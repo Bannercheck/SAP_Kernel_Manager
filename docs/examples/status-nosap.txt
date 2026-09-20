@@ -1,5 +1,5 @@
-$ ./sapkernel.sh status      # SAP kurulu olmayan bir hostta
-[1msapkernel status · vm · 2026-09-20 20:30:56[0m
+$ ./kernelman.sh status      # SAP kurulu olmayan bir hostta
+[1mkernelman status · vm · 2026-09-20 20:37:51[0m
   [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
 
 [36mHOST[0m

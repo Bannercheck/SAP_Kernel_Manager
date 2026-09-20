@@ -40,6 +40,19 @@ func exampleReport() *status.Report {
 					Sapstartsrv: "running", Status: "GREEN"},
 				{Nr: "02", Type: "D", TypeDesc: "Application Server (ABAP)", Host: "sapapp2", Sapstartsrv: "remote", Status: "GRAY"},
 			},
+		}, {
+			SID: "QAS", Type: "ABAP", Status: "GRAY",
+			Database:     status.DB{Type: "hdb", Name: "HDQ", Host: "saphdq"},
+			Kernel:       kernel.Version{Release: 793, Patch: 150, Platform: "linuxx86_64"},
+			KernelSource: "saphostctrl ListInstances",
+			Instances: []status.Instance{
+				{Nr: "10", Name: "ASCS10", Type: "ASCS", TypeDesc: "ABAP Central Services", Host: "sapci", Local: true,
+					Profile: "/usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci", DirExecutable: "/usr/sap/QAS/ASCS10/exe",
+					Sapstartsrv: "not running", Status: "GRAY"},
+				{Nr: "11", Name: "D11", Type: "D", TypeDesc: "Application Server (ABAP)", Host: "sapci", Local: true,
+					Profile: "/usr/sap/QAS/SYS/profile/QAS_D11_sapci", DirExecutable: "/usr/sap/QAS/D11/exe",
+					Sapstartsrv: "not running", Status: "GRAY"},
+			},
 		}},
 		Warnings: []string{"/usr/sap/sapservices: permission denied"},
 	}
@@ -57,11 +70,11 @@ func TestRenderStatus(t *testing.T) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}
 	}
-	// Refresh the documented example screen when requested: SAPKERNEL_WRITE_EXAMPLE=1 go test ./internal/cli
-	if os.Getenv("SAPKERNEL_WRITE_EXAMPLE") == "1" {
+	// Refresh the documented example screen when requested: KERNELMAN_WRITE_EXAMPLE=1 go test ./internal/cli
+	if os.Getenv("KERNELMAN_WRITE_EXAMPLE") == "1" {
 		var colour bytes.Buffer
 		RenderStatus(&colour, exampleReport(), ui.Palette{Colour: true, Unicode: true})
-		content := append([]byte("$ ./sapkernel.sh status\n"), colour.Bytes()...)
+		content := append([]byte("$ ./kernelman.sh status\n"), colour.Bytes()...)
 		if err := os.WriteFile("../../docs/examples/status-linux.txt", content, 0o644); err != nil {
 			t.Fatal(err)
 		}

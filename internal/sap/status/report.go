@@ -19,7 +19,7 @@ type Report struct {
 	Warnings    []string            `json:"warnings,omitempty"`
 }
 
-// HostInfo describes the machine sapkernel runs on.
+// HostInfo describes the machine kernelman runs on.
 type HostInfo struct {
 	Hostname      string `json:"hostname"`
 	OS            string `json:"os"`

@@ -1,40 +1,30 @@
 $ make cross
-    dist/bin/sapkernel-linux-amd64
-    dist/bin/sapkernel-linux-ppc64le
-    dist/bin/sapkernel-aix-ppc64
-    dist/bin/sapkernel-windows-amd64.exe
+    dist/bin/kernelman-linux-amd64
+    dist/bin/kernelman-linux-ppc64le
+    dist/bin/kernelman-aix-ppc64
+    dist/bin/kernelman-windows-amd64.exe
 
 $ ls -la dist dist/bin
   dist:
-  total 32
-  drwxr-xr-x 3 root root 4096 Sep 20 20:30 .
-  drwxr-xr-x 9 root root 4096 Sep 20 20:26 ..
-  -rw-r--r-- 1 root root  883 Sep 20 20:30 SHA256SUMS
-  drwxr-xr-x 2 root root 4096 Sep 20 20:30 bin
-  -rw-r--r-- 1 root root  317 Sep 20 20:30 sapkernel.bat
-  -rwxr-xr-x 1 root root  859 Sep 20 20:30 sapkernel.sh
-  -rw-r--r-- 1 root root  293 Sep 20 20:15 skm.bat
-  -rwxr-xr-x 1 root root  817 Sep 20 20:15 skm.sh
+  total 24
+  drwxr-xr-x 3 root root 4096 Sep 20 20:37 .
+  drwxr-xr-x 9 root root 4096 Sep 20 20:37 ..
+  -rw-r--r-- 1 root root  533 Sep 20 20:37 SHA256SUMS
+  drwxr-xr-x 2 root root 4096 Sep 20 20:37 bin
+  -rw-r--r-- 1 root root  317 Sep 20 20:37 kernelman.bat
+  -rwxr-xr-x 1 root root  859 Sep 20 20:37 kernelman.sh
   
   dist/bin:
-  total 21388
-  drwxr-xr-x 2 root root    4096 Sep 20 20:30 .
-  drwxr-xr-x 3 root root    4096 Sep 20 20:30 ..
-  -rwxr-xr-x 1 root root 3037464 Sep 20 20:30 sapkernel-aix-ppc64
-  -rwxr-xr-x 1 root root 2592952 Sep 20 20:30 sapkernel-linux-amd64
-  -rwxr-xr-x 1 root root 2687160 Sep 20 20:30 sapkernel-linux-ppc64le
-  -rwxr-xr-x 1 root root 2709504 Sep 20 20:30 sapkernel-windows-amd64.exe
-  -rwxr-xr-x 1 root root 2995580 Sep 20 20:15 skm-aix-ppc64
-  -rwxr-xr-x 1 root root 2551992 Sep 20 20:15 skm-linux-amd64
-  -rwxr-xr-x 1 root root 2621624 Sep 20 20:15 skm-linux-ppc64le
-  -rwxr-xr-x 1 root root 2668032 Sep 20 20:15 skm-windows-amd64.exe
+  total 10784
+  drwxr-xr-x 2 root root    4096 Sep 20 20:37 .
+  drwxr-xr-x 3 root root    4096 Sep 20 20:37 ..
+  -rwxr-xr-x 1 root root 3037936 Sep 20 20:37 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 2588856 Sep 20 20:37 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 2687160 Sep 20 20:37 kernelman-linux-ppc64le
+  -rwxr-xr-x 1 root root 2711040 Sep 20 20:37 kernelman-windows-amd64.exe
 
 $ file dist/bin/*
-  dist/bin/sapkernel-aix-ppc64:         64-bit XCOFF executable or object module not stripped
-  dist/bin/sapkernel-linux-amd64:       ELF 64-bit LSB executable
-  dist/bin/sapkernel-linux-ppc64le:     ELF 64-bit LSB executable
-  dist/bin/sapkernel-windows-amd64.exe: PE32+ executable (console) x86-64
-  dist/bin/skm-aix-ppc64:               64-bit XCOFF executable or object module not stripped
-  dist/bin/skm-linux-amd64:             ELF 64-bit LSB executable
-  dist/bin/skm-linux-ppc64le:           ELF 64-bit LSB executable
-  dist/bin/skm-windows-amd64.exe:       PE32+ executable (console) x86-64
+  dist/bin/kernelman-aix-ppc64:         64-bit XCOFF executable or object module not stripped
+  dist/bin/kernelman-linux-amd64:       ELF 64-bit LSB executable
+  dist/bin/kernelman-linux-ppc64le:     ELF 64-bit LSB executable
+  dist/bin/kernelman-windows-amd64.exe: PE32+ executable (console) x86-64

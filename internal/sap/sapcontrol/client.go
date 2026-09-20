@@ -1,6 +1,6 @@
 // Package sapcontrol wraps the sapcontrol command line tool. Every SAP
 // platform ships the same tool with the same output format, which makes it
-// the universal control API for sapkernel.
+// the universal control API for kernelman.
 package sapcontrol
 
 import (

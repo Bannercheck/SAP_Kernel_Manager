@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
@@ -104,7 +103,7 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 		kv(w, "Kernel platform", strings.Join(nonEmpty(sys.Kernel.Platform, sys.Kernel.CompilationMode, sys.Kernel.CompiledFor), " · "))
 		kv(w, "Kernel source", sys.KernelSource)
 		kv(w, "SAP_BASIS (kernel supports)", basisRange(sys.Kernel.SupportedBasis)+"  [actual SAP_BASIS needs DB/RFC access: planned]")
-		kv(w, "Kernel directory", sys.DirExeRoot+"  (DIR_EXE_ROOT)")
+		kv(w, "Kernel directory", suffixIf(sys.DirExeRoot, "  (DIR_EXE_ROOT)"))
 		kv(w, "DIR_CT_RUN", sys.DirCtRun)
 		kv(w, "Global kernel directory", sys.GlobalKernelDir)
 
@@ -116,16 +115,15 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 		}
 
 		fmt.Fprintln(w, "  Instances")
-		tw := tabwriter.NewWriter(w, 0, 4, 2, ' ', tabwriter.StripEscape)
-		fmt.Fprintln(tw, "    NR\tNAME\tTYPE\tHOST\tSAPSTARTSRV\tSTATUS\tPROFILE")
+		rows := [][]string{{"NR", "NAME", "TYPE", "HOST", "SAPSTARTSRV", "STATUS", "PROFILE"}}
 		for _, in := range sys.Instances {
-			fmt.Fprintf(tw, "    %s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-				in.Nr, orDash(in.Name), in.TypeDesc, in.Host,
-				ui.TabSafe(sapstartsrvLight(pal, in.Sapstartsrv)+" "+in.Sapstartsrv),
-				ui.TabSafe(statusLight(pal, in.Status)+" "+in.Status),
-				orDash(in.Profile))
+			rows = append(rows, []string{in.Nr, orDash(in.Name), in.TypeDesc, in.Host,
+				sapstartsrvLight(pal, in.Sapstartsrv) + " " + in.Sapstartsrv,
+				statusLight(pal, in.Status) + " " + in.Status, orDash(in.Profile)})
 		}
-		tw.Flush()
+		for _, l := range ui.Table("    ", rows) {
+			fmt.Fprintln(w, l)
+		}
 		for _, in := range sys.Instances {
 			if in.Error != "" {
 				fmt.Fprintf(w, "    %s instance %s: %s\n", pal.Cross(), in.Nr, in.Error)
@@ -188,6 +186,14 @@ func nonEmpty(ss ...string) []string {
 		}
 	}
 	return out
+}
+
+// suffixIf appends suffix only when s is not empty.
+func suffixIf(s, suffix string) string {
+	if s == "" {
+		return ""
+	}
+	return s + suffix
 }
 
 func orDash(s string) string {

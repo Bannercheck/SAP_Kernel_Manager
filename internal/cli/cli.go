@@ -1,4 +1,4 @@
-// Package cli implements the sapkernel sub-commands. It only parses flags and
+// Package cli implements the kernelman sub-commands. It only parses flags and
 // renders results; all SAP logic lives in internal/sap.
 package cli
 
@@ -7,15 +7,27 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
+
+// stdout is where operations write; the menu redirects it to its own writer.
+var stdout io.Writer = os.Stdout
+
+// palette overrides auto-detection when set (the menu passes its own).
+var palette *ui.Palette
+
+func currentPalette() ui.Palette {
+	if palette != nil {
+		return *palette
+	}
+	return ui.Detect(os.Stdout)
+}
 
 // Exit codes (see docs/ARCHITECTURE.md §5.9).
 const (
@@ -24,13 +36,13 @@ const (
 	ExitUsage = 2
 )
 
-// Version implements `sapkernel version`.
+// Version implements `kernelman version`.
 func Version(_ []string) int {
-	fmt.Println(version.String())
+	fmt.Fprintln(stdout, version.String())
 	return ExitOK
 }
 
-// Status implements `sapkernel status`.
+// Status implements `kernelman status`.
 func Status(args []string) int {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	sid := fs.String("sid", "", "only show this SAP system")
@@ -46,17 +58,17 @@ func Status(args []string) int {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	rep := status.Collect(ctx, exec.NewReal(), platform.Current(), status.Options{SID: *sid, Timeout: *timeout})
+	rep := collectStatus(ctx, status.Options{SID: *sid, Timeout: *timeout})
 
 	if *output == "json" {
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(rep); err != nil {
 			fmt.Fprintln(os.Stderr, version.AppName+" status:", err)
 			return ExitError
 		}
 	} else {
-		RenderStatus(os.Stdout, rep, ui.Detect(os.Stdout))
+		RenderStatus(stdout, rep, currentPalette())
 	}
 	if len(rep.Systems) == 0 {
 		return ExitError

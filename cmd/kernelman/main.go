@@ -1,4 +1,4 @@
-// sapkernel — SAP Kernel Manager command line entry point.
+// kernelman — SAP Kernel Manager command line entry point.
 package main
 
 import (

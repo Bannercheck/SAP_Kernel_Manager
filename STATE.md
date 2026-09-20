@@ -1,36 +1,36 @@
-# STATE — sapkernel ilerleme durumu
+# STATE — kernelman ilerleme durumu
 
 Son güncelleme: 2026-09-20 · Branch: `claude/great-turing-8e8v0c` · Faz: 1 tamam (+isim, menü, ışıklar) → Adım 2
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
-- [ ] **Adım 2 — Durdur** (`sapkernel stop`) · bkz. `docs/ARCHITECTURE.md` §5.7 adım 4, §5.2 (RunAs)
-  - 2a `internal/lock`: `DIR_CT_RUN/../.sapkernel.lock` (SID, host, pid, zaman; stale tespiti)
+- [ ] **Adım 2 — Durdur** (`kernelman stop`) · bkz. `docs/ARCHITECTURE.md` §5.7 adım 4, §5.2 (RunAs)
+  - 2a `internal/lock`: `DIR_CT_RUN/../.kernelman.lock` (SID, host, pid, zaman; stale tespiti)
   - 2b `sap/sapcontrol`: `StopSystem [ALL]`, `WaitforStopped <timeout> <delay>`, `StopService`, `StartService <SID>`, `StartSystem`, `WaitforStarted`
-  - 2c `internal/workflow` çekirdeği: `Step{Check,Do,Undo}`, `Run`, JSONL journal (`~/.sapkernel/runs/<id>/`), `resume`
-  - 2d **SAP Stop** adımı: snapshot yaz (`~/.sapkernel/systems/<SID>.json`: DIR_CT_RUN, DIR_EXE_ROOT, instance'lar, profiller) →
+  - 2c `internal/workflow` çekirdeği: `Step{Check,Do,Undo}`, `Run`, JSONL journal (`~/.kernelman/runs/<id>/`), `resume`
+  - 2d **SAP Stop** adımı: snapshot yaz (`~/.kernelman/systems/<SID>.json`: DIR_CT_RUN, DIR_EXE_ROOT, instance'lar, profiller) →
     `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek) → her local instance `StopService`; Undo = **SAP Start**
   - 2f çevrimdışı parametre çözümü: `sappfpar pf=<profil> <param>` (sapstartsrv kapalıyken); Windows keşif: `sc qc SAP<SID>_<NR>` parser
   - Adım/işlem adları `internal/cli/ops.go` kaydından gelir (SAP Status, SAP Stop, SAP Start, Kernel Backup …); menü bu kaydı kullanır
-  - 2e CLI: `sapkernel stop --sid ABC [--yes] [--dry-run] [--timeout]`, `sapkernel start --sid ABC`; ekranda adım ilerlemesi (`[1/3] StopSystem ... ok (42s)`)
+  - 2e CLI: `kernelman stop --sid ABC [--yes] [--dry-run] [--timeout]`, `kernelman start --sid ABC`; ekranda adım ilerlemesi (`[1/3] StopSystem ... ok (42s)`)
   - Test: FakeRunner ile stop→wait senaryosu; `make examples` ile `docs/examples/stop-linux.png`
 
 ## Yol haritası
 - [x] Adım 0 — Mimari, kurallar, bu dosya (`docs/ARCHITECTURE.md`, `CLAUDE.md`, `STATE.md`)
 - [x] Adım 1 — Temel + durum ekranı: `go.mod`, `Makefile` (build/check/cross/examples), `internal/{exec,platform,version,cli}`,
-      `internal/sap/{kernel,sapcontrol,discovery,status}`, `sapkernel status/version`, golden testler, `dist/` + `sapkernel.sh`/`sapkernel.bat`.
+      `internal/sap/{kernel,sapcontrol,discovery,status}`, `kernelman status/version`, golden testler, `dist/` + `kernelman.sh`/`kernelman.bat`.
       Ekranlar: `docs/examples/*.png` (menü dahil)
 - [ ] Adım 2 — Durdur (NEXT, yukarıda)
-- [ ] Adım 3 — Yedekle (`sapkernel backup --sid ABC`): sistem durmuş olmalı (Check) → `DIR_CT_RUN` → `<üst dizin>/exe_<YYYYMMDD_HHMMSS>`
+- [ ] Adım 3 — Yedekle (`kernelman backup --sid ABC`): sistem durmuş olmalı (Check) → `DIR_CT_RUN` → `<üst dizin>/exe_<YYYYMMDD_HHMMSS>`
       kopyası; izin/sahiplik korunur (`<sid>adm:sapsys`; root ise `RunAs=<sid>adm`); manifest sha256; `backup.keep` · §5.7 adım 5
-- [ ] Adım 4 — **Kernel Files** (`sapkernel files --from <dizin>`): kaynak dizini sor/tara; arşiv sınıflandırma (tam arşiv / tek bileşen yaması),
+- [ ] Adım 4 — **Kernel Files** (`kernelman files --from <dizin>`): kaynak dizini sor/tara; arşiv sınıflandırma (tam arşiv / tek bileşen yaması),
       **uygulama sırası** (en yüksek SAPEXE/SAPEXEDB → yamalar artan patch sırasıyla 400→411→…→420), hedef seviye, SAPCAR sarmalayıcı,
       staging'e sıralı açma + `disp+work -V` doğrulama, uyumluluk kuralları · §5.5–5.6
-- [ ] Adım 5 — **Kernel Update** planı + ön kontroller (`sapkernel update --dry-run`): disk, yetki, kilit, uyumluluk; **Health Check** (`doctor`) · §5.7 adım 1–2
+- [ ] Adım 5 — **Kernel Update** planı + ön kontroller (`kernelman update --dry-run`): disk, yetki, kilit, uyumluluk; **Health Check** (`doctor`) · §5.7 adım 1–2
 - [ ] Adım 6 — Workflow motoru tamamı: deploy (sıralı), postfix (saproot.sh, sapcpe), start, verify, cleanup, `update/resume/rollback/history` · §5.7
 - [ ] Adım 7 — Windows sertleştirme (servisler, UNC yollar, kilitli dosyalar) · §6
 - [ ] Adım 8 — AIX sertleştirme (`slibclean`, `genkld`, `LIBPATH`) · §6
-- [ ] Adım 9 — İndirme: SAP Support Portal / S-user, SHA-256, `sapkernel fetch` · §7
+- [ ] Adım 9 — İndirme: SAP Support Portal / S-user, SHA-256, `kernelman fetch` · §7
 - [ ] Adım 10 — Ek bileşenler: IGS, SAP Host Agent (`saphostexec -upgrade`)
 - [ ] Adım 11 — Çoklu host orkestrasyonu · §6
 - [ ] Adım 12 — Release pipeline (GitHub Actions cross-build, SHA256SUMS) · §9
@@ -40,22 +40,24 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - v1 yalnızca ABAP (+ASCS/ERS); Java instance'ları v2.
 - Paket deposu paylaşımlı NFS'te (`repo_dir`).
 - Windows: yalnızca tek host (global host).
-- Binary adı `sapkernel`.
+- Binary adı `kernelman`.
 
 ## Karar günlüğü
-- 2026-09-20 · İsim `skm` → **`sapkernel`** (kullanıcı: kısaltma güzel değil). Tek yerden: `internal/version.AppName/ProductName/EnvPrefix`,
-  Makefile `BIN`, `scripts/sapkernel.{sh,bat}`, `cmd/sapkernel`. Alternatifler sunuldu: `kernup`, `kernelctl`. Go modül yolu repo adı olarak kaldı.
+- 2026-09-20 · İsim **KernelMan** (kullanıcı seçimi): komut/binary `kernelman`, görünen ad `KernelMan`, env `KERNELMAN_*`.
+- 2026-09-20 · Menü başlığı: sistem başına açık/kapalı ışığı + kernel + sapstartsrv n/m + her instance'ın ışığı + Host Agent (kullanıcı: "sistem açık mı kapalı mı görünsün").
+- 2026-09-20 · İsim `skm` → **`kernelman`** (kullanıcı: kısaltma güzel değil). Tek yerden: `internal/version.AppName/ProductName/EnvPrefix`,
+  Makefile `BIN`, `scripts/kernelman.{sh,bat}`, `cmd/kernelman`. Alternatifler sunuldu: `kernup`, `kernelctl`. Go modül yolu repo adı olarak kaldı.
 - 2026-09-20 · Kullanıcı isteği: menüde yapılan işlemin yanında ✔/✘; durumlar trafik ışığı (GREEN yeşil, YELLOW sarı, RED+GRAY kırmızı).
-  `internal/ui`: renk yalnızca TTY/`SAPKERNEL_COLOR`, Unicode yalnızca UTF-8 locale (`SAPKERNEL_UNICODE`), Windows VT modu syscall ile.
+  `internal/ui`: renk yalnızca TTY/`KERNELMAN_COLOR`, Unicode yalnızca UTF-8 locale (`KERNELMAN_UNICODE`), Windows VT modu syscall ile.
 - 2026-09-20 · Kullanıcı: "Update Plan" menüde anlaşılmıyor → kaldırıldı; Kernel Update = dizin sor → plan göster → onay → uygula; `--dry-run` planda durur.
   "Kernel Packages" → "Kernel Files" (`files`), `apply` → `update`, `repo` kaldırıldı.
 - 2026-09-20 · Kullanıcı: SAR'lar indirme dizininden alınır, kopyalamadan önce dizin sorulur (`--from`).
 - 2026-09-20 · Kullanıcı (kritik): stack kernel (SAPEXE_400) önce, sonra tek bileşen yamaları artan sırayla (411, 412 … 420) → §5.5 kuralı.
-- 2026-09-20 · Kullanıcı isteği: işlem adları anlaşılır olsun → `internal/cli/ops.go` tek kayıt (ID + görünen ad); argümansız `sapkernel` terminalde menü açar.
+- 2026-09-20 · Kullanıcı isteği: işlem adları anlaşılır olsun → `internal/cli/ops.go` tek kayıt (ID + görünen ad); argümansız `kernelman` terminalde menü açar.
 - 2026-09-20 · sapstartsrv durduktan sonra `ParameterValue` çalışmaz → SAP Stop öncesi snapshot + `sappfpar` fallback (Adım 2/3).
-- 2026-09-20 · Kullanıcı isteği: durdurma ve kopyalama ayrı adımlar/komutlar (`sapkernel stop`, `sapkernel backup`); `apply` bunları zincirler.
+- 2026-09-20 · Kullanıcı isteği: durdurma ve kopyalama ayrı adımlar/komutlar (`kernelman stop`, `kernelman backup`); `apply` bunları zincirler.
 - 2026-09-20 · Her adımdan sonra `make examples` → `docs/examples/*.png` üretilir ve kullanıcıya gönderilir (kullanıcı macOS'ta, SAP hostu yok).
-- 2026-09-20 · Adım 1 bitti. Dağıtım düzeni: `dist/sapkernel.sh`, `dist/sapkernel.bat`, `dist/bin/sapkernel-<os>-<arch>`; hedef hosta hiçbir runtime
+- 2026-09-20 · Adım 1 bitti. Dağıtım düzeni: `dist/kernelman.sh`, `dist/kernelman.bat`, `dist/bin/kernelman-<os>-<arch>`; hedef hosta hiçbir runtime
   kurulmaz (Go yalnızca build makinesinde). Testdata paket içinde (`internal/sap/*/testdata/linux`).
 - 2026-09-20 · Gerçek SAP_BASIS sürümü OS seviyesinden okunamaz (DB/RFC gerekir); ekranda kernel'in desteklediği SVERS aralığı gösterilir.
 - 2026-09-20 · sapcontrol `GetProcessList` çıkış kodu 3/4 başarı sayılır; `textstatus` virgül içerir → sağdan/soldan sabit sütun ayrıştırma.
@@ -67,5 +69,5 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 ## Notlar / engeller
 - Uzak repoda henüz `main` yok; ilk push bu branch'ten. Kullanıcı isterse `main` bu branch'ten açılır.
 - AIX ve Windows'ta gerçek `sapcontrol`/`saphostctrl`/`disp+work -V` çıktı örnekleri lazım (golden test için) → kullanıcıdan istenecek.
-- `sapkernel status` gerçek bir SAP hostunda henüz denenmedi; ilk gerçek çalıştırma çıktısı (`--output json`) kullanıcıdan istenecek.
+- `kernelman status` gerçek bir SAP hostunda henüz denenmedi; ilk gerçek çalıştırma çıktısı (`--output json`) kullanıcıdan istenecek.
 - Bağımlılık yok (stdlib only); `go.sum` yok. yaml.v3 Adım 4'te (config) gelecek.

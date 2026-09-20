@@ -44,7 +44,7 @@ func FindOp(id string) (Op, bool) {
 // Dispatch runs the operation or explains that it is not available yet.
 func Dispatch(op Op, args []string) int {
 	if op.Run == nil {
-		fmt.Printf("%s (%s %s) is planned for step %d and not available yet.\n", op.Name, version.AppName, op.ID, op.Step)
+		fmt.Fprintf(stdout, "%s (%s %s) is planned for step %d and not available yet.\n", op.Name, version.AppName, op.ID, op.Step)
 		return ExitError
 	}
 	return op.Run(args)
@@ -53,7 +53,7 @@ func Dispatch(op Op, args []string) int {
 // Usage prints the top-level help.
 func Usage(w io.Writer) {
 	fmt.Fprintf(w, "%s — %s\n\nUsage: %s <command> [flags]      (no arguments on a terminal opens the menu)\n\n",
-		version.AppName, version.ProductName, version.AppName)
+		version.DisplayName, version.ProductName, version.AppName)
 	for _, op := range Ops {
 		state := ""
 		if op.Run == nil {

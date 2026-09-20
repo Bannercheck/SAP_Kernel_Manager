@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
@@ -127,8 +128,44 @@ var ansiRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 // Strip removes escape sequences (for width calculations and plain logs).
 func Strip(s string) string { return ansiRe.ReplaceAllString(s, "") }
 
-// TabSafe brackets escape sequences with tabwriter.Escape so that
-// text/tabwriter (with the StripEscape flag) ignores them when aligning.
-func TabSafe(s string) string {
-	return ansiRe.ReplaceAllStringFunc(s, func(m string) string { return "\xff" + m + "\xff" })
+// Width is the number of visible cells s occupies (escape sequences ignored).
+func Width(s string) int { return utf8.RuneCountInString(Strip(s)) }
+
+// PadRight pads s with spaces to the visible width w.
+func PadRight(s string, w int) string {
+	if n := Width(s); n < w {
+		return s + strings.Repeat(" ", w-n)
+	}
+	return s
+}
+
+// Table aligns rows into columns by visible width, two spaces apart, with
+// the given indent. Escape sequences inside cells do not disturb alignment.
+func Table(indent string, rows [][]string) []string {
+	var widths []int
+	for _, r := range rows {
+		for i, c := range r {
+			if i >= len(widths) {
+				widths = append(widths, 0)
+			}
+			if w := Width(c); w > widths[i] {
+				widths[i] = w
+			}
+		}
+	}
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		var b strings.Builder
+		b.WriteString(indent)
+		for i, c := range r {
+			if i == len(r)-1 {
+				b.WriteString(c) // last column: no trailing padding
+				break
+			}
+			b.WriteString(PadRight(c, widths[i]))
+			b.WriteString("  ")
+		}
+		out = append(out, strings.TrimRight(b.String(), " "))
+	}
+	return out
 }

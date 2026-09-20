@@ -49,7 +49,10 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 			continue
 		}
 		fmt.Fprintf(out, "\n%s\n", pal.Paint(ui.Bold, "=== "+op.Name+" ==="))
+		prevOut, prevPal := stdout, palette
+		stdout, palette = out, &pal
 		code := Dispatch(op, nil)
+		stdout, palette = prevOut, prevPal
 		results[op.ID] = code
 		mark := pal.Check() + " " + pal.Paint(ui.Green, "done")
 		if code != 0 {
@@ -65,7 +68,7 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 
 func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []string) {
 	host, _ := os.Hostname()
-	fmt.Fprintf(w, "%s   %s\n\n", pal.Paint(ui.Bold, version.AppName+" — "+version.ProductName), pal.Paint(ui.Dim, "host "+host))
+	fmt.Fprintf(w, "%s   %s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName), pal.Paint(ui.Dim, "host "+host))
 	for _, l := range summary {
 		fmt.Fprintln(w, "  "+l)
 	}
@@ -88,22 +91,28 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 	fmt.Fprintln(w)
 }
 
-// liveSummary probes the host and renders one traffic light per SAP system.
+// collectStatus gathers the live report; tests and transcripts replace it.
+var collectStatus = liveCollect
+
+func liveCollect(ctx context.Context, opts status.Options) *status.Report {
+	return status.Collect(ctx, exec.NewReal(), platform.Current(), opts)
+}
+
+// liveSummary probes the host and renders the system overview above the menu.
 func liveSummary(pal ui.Palette) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	rep := status.Collect(ctx, exec.NewReal(), platform.Current(), status.Options{Timeout: 15 * time.Second})
-	return SummaryLines(rep, pal)
+	return SummaryLines(collectStatus(ctx, status.Options{Timeout: 15 * time.Second}), pal)
 }
 
-// SummaryLines renders the per-system traffic lights used above the menu.
+// SummaryLines renders the overview shown above the menu: one line per SAP
+// system (is it up or down, kernel level, sapstartsrv, every instance's
+// light) plus the SAP Host Agent.
 func SummaryLines(rep *status.Report, pal ui.Palette) []string {
-	if len(rep.Systems) == 0 {
-		return []string{pal.Light(ui.Dim) + " " + pal.Paint(ui.Dim, "no SAP instances found on this host")}
-	}
-	var lines []string
+	rows := [][]string{{"SYSTEM", "TYPE", "SAP SYSTEM", "KERNEL", "SAPSTARTSRV", "INSTANCES"}}
 	for _, sys := range rep.Systems {
 		running, local := 0, 0
+		var insts []string
 		for _, in := range sys.Instances {
 			if in.Local {
 				local++
@@ -111,9 +120,39 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 					running++
 				}
 			}
+			name := in.Name
+			if name == "" {
+				name = in.Host + "/" + in.Nr
+			}
+			insts = append(insts, name+" "+statusLight(pal, in.Status))
 		}
-		lines = append(lines, fmt.Sprintf("%s %-4s %-12s %-7s kernel %-14s sapstartsrv %d/%d",
-			statusLight(pal, sys.Status), sys.SID, sys.Type, statusWord(sys.Status), sys.Kernel, running, local))
+		srvColour := ui.Green
+		switch {
+		case running == 0:
+			srvColour = ui.Red
+		case running < local:
+			srvColour = ui.Yellow
+		}
+		rows = append(rows, []string{sys.SID, sys.Type,
+			statusLight(pal, sys.Status) + " " + pal.Paint(statusColour(sys.Status), statusWord(sys.Status)),
+			sys.Kernel.String(),
+			fmt.Sprintf("%s %d/%d running", pal.Light(srvColour), running, local),
+			strings.Join(insts, "  ")})
+	}
+	var lines []string
+	if len(rep.Systems) == 0 {
+		lines = append(lines, pal.Light(ui.Dim)+" "+pal.Paint(ui.Dim, "no SAP instances found on this host"))
+	} else {
+		lines = ui.Table("", rows)
+	}
+	ha := rep.HostAgent
+	switch {
+	case !ha.Installed:
+		lines = append(lines, "SAP Host Agent  "+pal.Light(ui.Red)+" "+pal.Paint(ui.Red, "not installed"))
+	case ha.Running:
+		lines = append(lines, fmt.Sprintf("SAP Host Agent  %s %s  %s", pal.Light(ui.Green), pal.Paint(ui.Green, "running"), ha.Version))
+	default:
+		lines = append(lines, fmt.Sprintf("SAP Host Agent  %s %s  %s", pal.Light(ui.Red), pal.Paint(ui.Red, "not running"), ha.Version))
 	}
 	return lines
 }
