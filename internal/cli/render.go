@@ -33,20 +33,6 @@ func statusColour(s string) ui.Colour {
 	return ui.Dim
 }
 
-func statusWord(s string) string {
-	switch strings.ToUpper(s) {
-	case "GREEN":
-		return "running"
-	case "YELLOW":
-		return "partial"
-	case "RED":
-		return "error"
-	case "GRAY":
-		return "stopped"
-	}
-	return strings.ToLower(s)
-}
-
 func statusLight(pal ui.Palette, s string) string { return pal.Light(statusColour(s)) }
 
 func sapstartsrvLight(pal ui.Palette, s string) string {
@@ -65,7 +51,7 @@ func sapstartsrvLight(pal ui.Palette, s string) string {
 func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 	fmt.Fprintf(w, "%s\n", pal.Paint(ui.Bold, fmt.Sprintf("%s status · %s · %s", version.AppName, rep.Host.Hostname,
 		rep.GeneratedAt.Format("2006-01-02 15:04:05"))))
-	fmt.Fprintf(w, "  %s running   %s partial / hanging   %s stopped / error   %s remote or unknown\n\n",
+	fmt.Fprintf(w, "  %s running   %s partial   %s stopped   %s remote/unknown\n\n",
 		pal.Light(ui.Green), pal.Light(ui.Yellow), pal.Light(ui.Red), pal.Light(ui.Dim))
 
 	fmt.Fprintln(w, pal.Paint(ui.Cyan, "HOST"))
@@ -82,14 +68,14 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 	case !ha.Installed:
 		kv(w, "SAP Host Agent", pal.Light(ui.Red)+" not installed · "+ha.Error)
 	case ha.Running:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s running · %s · %s", pal.Light(ui.Green), ha.Version, ha.Path))
+		kv(w, "SAP Host Agent", fmt.Sprintf("%s %s · %s", pal.Light(ui.Green), ha.Version, ha.Path))
 	default:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s NOT running · %s · %s", pal.Light(ui.Red), ha.Version, ha.Path))
+		kv(w, "SAP Host Agent", fmt.Sprintf("%s %s · %s", pal.Light(ui.Red), ha.Version, ha.Path))
 	}
 
 	for _, sys := range rep.Systems {
 		fmt.Fprintf(w, "\n%s %s %s\n", pal.Paint(ui.Cyan, fmt.Sprintf("SYSTEM %s · %s ·", sys.SID, sys.Type)),
-			statusLight(pal, sys.Status), pal.Paint(statusColour(sys.Status), sys.Status+" ("+statusWord(sys.Status)+")"))
+			statusLight(pal, sys.Status), pal.Paint(statusColour(sys.Status), sys.Status))
 		kv(w, "SID", sys.SID)
 		kv(w, "SAP system type", sys.Type)
 		kv(w, "Database", strings.TrimSpace(sys.Database.DisplayName()+" "+dbDetail(sys.Database)))
@@ -118,7 +104,7 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 		rows := [][]string{{"NR", "NAME", "TYPE", "HOST", "SAPSTARTSRV", "STATUS", "PROFILE"}}
 		for _, in := range sys.Instances {
 			rows = append(rows, []string{in.Nr, orDash(in.Name), in.TypeDesc, in.Host,
-				sapstartsrvLight(pal, in.Sapstartsrv) + " " + in.Sapstartsrv,
+				sapstartsrvLight(pal, in.Sapstartsrv),
 				statusLight(pal, in.Status) + " " + in.Status, orDash(in.Profile)})
 		}
 		for _, l := range ui.Table("    ", rows) {

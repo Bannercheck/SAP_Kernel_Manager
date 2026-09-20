@@ -81,13 +81,14 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 				mark = pal.Cross()
 			}
 		}
-		state := ""
+		name := op.Name
 		if op.Run == nil {
-			state = pal.Paint(ui.Dim, fmt.Sprintf("   (planned: step %d)", op.Step))
+			name = pal.Paint(ui.Dim, name)
 		}
-		fmt.Fprintf(w, "  %2d) %s %-16s %s%s\n", i+1, mark, op.Name, op.Summary, state)
+		fmt.Fprintf(w, "  %2d) %s %s\n", i+1, mark, name)
 	}
 	fmt.Fprintln(w, "   q)   Quit")
+	fmt.Fprintln(w, pal.Paint(ui.Dim, "\n  dim = not available yet · details: "+version.AppName+" help"))
 	fmt.Fprintln(w)
 }
 
@@ -105,56 +106,36 @@ func liveSummary(pal ui.Palette) []string {
 	return SummaryLines(collectStatus(ctx, status.Options{Timeout: 15 * time.Second}), pal)
 }
 
-// SummaryLines renders the overview shown above the menu: one line per SAP
-// system (is it up or down, kernel level, sapstartsrv, every instance's
-// light) plus the SAP Host Agent.
+// SummaryLines renders the overview above the menu: one light per SAP
+// system and per instance, the kernel level, and the SAP Host Agent.
+// Words are left out on purpose; the light carries the state.
 func SummaryLines(rep *status.Report, pal ui.Palette) []string {
-	rows := [][]string{{"SYSTEM", "TYPE", "SAP SYSTEM", "KERNEL", "SAPSTARTSRV", "INSTANCES"}}
+	var rows [][]string
 	for _, sys := range rep.Systems {
-		running, local := 0, 0
 		var insts []string
 		for _, in := range sys.Instances {
-			if in.Local {
-				local++
-				if in.Sapstartsrv == "running" {
-					running++
-				}
-			}
 			name := in.Name
 			if name == "" {
 				name = in.Host + "/" + in.Nr
 			}
 			insts = append(insts, name+" "+statusLight(pal, in.Status))
 		}
-		srvColour := ui.Green
-		switch {
-		case running == 0:
-			srvColour = ui.Red
-		case running < local:
-			srvColour = ui.Yellow
-		}
-		rows = append(rows, []string{sys.SID, sys.Type,
-			statusLight(pal, sys.Status) + " " + pal.Paint(statusColour(sys.Status), statusWord(sys.Status)),
-			sys.Kernel.String(),
-			fmt.Sprintf("%s %d/%d running", pal.Light(srvColour), running, local),
-			strings.Join(insts, "  ")})
+		rows = append(rows, []string{statusLight(pal, sys.Status), sys.SID, sys.Type,
+			"kernel " + sys.Kernel.String(), strings.Join(insts, "  ")})
 	}
-	var lines []string
-	if len(rep.Systems) == 0 {
-		lines = append(lines, pal.Light(ui.Dim)+" "+pal.Paint(ui.Dim, "no SAP instances found on this host"))
-	} else {
-		lines = ui.Table("", rows)
+	if len(rows) == 0 {
+		rows = append(rows, []string{pal.Light(ui.Dim), pal.Paint(ui.Dim, "no SAP instances found on this host"), "", "", ""})
 	}
 	ha := rep.HostAgent
 	switch {
 	case !ha.Installed:
-		lines = append(lines, "SAP Host Agent  "+pal.Light(ui.Red)+" "+pal.Paint(ui.Red, "not installed"))
+		rows = append(rows, []string{pal.Light(ui.Red), "SAP Host Agent", pal.Paint(ui.Dim, "not installed"), "", ""})
 	case ha.Running:
-		lines = append(lines, fmt.Sprintf("SAP Host Agent  %s %s  %s", pal.Light(ui.Green), pal.Paint(ui.Green, "running"), ha.Version))
+		rows = append(rows, []string{pal.Light(ui.Green), "SAP Host Agent", "", ha.Version.String(), ""})
 	default:
-		lines = append(lines, fmt.Sprintf("SAP Host Agent  %s %s  %s", pal.Light(ui.Red), pal.Paint(ui.Red, "not running"), ha.Version))
+		rows = append(rows, []string{pal.Light(ui.Red), "SAP Host Agent", "", ha.Version.String(), ""})
 	}
-	return lines
+	return ui.Table("", rows)
 }
 
 func menuChoice(s string) (Op, bool) {

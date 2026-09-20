@@ -241,7 +241,7 @@ systems:
 
 | Komut | Görünen ad | İş |
 |-------|------------|----|
-| `kernelman` (argümansız, terminalde) | menü | üstte sistem başına trafik ışığı; yapılan işlemin numarası yanında yeşil ✔ / kırmızı ✘ |
+| `kernelman` (argümansız, terminalde) | menü | üstte sistem ve instance başına yalnızca trafik ışığı (kelime yok); işlem adları açıklamasız; yapılmış işlemin yanında yeşil ✔ / kırmızı ✘; henüz olmayanlar soluk |
 | `kernelman status [--sid ABC]` | **SAP Status** | **açılış ekranı**: SID · hostname · instance no/tipi · sistem tipi · OS/mimari · DB · kernel release/patch · DIR_EXE_ROOT · DIR_CT_RUN · global/local kernel dizinleri · instance listesi · sapstartsrv · Host Agent; her durum trafik ışığıyla |
 | `kernelman stop --sid ABC` | **SAP Stop** | `StopSystem ALL` → `WaitforStopped` → `StopService`; öncesinde snapshot |
 | `kernelman start --sid ABC` | **SAP Start** | `StartService` → `StartSystem` → `WaitforStarted` |

@@ -16,10 +16,9 @@ func TestSummaryLines(t *testing.T) {
 	lines := SummaryLines(exampleReport(), pal)
 	joined := strings.Join(lines, "\n")
 	for _, want := range []string{
-		"SYSTEM  TYPE  SAP SYSTEM   KERNEL                              SAPSTARTSRV      INSTANCES",
-		"ABC     ABAP  (~) partial  793 patch 200 (changelist 2123456)  (+) 2/2 running  D00 (+)  ASCS01 (+)  sapapp2/02 (x)",
-		"QAS     ABAP  (x) stopped  793 patch 150                       (x) 0/2 running  ASCS10 (x)  D11 (x)",
-		"SAP Host Agent  (+) running  722 patch 65",
+		"(~)  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 (+)  ASCS01 (+)  sapapp2/02 (x)",
+		"(x)  QAS             ABAP  kernel 793 patch 150                       ASCS10 (x)  D11 (x)",
+		"(+)  SAP Host Agent        722 patch 65",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("summary lacks %q\n%s", want, joined)

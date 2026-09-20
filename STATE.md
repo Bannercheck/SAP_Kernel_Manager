@@ -43,6 +43,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-20 · Kullanıcı: menü kalabalık, kapalı sistem için yalnızca kırmızı ışık → açıklamalar menüden kaldırıldı (`help`'te), durum kelimeleri (running/stopped/n/m) kaldırıldı, ışık tek gösterge.
 - 2026-09-20 · İsim **KernelMan** (kullanıcı seçimi): komut/binary `kernelman`, görünen ad `KernelMan`, env `KERNELMAN_*`.
 - 2026-09-20 · Menü başlığı: sistem başına açık/kapalı ışığı + kernel + sapstartsrv n/m + her instance'ın ışığı + Host Agent (kullanıcı: "sistem açık mı kapalı mı görünsün").
 - 2026-09-20 · İsim `skm` → **`kernelman`** (kullanıcı: kısaltma güzel değil). Tek yerden: `internal/version.AppName/ProductName/EnvPrefix`,

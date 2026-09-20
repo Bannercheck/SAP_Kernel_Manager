@@ -1,15 +1,15 @@
 $ ./kernelman.sh status
 [1mkernelman status · sapci · 2026-09-20 19:40:12[0m
-  [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
+  [32m●[0m running   [33m●[0m partial   [31m●[0m stopped   [90m○[0m remote/unknown
 
 [36mHOST[0m
   Hostname                     sapci
   OS                           SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)
   OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         abcadm (not privileged)
-  SAP Host Agent               [32m●[0m running · 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
+  SAP Host Agent               [32m●[0m 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
 
-[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW (partial)[0m
+[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW[0m
   SID                          ABC
   SAP system type              ABAP
   Database                     SAP HANA (hdb) · name HDB · host saphdb
@@ -26,11 +26,11 @@ $ ./kernelman.sh status
                                ASCS01   /usr/sap/ABC/ASCS01/exe
   Instances
     NR  NAME    TYPE                       HOST     SAPSTARTSRV  STATUS   PROFILE
-    00  D00     Application Server (ABAP)  sapci    [32m●[0m running    [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
-    01  ASCS01  ABAP Central Services      sapci    [32m●[0m running    [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
-    02  -       Application Server (ABAP)  sapapp2  [90m○[0m remote     [31m●[0m GRAY   -
+    00  D00     Application Server (ABAP)  sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+    01  ASCS01  ABAP Central Services      sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+    02  -       Application Server (ABAP)  sapapp2  [90m○[0m            [31m●[0m GRAY   -
 
-[36mSYSTEM QAS · ABAP ·[0m [31m●[0m [31mGRAY (stopped)[0m
+[36mSYSTEM QAS · ABAP ·[0m [31m●[0m [31mGRAY[0m
   SID                          QAS
   SAP system type              ABAP
   Database                     SAP HANA (hdb) · name HDQ · host saphdq
@@ -46,9 +46,9 @@ $ ./kernelman.sh status
                                ASCS10   /usr/sap/QAS/ASCS10/exe
                                D11      /usr/sap/QAS/D11/exe
   Instances
-    NR  NAME    TYPE                       HOST   SAPSTARTSRV    STATUS  PROFILE
-    10  ASCS10  ABAP Central Services      sapci  [31m●[0m not running  [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
-    11  D11     Application Server (ABAP)  sapci  [31m●[0m not running  [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
+    NR  NAME    TYPE                       HOST   SAPSTARTSRV  STATUS  PROFILE
+    10  ASCS10  ABAP Central Services      sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
+    11  D11     Application Server (ABAP)  sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
 
 [33mWARNINGS[0m
   - /usr/sap/sapservices: permission denied

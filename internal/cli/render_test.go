@@ -62,10 +62,10 @@ func TestRenderStatus(t *testing.T) {
 	var buf bytes.Buffer
 	RenderStatus(&buf, exampleReport(), ui.Palette{})
 	out := buf.String()
-	for _, want := range []string{"SYSTEM ABC · ABAP · (~) YELLOW (partial)", "Kernel version               793 (7.93)",
+	for _, want := range []string{"SYSTEM ABC · ABAP · (~) YELLOW", "Kernel version               793 (7.93)",
 		"Kernel patch level           200 (changelist 2123456)", "DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64",
 		"Global kernel directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "remote", "SAP HANA (hdb)",
-		"755–758", "SAP Host Agent               (+) running · 722 patch 65", "WARNINGS"} {
+		"755–758", "SAP Host Agent               (+) 722 patch 65", "WARNINGS"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}

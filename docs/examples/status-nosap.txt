@@ -1,6 +1,6 @@
 $ ./kernelman.sh status      # SAP kurulu olmayan bir hostta
-[1mkernelman status · vm · 2026-09-20 20:37:51[0m
-  [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
+[1mkernelman status · vm · 2026-09-20 20:40:39[0m
+  [32m●[0m running   [33m●[0m partial   [31m●[0m stopped   [90m○[0m remote/unknown
 
 [36mHOST[0m
   Hostname                     vm

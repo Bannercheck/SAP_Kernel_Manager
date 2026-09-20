@@ -1,37 +1,38 @@
 $ ./kernelman.sh              # argümansız: menü · 1 = SAP Status, q = çıkış
 [1mKernelMan — SAP Kernel Manager[0m   [90mhost vm[0m
 
-  SYSTEM  TYPE  SAP SYSTEM  KERNEL                              SAPSTARTSRV    INSTANCES
-  ABC     ABAP  [33m●[0m [33mpartial[0m   793 patch 200 (changelist 2123456)  [32m●[0m 2/2 running  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
-  QAS     ABAP  [31m●[0m [31mstopped[0m   793 patch 150                       [31m●[0m 0/2 running  ASCS10 [31m●[0m  D11 [31m●[0m
-  SAP Host Agent  [32m●[0m [32mrunning[0m  722 patch 65
+  [33m●[0m  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
+  [31m●[0m  QAS             ABAP  kernel 793 patch 150                       ASCS10 [31m●[0m  D11 [31m●[0m
+  [32m●[0m  SAP Host Agent        722 patch 65
 
-   1)   SAP Status       host, kernel, directories, instances and sapstartsrv state
-   2)   SAP Stop         stop the SAP system and wait until every instance is down[90m   (planned: step 2)[0m
-   3)   SAP Start        start sapstartsrv and the SAP system, wait until running[90m   (planned: step 2)[0m
-   4)   Kernel Backup    copy DIR_CT_RUN to exe_<timestamp> as <sid>adm:sapsys[90m   (planned: step 3)[0m
-   5)   Kernel Files     scan the download directory: archives, apply order, target patch level[90m   (planned: step 4)[0m
-   6)   Kernel Update    ask for the download directory, show the plan, confirm, then update[90m   (planned: step 5)[0m
-   7)   Kernel Rollback  restore the backup taken by a previous update[90m   (planned: step 6)[0m
-   8)   Run History      previous runs and their outcome[90m   (planned: step 6)[0m
-   9)   Health Check     tool paths, privileges, sapcontrol access[90m   (planned: step 5)[0m
-  10)   Version          build information
+   1)   SAP Status
+   2)   [90mSAP Stop[0m
+   3)   [90mSAP Start[0m
+   4)   [90mKernel Backup[0m
+   5)   [90mKernel Files[0m
+   6)   [90mKernel Update[0m
+   7)   [90mKernel Rollback[0m
+   8)   [90mRun History[0m
+   9)   [90mHealth Check[0m
+  10)   Version
    q)   Quit
+[90m
+  dim = not available yet · details: kernelman help[0m
 
 Select an operation (number or name, q to quit): 1
 
 [1m=== SAP Status ===[0m
 [1mkernelman status · sapci · 2026-09-20 19:40:12[0m
-  [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
+  [32m●[0m running   [33m●[0m partial   [31m●[0m stopped   [90m○[0m remote/unknown
 
 [36mHOST[0m
   Hostname                     sapci
   OS                           SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)
   OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         abcadm (not privileged)
-  SAP Host Agent               [32m●[0m running · 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
+  SAP Host Agent               [32m●[0m 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
 
-[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW (partial)[0m
+[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW[0m
   SID                          ABC
   SAP system type              ABAP
   Database                     SAP HANA (hdb) · name HDB · host saphdb
@@ -48,11 +49,11 @@ Select an operation (number or name, q to quit): 1
                                ASCS01   /usr/sap/ABC/ASCS01/exe
   Instances
     NR  NAME    TYPE                       HOST     SAPSTARTSRV  STATUS   PROFILE
-    00  D00     Application Server (ABAP)  sapci    [32m●[0m running    [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
-    01  ASCS01  ABAP Central Services      sapci    [32m●[0m running    [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
-    02  -       Application Server (ABAP)  sapapp2  [90m○[0m remote     [31m●[0m GRAY   -
+    00  D00     Application Server (ABAP)  sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+    01  ASCS01  ABAP Central Services      sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+    02  -       Application Server (ABAP)  sapapp2  [90m○[0m            [31m●[0m GRAY   -
 
-[36mSYSTEM QAS · ABAP ·[0m [31m●[0m [31mGRAY (stopped)[0m
+[36mSYSTEM QAS · ABAP ·[0m [31m●[0m [31mGRAY[0m
   SID                          QAS
   SAP system type              ABAP
   Database                     SAP HANA (hdb) · name HDQ · host saphdq
@@ -68,9 +69,9 @@ Select an operation (number or name, q to quit): 1
                                ASCS10   /usr/sap/QAS/ASCS10/exe
                                D11      /usr/sap/QAS/D11/exe
   Instances
-    NR  NAME    TYPE                       HOST   SAPSTARTSRV    STATUS  PROFILE
-    10  ASCS10  ABAP Central Services      sapci  [31m●[0m not running  [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
-    11  D11     Application Server (ABAP)  sapci  [31m●[0m not running  [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
+    NR  NAME    TYPE                       HOST   SAPSTARTSRV  STATUS  PROFILE
+    10  ASCS10  ABAP Central Services      sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
+    11  D11     Application Server (ABAP)  sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
 
 [33mWARNINGS[0m
   - /usr/sap/sapservices: permission denied
@@ -78,21 +79,22 @@ Select an operation (number or name, q to quit): 1
 --- SAP Status: [32m✔[0m [32mdone[0m. Press Enter to continue.
 [1mKernelMan — SAP Kernel Manager[0m   [90mhost vm[0m
 
-  SYSTEM  TYPE  SAP SYSTEM  KERNEL                              SAPSTARTSRV    INSTANCES
-  ABC     ABAP  [33m●[0m [33mpartial[0m   793 patch 200 (changelist 2123456)  [32m●[0m 2/2 running  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
-  QAS     ABAP  [31m●[0m [31mstopped[0m   793 patch 150                       [31m●[0m 0/2 running  ASCS10 [31m●[0m  D11 [31m●[0m
-  SAP Host Agent  [32m●[0m [32mrunning[0m  722 patch 65
+  [33m●[0m  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
+  [31m●[0m  QAS             ABAP  kernel 793 patch 150                       ASCS10 [31m●[0m  D11 [31m●[0m
+  [32m●[0m  SAP Host Agent        722 patch 65
 
-   1) [32m✔[0m SAP Status       host, kernel, directories, instances and sapstartsrv state
-   2)   SAP Stop         stop the SAP system and wait until every instance is down[90m   (planned: step 2)[0m
-   3)   SAP Start        start sapstartsrv and the SAP system, wait until running[90m   (planned: step 2)[0m
-   4)   Kernel Backup    copy DIR_CT_RUN to exe_<timestamp> as <sid>adm:sapsys[90m   (planned: step 3)[0m
-   5)   Kernel Files     scan the download directory: archives, apply order, target patch level[90m   (planned: step 4)[0m
-   6)   Kernel Update    ask for the download directory, show the plan, confirm, then update[90m   (planned: step 5)[0m
-   7)   Kernel Rollback  restore the backup taken by a previous update[90m   (planned: step 6)[0m
-   8)   Run History      previous runs and their outcome[90m   (planned: step 6)[0m
-   9)   Health Check     tool paths, privileges, sapcontrol access[90m   (planned: step 5)[0m
-  10)   Version          build information
+   1) [32m✔[0m SAP Status
+   2)   [90mSAP Stop[0m
+   3)   [90mSAP Start[0m
+   4)   [90mKernel Backup[0m
+   5)   [90mKernel Files[0m
+   6)   [90mKernel Update[0m
+   7)   [90mKernel Rollback[0m
+   8)   [90mRun History[0m
+   9)   [90mHealth Check[0m
+  10)   Version
    q)   Quit
+[90m
+  dim = not available yet · details: kernelman help[0m
 
 Select an operation (number or name, q to quit): q
