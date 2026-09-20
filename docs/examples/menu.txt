@@ -1,0 +1,51 @@
+$ ./skm.sh              # argümansız: menü
+skm — SAP Kernel Manager
+
+   1) SAP Status       host, kernel, directories, instances and sapstartsrv state
+   2) SAP Stop         stop the SAP system and wait until every instance is down   (planned: step 2)
+   3) SAP Start        start sapstartsrv and the SAP system, wait until running   (planned: step 2)
+   4) Kernel Backup    copy DIR_CT_RUN to exe_<timestamp> as <sid>adm:sapsys   (planned: step 3)
+   5) Kernel Packages  import, verify and list SAPEXE/SAPEXEDB archives   (planned: step 4)
+   6) Update Plan      preflight checks and an executable update plan   (planned: step 5)
+   7) Kernel Update    run the plan: stop, backup, deploy, fix, start, verify   (planned: step 6)
+   8) Kernel Rollback  restore the backup taken by a previous run   (planned: step 6)
+   9) Run History      previous runs and their outcome   (planned: step 6)
+  10) Health Check     tool paths, privileges, sapcontrol access   (planned: step 5)
+  11) Version          build information
+   q) Quit
+
+Select an operation (number or name, q to quit): 1
+
+=== SAP Status ===
+skm status · vm · 2026-09-20 20:20:20
+
+HOST
+  Hostname                     vm
+  OS                           Ubuntu 24.04.4 LTS (kernel 6.18.44-fc-v37)
+  OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
+  User                         root (privileged)
+  SAP Host Agent               not installed · SAP Host Agent not found (/usr/sap/hostctrl/exe)
+
+WARNINGS
+  - saphostctrl: executable not found: saphostctrl
+  - /usr/sap/sapservices: open /usr/sap/sapservices: no such file or directory
+  - sapcontrol not found; instance status unavailable
+  - no SAP instances found on this host
+
+--- SAP Status finished (exit code 1). Press Enter to continue.
+skm — SAP Kernel Manager
+
+   1) SAP Status       host, kernel, directories, instances and sapstartsrv state
+   2) SAP Stop         stop the SAP system and wait until every instance is down   (planned: step 2)
+   3) SAP Start        start sapstartsrv and the SAP system, wait until running   (planned: step 2)
+   4) Kernel Backup    copy DIR_CT_RUN to exe_<timestamp> as <sid>adm:sapsys   (planned: step 3)
+   5) Kernel Packages  import, verify and list SAPEXE/SAPEXEDB archives   (planned: step 4)
+   6) Update Plan      preflight checks and an executable update plan   (planned: step 5)
+   7) Kernel Update    run the plan: stop, backup, deploy, fix, start, verify   (planned: step 6)
+   8) Kernel Rollback  restore the backup taken by a previous run   (planned: step 6)
+   9) Run History      previous runs and their outcome   (planned: step 6)
+  10) Health Check     tool paths, privileges, sapcontrol access   (planned: step 5)
+  11) Version          build information
+   q) Quit
+
+Select an operation (number or name, q to quit): q

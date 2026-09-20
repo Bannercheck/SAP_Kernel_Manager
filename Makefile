@@ -44,6 +44,7 @@ examples: build
 	@SKM_WRITE_EXAMPLE=1 go test ./internal/cli >/dev/null
 	@{ echo '$$ ./skm.sh version'; ./bin/skm version; } > docs/examples/version.txt
 	@{ echo '$$ ./skm.sh status      # SAP kurulu olmayan bir hostta'; ./bin/skm status; echo "exit code: $$?"; } > docs/examples/status-nosap.txt
+	@{ echo '$$ ./skm.sh              # argümansız: menü'; printf '1\n\nq\n' | SKM_MENU=1 ./bin/skm; } > docs/examples/menu.txt
 	@for f in docs/examples/*.txt; do python3 scripts/screen2png.py $$f $${f%.txt}.png "skm — $$(basename $${f%.txt})" >/dev/null || exit 1; done
 	@ls docs/examples/*.png
 

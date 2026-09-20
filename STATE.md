@@ -8,7 +8,10 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   - 2a `internal/lock`: `DIR_CT_RUN/../.skm.lock` (SID, host, pid, zaman; stale tespiti)
   - 2b `sap/sapcontrol`: `StopSystem [ALL]`, `WaitforStopped <timeout> <delay>`, `StopService`, `StartService <SID>`, `StartSystem`, `WaitforStarted`
   - 2c `internal/workflow` çekirdeği: `Step{Check,Do,Undo}`, `Run`, JSONL journal (`~/.skm/runs/<id>/`), `resume`
-  - 2d `stop` adımı: `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek) → her local instance `StopService`; Undo = start
+  - 2d **SAP Stop** adımı: snapshot yaz (`~/.skm/systems/<SID>.json`: DIR_CT_RUN, DIR_EXE_ROOT, instance'lar, profiller) →
+    `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek) → her local instance `StopService`; Undo = **SAP Start**
+  - 2f çevrimdışı parametre çözümü: `sappfpar pf=<profil> <param>` (sapstartsrv kapalıyken); Windows keşif: `sc qc SAP<SID>_<NR>` parser
+  - Adım/işlem adları `internal/cli/ops.go` kaydından gelir (SAP Status, SAP Stop, SAP Start, Kernel Backup …); menü bu kaydı kullanır
   - 2e CLI: `skm stop --sid ABC [--yes] [--dry-run] [--timeout]`, `skm start --sid ABC`; ekranda adım ilerlemesi (`[1/3] StopSystem ... ok (42s)`)
   - Test: FakeRunner ile stop→wait senaryosu; `make examples` ile `docs/examples/stop-linux.png`
 
@@ -16,7 +19,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [x] Adım 0 — Mimari, kurallar, bu dosya (`docs/ARCHITECTURE.md`, `CLAUDE.md`, `STATE.md`)
 - [x] Adım 1 — Temel + durum ekranı: `go.mod`, `Makefile` (build/check/cross/examples), `internal/{exec,platform,version,cli}`,
       `internal/sap/{kernel,sapcontrol,discovery,status}`, `skm status/version`, golden testler, `dist/` + `skm.sh`/`skm.bat`.
-      Ekranlar: `docs/examples/*.png`
+      Ekranlar: `docs/examples/*.png` (menü dahil)
 - [ ] Adım 2 — Durdur (NEXT, yukarıda)
 - [ ] Adım 3 — Yedekle (`skm backup --sid ABC`): sistem durmuş olmalı (Check) → `DIR_CT_RUN` → `<üst dizin>/exe_<YYYYMMDD_HHMMSS>`
       kopyası; izin/sahiplik korunur (`<sid>adm:sapsys`; root ise `RunAs=<sid>adm`); manifest sha256; `backup.keep` · §5.7 adım 5
@@ -38,6 +41,8 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `skm`.
 
 ## Karar günlüğü
+- 2026-09-20 · Kullanıcı isteği: işlem adları anlaşılır olsun → `internal/cli/ops.go` tek kayıt (ID + görünen ad); argümansız `skm` terminalde menü açar.
+- 2026-09-20 · sapstartsrv durduktan sonra `ParameterValue` çalışmaz → SAP Stop öncesi snapshot + `sappfpar` fallback (Adım 2/3).
 - 2026-09-20 · Kullanıcı isteği: durdurma ve kopyalama ayrı adımlar/komutlar (`skm stop`, `skm backup`); `apply` bunları zincirler.
 - 2026-09-20 · Her adımdan sonra `make examples` → `docs/examples/*.png` üretilir ve kullanıcıya gönderilir (kullanıcı macOS'ta, SAP hostu yok).
 - 2026-09-20 · Adım 1 bitti. Dağıtım düzeni: `dist/skm.sh`, `dist/skm.bat`, `dist/bin/skm-<os>-<arch>`; hedef hosta hiçbir runtime

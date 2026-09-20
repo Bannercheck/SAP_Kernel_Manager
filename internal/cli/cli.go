@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -23,17 +22,6 @@ const (
 	ExitError = 1
 	ExitUsage = 2
 )
-
-// Usage prints the top-level help.
-func Usage(w io.Writer) {
-	fmt.Fprint(w, `skm — SAP Kernel Manager
-
-Usage:
-  skm status  [--sid SID] [--output table|json] [--timeout 30s]   show host, kernel and instance state
-  skm version                                                     show build information
-  skm help                                                        show this help
-`)
-}
 
 // Version implements `skm version`.
 func Version(_ []string) int {

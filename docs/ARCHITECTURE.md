@@ -107,7 +107,11 @@ type Platform interface {
 | AIX | `rs6000_64` | aynı şema | `LIBPATH` | `saproot.sh`, `slibclean` |
 | Windows x64 | `NTAMD64` | `<drive>:\usr\sap\<SID>\SYS\exe\uc\NTAMD64` (paylaşım: `\\<host>\sapmnt\<SID>\SYS\exe\uc\NTAMD64`) | `PATH` | — (yerel admin) |
 
-Kernel yolu asla tahmin edilmez: `sapcontrol -nr <NR> -function ParameterValue DIR_CT_RUN` ile okunur.
+**Hiçbir SID, instance numarası veya dizin elle verilmez; hepsi otomatik bulunur:**
+1. Instance'lar: `saphostctrl -function ListInstances` (tüm platformlar) + Unix `/usr/sap/sapservices` (+ Windows `sc qc SAP<SID>_<NR>`, Adım 2)
+2. Dizinler: `sapcontrol -nr <NR> -function ParameterValue DIR_CT_RUN | DIR_EXE_ROOT | DIR_EXECUTABLE`
+3. Sistem dururken: `SAP Stop` öncesi alınan snapshot, yoksa `sappfpar pf=<instance profili> DIR_CT_RUN`
+`--sid` yalnızca hostta birden çok sistem varken filtre olarak kullanılır.
 
 ### 5.2 `exec.Runner`
 
@@ -175,21 +179,26 @@ satır yazılır; `skm resume <run-id>` `Check` ile tamamlanmışları atlar.
 
 | # | Adım | Kesinti içinde? | Undo |
 |---|------|-----------------|------|
-| 1 | preflight: kilit al, `DIR_CT_RUN`, mevcut sürüm, instance listesi, yetki, disk ≥ 3× paket | hayır | kilidi bırak |
-| 2 | stage: SAR'ları staging'e aç, `disp+work -V` ile hedefi doğrula, uyumluluk | hayır | staging sil |
-| 3 | hook `pre_stop` | — | hook `undo_pre_stop` (ops.) |
-| 4 | stop: `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek bekle) → her instance `StopService` | **evet** | start |
-| 5 | backup: `DIR_CT_RUN` → aynı üst dizine `exe_<YYYYMMDD_HHMMSS>` kopyası, `<sid>adm:sapsys`, izinler korunur, manifest (sha256) | evet | — (yedek kalır) |
-| 6 | predeploy (platform): AIX `slibclean`, Unix `cleanipc`, exe'den çalışan `saposcol -k` | evet | — |
-| 7 | deploy: staging → `DIR_CT_RUN` üstüne kopyala (izinler korunur, eski fazla dosyalar **silinmez**) | evet | yedeği geri kopyala |
-| 8 | postfix: Unix `saproot.sh <SID>` (sudo); her instance için profildeki `sapcpe` satırlarını çalıştır | evet | aynısı (yedek için) |
-| 9 | start: `StartService` → `StartSystem ALL` → `WaitforStarted` | evet | stop |
-| 10 | hook `post_start` | — | — |
-| 11 | verify: `GetVersionInfo`/`disp+work -V` == hedef, `GetProcessList` tümü GREEN | hayır | — |
-| 12 | cleanup: staging sil, yedek saklama politikası (`backup.keep`) | hayır | — |
+| 1 | **Preflight Check** — kilit al, `DIR_CT_RUN`, mevcut sürüm, instance listesi, yetki, disk ≥ 3× paket | hayır | kilidi bırak |
+| 2 | **Stage Packages** — SAR'ları staging'e aç, `disp+work -V` ile hedefi doğrula, uyumluluk | hayır | staging sil |
+| 3 | **Hook pre_stop** | — | hook `undo_pre_stop` (ops.) |
+| 4 | **SAP Stop** — `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek bekle) → her instance `StopService` | **evet** | start |
+| 5 | **Kernel Backup** — `DIR_CT_RUN` → aynı üst dizine `exe_<YYYYMMDD_HHMMSS>` kopyası, `<sid>adm:sapsys`, izinler korunur, manifest (sha256) | evet | — (yedek kalır) |
+| 6 | **Prepare Host** (platform) — AIX `slibclean`, Unix `cleanipc`, exe'den çalışan `saposcol -k` | evet | — |
+| 7 | **Kernel Deploy** — staging → `DIR_CT_RUN` üstüne kopyala (izinler korunur, eski fazla dosyalar **silinmez**) | evet | yedeği geri kopyala |
+| 8 | **Fix Permissions & sapcpe** — Unix `saproot.sh <SID>` (sudo); her instance için profildeki `sapcpe` satırlarını çalıştır | evet | aynısı (yedek için) |
+| 9 | **SAP Start** — `StartService` → `StartSystem ALL` → `WaitforStarted` | evet | stop |
+| 10 | **Hook post_start** | — | — |
+| 11 | **Verify Kernel** — `GetVersionInfo`/`disp+work -V` == hedef, `GetProcessList` tümü GREEN | hayır | — |
+| 12 | **Cleanup** — staging sil, yedek saklama politikası (`backup.keep`) | hayır | — |
 
 Yedek adı ve konumu `backup.dir` / `backup.name` ile değiştirilebilir (varsayılan: `DIR_CT_RUN`'ın yanına `exe_<tarih>`).
 Araç root olarak çalışıyorsa kopya `RunAs=<sid>adm` ile yapılır; `<sid>adm` olarak çalışıyorsa sahiplik doğal olarak `<sid>adm:sapsys` olur.
+
+Adım adları (kalın) kullanıcıya görünen adlardır: menüde, ilerleme satırlarında (`[4/12] SAP Stop ... ok (42s)`) ve journal'da aynı ad kullanılır.
+`skm stop`, `skm start`, `skm backup` komutları bu adımları tek başına da çalıştırır; `SAP Stop` durdurmadan **önce** sistem parametrelerini
+(`DIR_CT_RUN`, `DIR_EXE_ROOT`, instance listesi, profiller) `~/.skm/systems/<SID>.json` dosyasına yazar, çünkü sapstartsrv durduktan sonra
+`sapcontrol ParameterValue` çalışmaz. `Kernel Backup` sırayla şunları dener: sapcontrol → bu snapshot → `sappfpar pf=<profil> DIR_CT_RUN` (çevrimdışı).
 
 **Rollback** = 4 → 6 → yedeği `DIR_CT_RUN`'a geri kopyala → 8 → 9 → 11. Rollback da journal'lıdır ve resume edilebilir.
 
@@ -217,16 +226,20 @@ systems:
 
 ### 5.9 CLI ve çıktı standardı
 
-| Komut | İş |
-|-------|----|
-| `skm status [--sid ABC]` | **açılış ekranı**: SID · hostname · instance no · instance tipi · sistem durumu (GREEN/YELLOW/GRAY) · sapstartsrv çalışıyor mu · SAP Host Agent çalışıyor mu/sürümü · kernel release/patch |
-| `skm repo add <sar…> / list / inspect <id> / rm <id>` | paket deposu |
-| `skm plan --sid ABC --patch 200 [--release 793]` | plan dosyası üret, ön kontrolleri göster |
-| `skm apply <plan-id> [--yes] [--dry-run]` | planı uygula |
-| `skm resume <run-id>` / `skm rollback <run-id>` | devam / geri al |
-| `skm history [--sid ABC]` | çalıştırma geçmişi |
-| `skm doctor` | araç yolları, yetkiler, sapcontrol erişimi |
-| `skm version` | sürüm, commit, hedef OS/arch |
+| Komut | Görünen ad | İş |
+|-------|------------|----|
+| `skm` (argümansız, terminalde) | menü | numaralı işlem menüsü; aşağıdaki işlemlerin hepsi buradan da çalışır |
+| `skm status [--sid ABC]` | **SAP Status** | **açılış ekranı**: SID · hostname · instance no/tipi · sistem tipi · OS/mimari · DB · kernel release/patch · DIR_EXE_ROOT · DIR_CT_RUN · global/local kernel dizinleri · instance listesi · sapstartsrv · Host Agent |
+| `skm stop --sid ABC` | **SAP Stop** | `StopSystem ALL` → `WaitforStopped` → `StopService`; öncesinde snapshot |
+| `skm start --sid ABC` | **SAP Start** | `StartService` → `StartSystem` → `WaitforStarted` |
+| `skm backup --sid ABC` | **Kernel Backup** | `DIR_CT_RUN` → `exe_<tarih>` kopyası (`<sid>adm:sapsys`) |
+| `skm repo add <sar…> / list / inspect / rm` | **Kernel Packages** | paket deposu |
+| `skm plan --sid ABC --patch 200` | **Update Plan** | ön kontroller + plan dosyası |
+| `skm apply <plan-id> [--yes] [--dry-run]` | **Kernel Update** | planı uygula (12 adım) |
+| `skm resume <run-id>` / `skm rollback <run-id>` | **Resume** / **Kernel Rollback** | devam / geri al |
+| `skm history [--sid ABC]` | **Run History** | çalıştırma geçmişi |
+| `skm doctor` | **Health Check** | araç yolları, yetkiler, sapcontrol erişimi |
+| `skm version` | **Version** | sürüm, commit, hedef OS/arch |
 
 Çıktı kuralları: `--output table|json` (json = makine, tablo = insan); renk yalnızca TTY'de, `NO_COLOR` saygı görür;
 adım ilerlemesi tek satır: `[7/12] deploy  ABC  … ok (38s)`; geri dönülmez işlemler öncesi `--yes` yoksa onay istenir;
