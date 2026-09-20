@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"io"
+
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
 
 // Op is one user-facing operation. Name is what people see in the menu,
@@ -21,10 +23,9 @@ var Ops = []Op{
 	{ID: "stop", Name: "SAP Stop", Summary: "stop the SAP system and wait until every instance is down", Step: 2},
 	{ID: "start", Name: "SAP Start", Summary: "start sapstartsrv and the SAP system, wait until running", Step: 2},
 	{ID: "backup", Name: "Kernel Backup", Summary: "copy DIR_CT_RUN to exe_<timestamp> as <sid>adm:sapsys", Step: 3},
-	{ID: "repo", Name: "Kernel Packages", Summary: "import, verify and list SAPEXE/SAPEXEDB archives", Step: 4},
-	{ID: "plan", Name: "Update Plan", Summary: "preflight checks and an executable update plan", Step: 5},
-	{ID: "apply", Name: "Kernel Update", Summary: "run the plan: stop, backup, deploy, fix, start, verify", Step: 6},
-	{ID: "rollback", Name: "Kernel Rollback", Summary: "restore the backup taken by a previous run", Step: 6},
+	{ID: "files", Name: "Kernel Files", Summary: "scan the download directory: archives, apply order, target patch level", Step: 4},
+	{ID: "update", Name: "Kernel Update", Summary: "ask for the download directory, show the plan, confirm, then update", Step: 5},
+	{ID: "rollback", Name: "Kernel Rollback", Summary: "restore the backup taken by a previous update", Step: 6},
 	{ID: "history", Name: "Run History", Summary: "previous runs and their outcome", Step: 6},
 	{ID: "doctor", Name: "Health Check", Summary: "tool paths, privileges, sapcontrol access", Step: 5},
 	{ID: "version", Name: "Version", Summary: "build information", Run: Version},
@@ -43,7 +44,7 @@ func FindOp(id string) (Op, bool) {
 // Dispatch runs the operation or explains that it is not available yet.
 func Dispatch(op Op, args []string) int {
 	if op.Run == nil {
-		fmt.Printf("%s (skm %s) is planned for step %d and not available yet.\n", op.Name, op.ID, op.Step)
+		fmt.Printf("%s (%s %s) is planned for step %d and not available yet.\n", op.Name, version.AppName, op.ID, op.Step)
 		return ExitError
 	}
 	return op.Run(args)
@@ -51,7 +52,8 @@ func Dispatch(op Op, args []string) int {
 
 // Usage prints the top-level help.
 func Usage(w io.Writer) {
-	fmt.Fprint(w, "skm — SAP Kernel Manager\n\nUsage: skm <command> [flags]      (no arguments on a terminal opens the menu)\n\n")
+	fmt.Fprintf(w, "%s — %s\n\nUsage: %s <command> [flags]      (no arguments on a terminal opens the menu)\n\n",
+		version.AppName, version.ProductName, version.AppName)
 	for _, op := range Ops {
 		state := ""
 		if op.Run == nil {
@@ -59,5 +61,6 @@ func Usage(w io.Writer) {
 		}
 		fmt.Fprintf(w, "  %-9s %-16s %s%s\n", op.ID, op.Name, op.Summary, state)
 	}
-	fmt.Fprint(w, "\nFlags for status: --sid SID  --output table|json  --timeout 30s\n")
+	fmt.Fprint(w, "\nFlags for status: --sid SID  --output table|json  --timeout 30s\n"+
+		"Planned: update --from <download dir> [--dry-run] [--yes]\n")
 }

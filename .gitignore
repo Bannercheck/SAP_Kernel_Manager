@@ -5,7 +5,7 @@
 *.out
 coverage.*
 # local state
-/.skm/
+/.sapkernel/
 *.log
 # editors
 .idea/

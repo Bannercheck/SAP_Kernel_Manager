@@ -1,4 +1,4 @@
-# skm — SAP Kernel Manager
+# sapkernel — SAP Kernel Manager
 
 SAP NetWeaver / S/4HANA kernel güncellemelerini Linux, AIX ve Windows üzerinde güvenli, geri alınabilir ve
 tekrarlanabilir şekilde yapan tek binary CLI aracı.
@@ -12,17 +12,17 @@ tekrarlanabilir şekilde yapan tek binary CLI aracı.
 `make cross` çıktısı olan `dist/` klasörünü sunucuya kopyalayın:
 
 ```
-dist/skm.sh                  Linux / AIX başlatıcı (doğru binary'yi seçer)
-dist/skm.bat                 Windows başlatıcı
-dist/bin/skm-linux-amd64     tek başına çalışan yerel binary'ler
-dist/bin/skm-linux-ppc64le
-dist/bin/skm-aix-ppc64
-dist/bin/skm-windows-amd64.exe
+dist/sapkernel.sh                  Linux / AIX başlatıcı (doğru binary'yi seçer)
+dist/sapkernel.bat                 Windows başlatıcı
+dist/bin/sapkernel-linux-amd64     tek başına çalışan yerel binary'ler
+dist/bin/sapkernel-linux-ppc64le
+dist/bin/sapkernel-aix-ppc64
+dist/bin/sapkernel-windows-amd64.exe
 ```
 
 ```sh
-./skm.sh status              # <sid>adm olarak çalıştırın
-./skm.sh status --sid ABC --output json
+./sapkernel.sh status              # <sid>adm olarak çalıştırın
+./sapkernel.sh status --sid ABC --output json
 ```
 
 Örnek ekran: [`docs/examples/status-linux.txt`](docs/examples/status-linux.txt)

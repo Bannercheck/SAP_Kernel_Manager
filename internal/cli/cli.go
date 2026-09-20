@@ -1,4 +1,4 @@
-// Package cli implements the skm sub-commands. It only parses flags and
+// Package cli implements the sapkernel sub-commands. It only parses flags and
 // renders results; all SAP logic lives in internal/sap.
 package cli
 
@@ -13,6 +13,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
 
@@ -23,13 +24,13 @@ const (
 	ExitUsage = 2
 )
 
-// Version implements `skm version`.
+// Version implements `sapkernel version`.
 func Version(_ []string) int {
 	fmt.Println(version.String())
 	return ExitOK
 }
 
-// Status implements `skm status`.
+// Status implements `sapkernel status`.
 func Status(args []string) int {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	sid := fs.String("sid", "", "only show this SAP system")
@@ -39,7 +40,7 @@ func Status(args []string) int {
 		return ExitUsage
 	}
 	if *output != "table" && *output != "json" {
-		fmt.Fprintf(os.Stderr, "skm status: invalid --output %q (table|json)\n", *output)
+		fmt.Fprintf(os.Stderr, "%s status: invalid --output %q (table|json)\n", version.AppName, *output)
 		return ExitUsage
 	}
 
@@ -51,11 +52,11 @@ func Status(args []string) int {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(rep); err != nil {
-			fmt.Fprintln(os.Stderr, "skm status:", err)
+			fmt.Fprintln(os.Stderr, version.AppName+" status:", err)
 			return ExitError
 		}
 	} else {
-		RenderStatus(os.Stdout, rep)
+		RenderStatus(os.Stdout, rep, ui.Detect(os.Stdout))
 	}
 	if len(rep.Systems) == 0 {
 		return ExitError

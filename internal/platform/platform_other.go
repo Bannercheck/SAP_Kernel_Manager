@@ -9,7 +9,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 )
 
-// other lets skm compile on developer machines (e.g. macOS); it is not a
+// other lets sapkernel compile on developer machines (e.g. macOS); it is not a
 // supported SAP host platform.
 type other struct{ unixBase }
 

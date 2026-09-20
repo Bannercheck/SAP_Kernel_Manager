@@ -1,2 +1,2 @@
-$ ./skm.sh version
-skm 7e01456-dirty (commit 7e01456, built 2026-09-20T20:20:20Z, linux/amd64, go1.24.7)
+$ ./sapkernel.sh version
+sapkernel 6fa6497-dirty (commit 6fa6497, built 2026-09-20T20:30:56Z, linux/amd64, go1.24.7)

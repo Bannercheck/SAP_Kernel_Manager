@@ -10,7 +10,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 )
 
-// Platform describes the host skm runs on.
+// Platform describes the host sapkernel runs on.
 type Platform interface {
 	Name() string                 // "linux" | "aix" | "windows"
 	Arch() string                 // Go arch: amd64, ppc64le, ppc64

@@ -1,4 +1,4 @@
-# skm — SAP Kernel Manager · Claude working rules
+# sapkernel — SAP Kernel Manager · Claude working rules
 
 (Türkçe özet: her oturumda önce STATE.md oku, sadece NEXT maddesini yap, bitince STATE.md güncelle, commit+push. Mimariyi tekrar anlatma.)
 
@@ -9,7 +9,7 @@
 3. Before changing a package, read only the files you will change and their tests. Nothing else.
 4. Finish every session with: `make check` (build + vet + test) → update `STATE.md`
    (move item to done, set new NEXT, log decisions) → commit → `git push -u origin <branch>`.
-5. **Show, don't tell.** The user cannot run skm (macOS, no SAP host). After every step regenerate
+5. **Show, don't tell.** The user cannot run sapkernel (macOS, no SAP host). After every step regenerate
    `docs/examples/*.txt` transcripts (fake-runner scenarios or the real binary) and their PNGs with
    `make examples`, commit them, and send the PNGs to the user with SendUserFile. New behaviour
    without a screenshot is not done.

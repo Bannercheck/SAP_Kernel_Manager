@@ -1,14 +1,15 @@
-$ ./skm.sh status      # SAP kurulu olmayan bir hostta
-skm status · vm · 2026-09-20 20:20:20
+$ ./sapkernel.sh status      # SAP kurulu olmayan bir hostta
+[1msapkernel status · vm · 2026-09-20 20:30:56[0m
+  [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
 
-HOST
+[36mHOST[0m
   Hostname                     vm
   OS                           Ubuntu 24.04.4 LTS (kernel 6.18.44-fc-v37)
   OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         root (privileged)
-  SAP Host Agent               not installed · SAP Host Agent not found (/usr/sap/hostctrl/exe)
+  SAP Host Agent               [31m●[0m not installed · SAP Host Agent not found (/usr/sap/hostctrl/exe)
 
-WARNINGS
+[33mWARNINGS[0m
   - saphostctrl: executable not found: saphostctrl
   - /usr/sap/sapservices: open /usr/sap/sapservices: no such file or directory
   - sapcontrol not found; instance status unavailable

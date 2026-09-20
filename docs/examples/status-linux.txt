@@ -1,14 +1,15 @@
-$ ./skm.sh status
-skm status · sapci · 2026-09-20 19:40:12
+$ ./sapkernel.sh status
+[1msapkernel status · sapci · 2026-09-20 19:40:12[0m
+  [32m●[0m running   [33m●[0m partial / hanging   [31m●[0m stopped / error   [90m○[0m remote or unknown
 
-HOST
+[36mHOST[0m
   Hostname                     sapci
   OS                           SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)
   OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         abcadm (not privileged)
-  SAP Host Agent               running · 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
+  SAP Host Agent               [32m●[0m running · 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
 
-SYSTEM ABC · ABAP · status YELLOW
+[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW (partial)[0m
   SID                          ABC
   SAP system type              ABAP
   Database                     SAP HANA (hdb) · name HDB · host saphdb
@@ -24,10 +25,10 @@ SYSTEM ABC · ABAP · status YELLOW
                                D00      /usr/sap/ABC/D00/exe
                                ASCS01   /usr/sap/ABC/ASCS01/exe
   Instances
-    NR  NAME    TYPE                       HOST     SAPSTARTSRV  STATUS  PROFILE
-    00  D00     Application Server (ABAP)  sapci    running      GREEN   /usr/sap/ABC/SYS/profile/ABC_D00_sapci
-    01  ASCS01  ABAP Central Services      sapci    running      GREEN   /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
-    02  -       Application Server (ABAP)  sapapp2  remote       GRAY    -
+    NR  NAME    TYPE                       HOST     SAPSTARTSRV         STATUS            PROFILE
+    00  D00     Application Server (ABAP)  sapci    [32m●[0m running  [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+    01  ASCS01  ABAP Central Services      sapci    [32m●[0m running  [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+    02  -       Application Server (ABAP)  sapapp2  [90m○[0m remote   [31m●[0m GRAY   -
 
-WARNINGS
+[33mWARNINGS[0m
   - /usr/sap/sapservices: permission denied

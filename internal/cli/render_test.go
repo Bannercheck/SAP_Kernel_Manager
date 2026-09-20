@@ -11,6 +11,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/kernel"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
 
 func exampleReport() *status.Report {
@@ -46,19 +47,21 @@ func exampleReport() *status.Report {
 
 func TestRenderStatus(t *testing.T) {
 	var buf bytes.Buffer
-	RenderStatus(&buf, exampleReport())
+	RenderStatus(&buf, exampleReport(), ui.Palette{})
 	out := buf.String()
-	for _, want := range []string{"SYSTEM ABC · ABAP · status YELLOW", "Kernel version               793 (7.93)",
+	for _, want := range []string{"SYSTEM ABC · ABAP · (~) YELLOW (partial)", "Kernel version               793 (7.93)",
 		"Kernel patch level           200 (changelist 2123456)", "DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64",
 		"Global kernel directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "remote", "SAP HANA (hdb)",
-		"755–758", "SAP Host Agent               running · 722 patch 65", "WARNINGS"} {
+		"755–758", "SAP Host Agent               (+) running · 722 patch 65", "WARNINGS"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}
 	}
-	// Refresh the documented example screen when requested: SKM_WRITE_EXAMPLE=1 go test ./internal/cli
-	if os.Getenv("SKM_WRITE_EXAMPLE") == "1" {
-		content := append([]byte("$ ./skm.sh status\n"), buf.Bytes()...)
+	// Refresh the documented example screen when requested: SAPKERNEL_WRITE_EXAMPLE=1 go test ./internal/cli
+	if os.Getenv("SAPKERNEL_WRITE_EXAMPLE") == "1" {
+		var colour bytes.Buffer
+		RenderStatus(&colour, exampleReport(), ui.Palette{Colour: true, Unicode: true})
+		content := append([]byte("$ ./sapkernel.sh status\n"), colour.Bytes()...)
 		if err := os.WriteFile("../../docs/examples/status-linux.txt", content, 0o644); err != nil {
 			t.Fatal(err)
 		}
