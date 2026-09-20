@@ -1,0 +1,7 @@
+
+20.09.2026 19:30:01
+GetProcessList
+OK
+name, description, dispstatus, textstatus, starttime, elapsedtime, pid
+msg_server, MessageServer, GREEN, Running, 2026 09 10 08:00:01, 275:30:04, 12301
+enq_server, Enqueue Server 2, GREEN, Running, 2026 09 10 08:00:01, 275:30:04, 12302

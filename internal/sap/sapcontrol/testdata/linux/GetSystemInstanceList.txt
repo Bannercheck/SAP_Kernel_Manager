@@ -1,0 +1,8 @@
+
+20.09.2026 19:30:02
+GetSystemInstanceList
+OK
+hostname, instanceNr, httpPort, httpsPort, startPriority, features, dispstatus
+sapci, 1, 50113, 50114, 1, MESSAGESERVER|ENQUE, GREEN
+sapci, 0, 50013, 50014, 3, ABAP|GATEWAY|ICMAN|IGS, GREEN
+sapapp2, 2, 50213, 50214, 3, ABAP|GATEWAY|ICMAN|IGS, GRAY

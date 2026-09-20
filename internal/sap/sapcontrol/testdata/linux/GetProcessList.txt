@@ -1,0 +1,9 @@
+
+20.09.2026 19:30:01
+GetProcessList
+OK
+name, description, dispstatus, textstatus, starttime, elapsedtime, pid
+disp+work, Dispatcher, GREEN, Running, Message Server connection ok, Dialog Queue time: 0.00 sec, 2026 09 10 08:00:05, 275:30:00, 12345
+igswd_mt, IGS Watchdog, GREEN, Running, 2026 09 10 08:00:05, 275:30:00, 12346
+gwrd, Gateway, GREEN, Running, 2026 09 10 08:00:05, 275:30:00, 12347
+icman, ICM, GREEN, Running, 2026 09 10 08:00:05, 275:30:00, 12348

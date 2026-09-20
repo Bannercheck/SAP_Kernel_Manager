@@ -1,0 +1,4 @@
+#!/bin/sh
+LD_LIBRARY_PATH=/usr/sap/ABC/ASCS01/exe:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; /usr/sap/ABC/ASCS01/exe/sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D -u abcadm
+limit.descriptors=1048576
+systemctl --no-ask-password start SAPABC_00 # sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_D00_sapci

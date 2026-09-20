@@ -1,0 +1,46 @@
+
+--------------------
+disp+work information
+--------------------
+
+kernel release                793
+
+kernel make variant           793_REL
+
+DBMS client library           SQLDBC 2.20.14.1706784436
+
+DBSL shared library version   793.02
+
+compiled on                   Linux GNU SLES-12 x86_64 cc9.3.1 use-pr220422 for linuxx86_64
+
+compiled for                  64 BIT
+
+compilation mode              UNICODE
+
+compile time                  Sep 14 2026 21:33:27
+
+update level                  0
+
+patch number                  200
+
+source id                     0.200
+
+RKS compatibility level       0
+
+DW_GUI_VERSION                6.0.0.0
+
+
+---------------------
+supported environment
+---------------------
+
+database (SAP, table SVERS)   755
+                              756
+                              757
+                              758
+
+operating system
+Linux 4.12.x
+Linux 5.x
+Linux 6.x
+

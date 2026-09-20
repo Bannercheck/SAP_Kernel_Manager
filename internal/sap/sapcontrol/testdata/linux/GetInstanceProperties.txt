@@ -1,0 +1,11 @@
+
+20.09.2026 19:30:06
+GetInstanceProperties
+OK
+property, propertytype, value
+SAPSYSTEM, Attribute, 00
+SAPSYSTEMNAME, Attribute, ABC
+SAPLOCALHOST, Attribute, sapci
+INSTANCE_NAME, Attribute, D00
+StartPriority, Attribute, 3
+Protected Webmethods, Attribute, Start,Stop,Shutdown,InstanceStart

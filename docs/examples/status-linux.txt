@@ -1,0 +1,32 @@
+skm status · sapci · 2026-09-20 19:40:12
+
+HOST
+  Hostname                     sapci
+  OS                           SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)
+  OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
+  User                         abcadm (not privileged)
+  SAP Host Agent               running · 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
+
+SYSTEM ABC · ABAP · status YELLOW
+  SID                          ABC
+  SAP system type              ABAP
+  Database                     SAP HANA (hdb) · name HDB · host saphdb
+  Kernel version               793 (7.93)
+  Kernel patch level           200 (changelist 2123456) · compiled Sep 14 2026 21:33:27
+  Kernel platform              linuxx86_64 · UNICODE · 64 BIT
+  Kernel source                disp+work -V (/usr/sap/ABC/SYS/exe/uc/linuxx86_64)
+  SAP_BASIS (kernel supports)  755–758  [actual SAP_BASIS needs DB/RFC access: planned]
+  Kernel directory             /usr/sap/ABC/SYS/exe  (DIR_EXE_ROOT)
+  DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64
+  Global kernel directory      /sapmnt/ABC/exe/uc/linuxx86_64
+  Local kernel directories    
+                               D00      /usr/sap/ABC/D00/exe
+                               ASCS01   /usr/sap/ABC/ASCS01/exe
+  Instances
+    NR  NAME    TYPE                       HOST     SAPSTARTSRV  STATUS  PROFILE
+    00  D00     Application Server (ABAP)  sapci    running      GREEN   /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+    01  ASCS01  ABAP Central Services      sapci    running      GREEN   /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+    02  -       Application Server (ABAP)  sapapp2  remote       GRAY    -
+
+WARNINGS
+  - /usr/sap/sapservices: permission denied

@@ -1,0 +1,22 @@
+--------------------
+saphostexec information
+--------------------
+
+kernel release                722
+
+kernel make variant           722_REL
+
+compiled on                   Linux GNU SLES-12 x86_64 cc4.8.5 use-pr210322 for linuxx86_64
+
+compiled for                  64 BIT
+
+compilation mode              UNICODE
+
+compile time                  Jan 10 2026 12:00:00
+
+update level                  0
+
+patch number                  65
+
+source id                     0.065
+

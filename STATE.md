@@ -1,21 +1,24 @@
 # STATE — skm ilerleme durumu
 
-Son güncelleme: 2026-09-20 · Branch: `claude/great-turing-8e8v0c` · Faz: 0 (mimari)
+Son güncelleme: 2026-09-20 · Branch: `claude/great-turing-8e8v0c` · Faz: 1 tamam → Adım 2
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
-- [ ] **Adım 1 — Temel + durum ekranı** (`skm status`) · bkz. `docs/ARCHITECTURE.md` §4, §5.1–5.5, §5.9
-  - 1a Temel: `go.mod`, `cmd/skm`, `Makefile` (build/check/cross), `internal/exec` (Runner+Fake), `internal/logging`, `skm version`
-  - 1b SAP katmanı: `internal/platform` (linux/aix/windows), `sap/discovery` (saphostctrl ListInstances + sapservices),
-    `sap/sapcontrol` (GetProcessList, GetVersionInfo, ParameterValue, GetSystemInstanceList), `sap/kernel` (`disp+work -V` parser)
-  - 1c Ekran: SID · hostname · instance no/tipi · sistem durumu · sapstartsrv çalışıyor mu · Host Agent (`saphostexec -status/-version`) · kernel release/patch
-  - Golden testler: `testdata/linux/…` (AIX/Windows örnek çıktıları kullanıcıdan istenecek)
+- [ ] **Adım 2 — Durdur + yedekle** · bkz. `docs/ARCHITECTURE.md` §5.7 adım 4–5, §5.2 (RunAs)
+  - 2a `internal/lock`: `DIR_CT_RUN/../.skm.lock` (SID, host, pid, zaman; stale tespiti)
+  - 2b `sap/sapcontrol`: `StopSystem [ALL]`, `WaitforStopped <timeout> <delay>`, `StopService`, `StartService <SID>`, `StartSystem`, `WaitforStarted`, `RestartService`
+  - 2c `internal/workflow` çekirdeği: `Step{Check,Do,Undo}`, `Run`, JSONL journal (`~/.skm/runs/<id>/`), `resume`
+  - 2d adımlar: `stop` (StopSystem ALL → WaitforStopped → her local instance StopService) ve `backup`
+    (`DIR_CT_RUN` → `<üst dizin>/exe_<YYYYMMDD_HHMMSS>`; izin/sahiplik korunur; root ise `RunAs=<sid>adm`; manifest sha256)
+  - 2e CLI: `skm stop --sid`, `skm backup --sid`, `skm start --sid`, `skm resume <run-id>`; `--yes`, `--dry-run`
+  - Test: FakeRunner ile stop→wait→backup senaryosu; kopya için temp dizinli gerçek dosya testi
 
 ## Yol haritası
 - [x] Adım 0 — Mimari, kurallar, bu dosya (`docs/ARCHITECTURE.md`, `CLAUDE.md`, `STATE.md`)
-- [ ] Adım 1 — Temel + durum ekranı (yukarıda)
-- [ ] Adım 2 — Durdur + yedekle: kilit → `StopSystem ALL` → `WaitforStopped` → `StopService` → `DIR_CT_RUN` → `exe_<YYYYMMDD_HHMMSS>` kopyası
-      (`<sid>adm:sapsys`, izinler korunur, manifest) → journal; `skm stop/backup/start` komutları · §5.7 adım 4–5
+- [x] Adım 1 — Temel + durum ekranı: `go.mod`, `Makefile` (build/check/cross), `internal/{exec,platform,version,cli}`,
+      `internal/sap/{kernel,sapcontrol,discovery,status}`, `skm status/version`, golden testler, `dist/` + `skm.sh`/`skm.bat`.
+      Örnek ekran: `docs/examples/status-linux.txt`
+- [ ] Adım 2 — Durdur + yedekle (NEXT, yukarıda)
 - [ ] Adım 3 — Paket deposu: SAR ad parser, SAPCAR sarmalayıcı, `skm repo add/list/inspect`, staging + `disp+work -V` doğrulama, uyumluluk · §5.5–5.6
 - [ ] Adım 4 — `skm plan` + preflight (disk, yetki, kilit, uyumluluk, plan dosyası) · §5.7 adım 1–2
 - [ ] Adım 5 — Workflow motoru tamamı: deploy, postfix (saproot.sh, sapcpe), start, verify, cleanup, `apply/resume/rollback/history` · §5.7
@@ -34,6 +37,11 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `skm`.
 
 ## Karar günlüğü
+- 2026-09-20 · Adım 1 bitti. Dağıtım düzeni: `dist/skm.sh`, `dist/skm.bat`, `dist/bin/skm-<os>-<arch>`; hedef hosta hiçbir runtime
+  kurulmaz (Go yalnızca build makinesinde). Testdata paket içinde (`internal/sap/*/testdata/linux`).
+- 2026-09-20 · Gerçek SAP_BASIS sürümü OS seviyesinden okunamaz (DB/RFC gerekir); ekranda kernel'in desteklediği SVERS aralığı gösterilir.
+- 2026-09-20 · sapcontrol `GetProcessList` çıkış kodu 3/4 başarı sayılır; `textstatus` virgül içerir → sağdan/soldan sabit sütun ayrıştırma.
+- 2026-09-20 · Windows'ta `IsPrivileged` `\\.\PHYSICALDRIVE0` açma denemesiyle (x/sys bağımlılığı ertelendi).
 - 2026-09-20 · Go seçildi; CGO kapalı; bağımlılık: yaml.v3, x/sys, x/term (gerekçe §2 D1–D3).
 - 2026-09-20 · Kullanıcı prosedürü gereği yedek **durdurmadan sonra** alınır; ad `exe_<tarih>`, sahip `<sid>adm:sapsys` (D9).
 - 2026-09-20 · Repo boştu; "design system çıkar" isteği uygulanamaz. CLI çıktı standardı §5.9'da tanımlandı; web UI gelirse gerçek design system yapılır.
@@ -41,3 +49,5 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 ## Notlar / engeller
 - Uzak repoda henüz `main` yok; ilk push bu branch'ten. Kullanıcı isterse `main` bu branch'ten açılır.
 - AIX ve Windows'ta gerçek `sapcontrol`/`saphostctrl`/`disp+work -V` çıktı örnekleri lazım (golden test için) → kullanıcıdan istenecek.
+- `skm status` gerçek bir SAP hostunda henüz denenmedi; ilk gerçek çalıştırma çıktısı (`--output json`) kullanıcıdan istenecek.
+- Bağımlılık yok (stdlib only); `go.sum` yok. yaml.v3 Adım 4'te (config) gelecek.

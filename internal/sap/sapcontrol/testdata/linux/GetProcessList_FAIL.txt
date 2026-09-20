@@ -1,0 +1,4 @@
+
+20.09.2026 19:30:05
+GetProcessList
+FAIL: NIECONN_REFUSED (Connection refused), NiRawConnect failed in plugin_fopen()
