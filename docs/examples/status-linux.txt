@@ -1,3 +1,4 @@
+$ ./skm.sh status
 skm status · sapci · 2026-09-20 19:40:12
 
 HOST

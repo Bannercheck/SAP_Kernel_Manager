@@ -58,7 +58,8 @@ func TestRenderStatus(t *testing.T) {
 	}
 	// Refresh the documented example screen when requested: SKM_WRITE_EXAMPLE=1 go test ./internal/cli
 	if os.Getenv("SKM_WRITE_EXAMPLE") == "1" {
-		if err := os.WriteFile("../../docs/examples/status-linux.txt", buf.Bytes(), 0o644); err != nil {
+		content := append([]byte("$ ./skm.sh status\n"), buf.Bytes()...)
+		if err := os.WriteFile("../../docs/examples/status-linux.txt", content, 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}

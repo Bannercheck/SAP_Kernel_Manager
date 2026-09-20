@@ -1,0 +1,30 @@
+$ make cross
+    dist/bin/skm-linux-amd64
+    dist/bin/skm-linux-ppc64le
+    dist/bin/skm-aix-ppc64
+    dist/bin/skm-windows-amd64.exe
+
+$ ls -la dist dist/bin
+  dist:
+  total 24
+  drwxr-xr-x 3 root root 4096 Sep 20 20:13 .
+  drwxr-xr-x 9 root root 4096 Sep 20 20:13 ..
+  -rw-r--r-- 1 root root  497 Sep 20 20:15 SHA256SUMS
+  drwxr-xr-x 2 root root 4096 Sep 20 20:15 bin
+  -rw-r--r-- 1 root root  293 Sep 20 20:15 skm.bat
+  -rwxr-xr-x 1 root root  817 Sep 20 20:15 skm.sh
+  
+  dist/bin:
+  total 10604
+  drwxr-xr-x 2 root root    4096 Sep 20 20:15 .
+  drwxr-xr-x 3 root root    4096 Sep 20 20:13 ..
+  -rwxr-xr-x 1 root root 2995580 Sep 20 20:15 skm-aix-ppc64
+  -rwxr-xr-x 1 root root 2551992 Sep 20 20:15 skm-linux-amd64
+  -rwxr-xr-x 1 root root 2621624 Sep 20 20:15 skm-linux-ppc64le
+  -rwxr-xr-x 1 root root 2668032 Sep 20 20:15 skm-windows-amd64.exe
+
+$ file dist/bin/*
+  dist/bin/skm-aix-ppc64:         64-bit XCOFF executable or object module not stripped
+  dist/bin/skm-linux-amd64:       ELF 64-bit LSB executable
+  dist/bin/skm-linux-ppc64le:     ELF 64-bit LSB executable
+  dist/bin/skm-windows-amd64.exe: PE32+ executable (console) x86-64

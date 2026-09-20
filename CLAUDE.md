@@ -9,9 +9,13 @@
 3. Before changing a package, read only the files you will change and their tests. Nothing else.
 4. Finish every session with: `make check` (build + vet + test) → update `STATE.md`
    (move item to done, set new NEXT, log decisions) → commit → `git push -u origin <branch>`.
-5. Reply to the user in Turkish, ≤ 15 lines: what was done, what is NEXT, open questions (if any).
+5. **Show, don't tell.** The user cannot run skm (macOS, no SAP host). After every step regenerate
+   `docs/examples/*.txt` transcripts (fake-runner scenarios or the real binary) and their PNGs with
+   `make examples`, commit them, and send the PNGs to the user with SendUserFile. New behaviour
+   without a screenshot is not done.
+6. Reply to the user in Turkish, ≤ 15 lines: what was done, what is NEXT, open questions (if any).
    Never re-explain the architecture; reference `docs/ARCHITECTURE.md §n` instead.
-6. If a step turns out too big for one session, split it in `STATE.md` and finish the first part cleanly.
+7. If a step turns out too big for one session, split it in `STATE.md` and finish the first part cleanly.
 
 ## Code rules
 - Go, stdlib-first. Allowed deps: `gopkg.in/yaml.v3`, `golang.org/x/sys`, `golang.org/x/term`.
