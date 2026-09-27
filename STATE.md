@@ -28,6 +28,13 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı (4. tur): **disk bölümü** — ana menüde `/usr/sap` ve `/sapmnt` için kullanılan alan (en büyük 3 alt dizinle) + boş alan ışığı
+  (yeşil >%20, sarı >%10, kırmızı); SAP Status'ta `df -Pk` tablosu + `du -sk` dizin boyutları (en büyük 20 + toplam). Kernel Backup öncesi
+  "Check free space" adımı (mount başına gereken + %10 pay). `internal/disk` paketi (Linux/AIX uyumlu `df -Pk`, `du -sk`).
+- 2026-09-27 · Tablo başlıkları (STATE, SYSTEM, TYPE, HOSTNAME …) kalın-cyan başlık stili; değerlerden ayrışır.
+- 2026-09-27 · **root şart değil:** `<sid>adm` ile tüm işlemler çalışır (dosyalar zaten `<sid>adm:sapsys` olur, chown "not needed");
+  root ise `su - <sid>adm`; başka kullanıcı ise uyarı + sonradan chown talimatı. Yalnızca `saproot.sh` root ister; ekranda komut verilir.
+  Ekranda "running as …" satırı.
 - 2026-09-27 · Kullanıcı (3. tur): tarama **tüm sunucu** (`/` kökü; /proc /sys /dev /usr/lib /usr/share /var/lib /hana/data … ve kernel dizinleri + yedekler atlanır,
   ilerleme sayacı gösterilir). Kernel Update de snapshot kopyalarına değil sunucu taramasına bakar; FOUND IN gerçek indirme yeri.
 - 2026-09-27 · İstem tasarımı: numaralar yalnızca ana menüde. Evet/hayır `[Y] Yes [N] No`, durdur/başlat `[S] Start SAP [K] Stop SAP`, işlem sonunda

@@ -31,7 +31,7 @@ func TestDemoFlow(t *testing.T) {
 		"DEMO · simulated SAP host",
 		"SYSTEM ABC · AS ABAP",
 		"1) ✔ SAP Status", "2) ✔ Kernel Backup", "3) ✔ Kernel File Transfer", "4) ✔ SAP Stop / Start", "5) ✔ Kernel Update", "6) ✔ Kernel Rollback",
-		"[3/10] Verify linuxx86_64_", "target level after apply: patch 423",
+		"[1/11] Check free space", "[4/11] Verify linuxx86_64_", "target level after apply: patch 423",
 		"[1/5] StopSystem ALL ... ok", "D00 (sapstartsrv down)",
 		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "system ABC started",
 		"system ABC is running; the kernel can only be replaced while it is stopped.",

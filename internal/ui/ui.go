@@ -108,6 +108,18 @@ func (p Palette) Light(c Colour) string {
 	}
 }
 
+// Header styles a table or section heading so it stands apart from values.
+func (p Palette) Header(s string) string { return p.Paint(Cyan, p.Paint(Bold, s)) }
+
+// Headers styles every cell of a table's first row.
+func (p Palette) Headers(cells ...string) []string {
+	out := make([]string, len(cells))
+	for i, c := range cells {
+		out[i] = p.Header(c)
+	}
+	return out
+}
+
 // BigLight is a larger traffic light for system-level state.
 func (p Palette) BigLight(c Colour) string {
 	if p.Unicode {

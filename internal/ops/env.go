@@ -32,6 +32,7 @@ type Env struct {
 	T            *system.Target
 	Pr           Progress
 	IsRoot       bool
+	User         string // login name of the current user
 	Now          func() time.Time
 	StopTimeout  time.Duration
 	StartTimeout time.Duration

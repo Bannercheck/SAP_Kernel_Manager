@@ -43,7 +43,7 @@ func Status(args []string) int {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	rep := collectStatus(ctx, status.Options{SID: *sid, Timeout: *timeout})
+	rep := collectStatus(ctx, status.Options{SID: *sid, Timeout: *timeout, DirSizes: true, DiskRoots: diskRoots()})
 
 	if *output == "json" {
 		enc := json.NewEncoder(stdout)

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/kernel"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
@@ -54,6 +55,15 @@ func exampleReport() *status.Report {
 					Sapstartsrv: "not running", Status: "GRAY"},
 			},
 		}},
+		Disk: status.Disk{
+			Roots: []string{"/usr/sap", "/sapmnt"},
+			Filesystems: []disk.Filesystem{
+				{Device: "/dev/mapper/vg_sap-usrsap", Mount: "/usr/sap", Path: "/usr/sap", SizeKB: 209612800, UsedKB: 86016000, AvailKB: 123596800, UsePct: 41},
+				{Device: "sapnfs:/export/sapmnt", Mount: "/sapmnt", Path: "/sapmnt", SizeKB: 52428800, UsedKB: 44040192, AvailKB: 8388608, UsePct: 84},
+			},
+			Dirs: []disk.DirSize{{Path: "/usr/sap/ABC", KB: 33554432}, {Path: "/sapmnt/ABC", KB: 12582912}, {Path: "/usr/sap/QAS", KB: 10485760},
+				{Path: "/sapmnt/QAS", KB: 9437184}, {Path: "/usr/sap/trans", KB: 1153433}, {Path: "/usr/sap/hostctrl", KB: 204800}, {Path: "/usr/sap/tmp", KB: 2048}},
+		},
 		Warnings: []string{"/usr/sap/sapservices: permission denied"},
 	}
 }
@@ -65,7 +75,9 @@ func TestRenderStatus(t *testing.T) {
 	for _, want := range []string{"SYSTEM ABC · AS ABAP · Hostname sapci · (~) PARTIAL (YELLOW)", "Kernel Version               793 (7.93)",
 		"Kernel Patch Level           200 (Changelist 2123456)", "DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64",
 		"Global Kernel Directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "Remote/Unknown", "SAP HANA (hdb)",
-		"755–758", "SAP Host Agent               (+) RUNNING · 722 Patch 65", "SYSTEM QAS · AS ABAP · Hostname sapci · (x) STOPPED (GRAY)", "WARNINGS"} {
+		"755–758", "SAP Host Agent               (+) RUNNING · 722 Patch 65", "SYSTEM QAS · AS ABAP · Hostname sapci · (x) STOPPED (GRAY)",
+		"DISK", "/usr/sap  199.9 GB  82.0 GB  117.9 GB  41%   (+)", "/sapmnt   50.0 GB   42.0 GB  8.0 GB    84%   (~)",
+		"DIRECTORY SIZES  (/usr/sap, /sapmnt)", "32.0 GB   /usr/sap/ABC", "64.3 GB   total", "WARNINGS"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}

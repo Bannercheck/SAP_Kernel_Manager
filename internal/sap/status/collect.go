@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
@@ -18,9 +19,14 @@ import (
 
 // Options narrows and tunes collection.
 type Options struct {
-	SID     string        // only this system ("" = all)
-	Timeout time.Duration // per sapcontrol call
+	SID       string        // only this system ("" = all)
+	Timeout   time.Duration // per sapcontrol call
+	DirSizes  bool          // also run du over the SAP roots (slower)
+	DiskRoots []string      // defaults to /usr/sap and /sapmnt
 }
+
+// DefaultDiskRoots are the SAP trees whose sizes matter for a kernel update.
+var DefaultDiskRoots = []string{"/usr/sap", "/sapmnt"}
 
 // Collect builds the Report. Failures of individual probes are recorded in
 // the report instead of aborting, so the screen always shows what is known.
@@ -55,7 +61,39 @@ func Collect(ctx context.Context, r exec.Runner, p platform.Platform, opts Optio
 	if len(insts) == 0 {
 		rep.Warnings = append(rep.Warnings, "no SAP instances found on this host")
 	}
+	rep.Disk = collectDisk(ctx, r, opts)
 	return rep
+}
+
+// collectDisk gathers df for the SAP roots and, on request, du of their children.
+func collectDisk(ctx context.Context, r exec.Runner, opts Options) Disk {
+	d := Disk{}
+	roots := opts.DiskRoots
+	if len(roots) == 0 {
+		roots = DefaultDiskRoots
+	}
+	for _, root := range roots {
+		if st, err := os.Stat(root); err == nil && st.IsDir() {
+			d.Roots = append(d.Roots, root)
+		}
+	}
+	if len(d.Roots) == 0 {
+		d.Error = "none of " + strings.Join(roots, ", ") + " exists"
+		return d
+	}
+	fs, err := disk.DF(ctx, r, d.Roots...)
+	if err != nil {
+		d.Error = err.Error()
+	}
+	d.Filesystems = fs
+	if opts.DirSizes {
+		if sizes, err := disk.DU(ctx, r, d.Roots...); err != nil {
+			d.Error = strings.TrimSpace(d.Error + " " + err.Error())
+		} else {
+			d.Dirs = sizes
+		}
+	}
+	return d
 }
 
 func hostInfo(ctx context.Context, r exec.Runner, p platform.Platform) HostInfo {

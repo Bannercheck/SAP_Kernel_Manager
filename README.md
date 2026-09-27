@@ -26,8 +26,9 @@ cd /usr/sap && ./kernelman.sh      # root veya <sid>adm; argümansız = menü
 ./kernelman.sh files --yes && ./kernelman.sh update --yes --start   # --from DIR ile tarama tek dizine daraltılır
 ```
 
-Root olarak çalıştırıldığında dosya işlemleri ve sapcontrol `su - <sid>adm` ile yapılır; `chown -R <sid>adm:sapsys` ve
-`saproot.sh` yalnızca root'ta çalışır.
+`<sid>adm` ile çalıştırmak yeterlidir (dosyalar zaten `<sid>adm:sapsys` olur). Root ile çalıştırılırsa dosya işlemleri ve sapcontrol
+`su - <sid>adm` ile yapılır ve `chown -R`, `saproot.sh` otomatik çalışır; `<sid>adm` ile çalışırken `saproot.sh` için ekranda root komutu gösterilir.
+Ana menü `/usr/sap` ve `/sapmnt` kullanımını ve boş alanı gösterir; Kernel Backup önce yeterli yer olduğunu kontrol eder.
 
 Örnek ekran: [`docs/examples/status-linux.txt`](docs/examples/status-linux.txt)
 

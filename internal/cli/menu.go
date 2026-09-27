@@ -7,10 +7,12 @@ import (
 	"io"
 	"os"
 	osuser "os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
@@ -102,14 +104,14 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 func liveSummary(pal ui.Palette) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	return SummaryLines(collectStatus(ctx, status.Options{Timeout: 15 * time.Second}), pal)
+	return SummaryLines(collectStatus(ctx, status.Options{Timeout: 15 * time.Second, DirSizes: true, DiskRoots: diskRoots()}), pal)
 }
 
 // SummaryLines renders the overview above the menu: a big badge per SAP
 // system (RUNNING / PARTIAL / STOPPED), its type, hostname, kernel level and
 // one light per instance, plus the SAP Host Agent.
 func SummaryLines(rep *status.Report, pal ui.Palette) []string {
-	rows := [][]string{{"", "SYSTEM", "TYPE", "HOSTNAME", "KERNEL", "INSTANCES"}}
+	rows := [][]string{pal.Headers("STATE", "SYSTEM", "TYPE", "HOSTNAME", "KERNEL", "INSTANCES")}
 	for _, sys := range rep.Systems {
 		var insts []string
 		for _, in := range sys.Instances {
@@ -134,7 +136,53 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 	default:
 		rows = append(rows, []string{pal.Badge(ui.Red, "STOPPED"), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), ""})
 	}
+	lines := ui.Table("", rows)
+	if dl := DiskLines(rep.Disk, pal); len(dl) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, dl...)
+	}
+	return lines
+}
+
+// DiskLines renders "/usr/sap 42.1 GB used (ABC 31 GB · trans 1 GB) · ⬤ 118 GB free of 200 GB" per root.
+func DiskLines(d status.Disk, pal ui.Palette) []string {
+	if len(d.Roots) == 0 {
+		return nil
+	}
+	rows := [][]string{pal.Headers("DISK", "USED", "LARGEST", "FREE")}
+	for _, root := range d.Roots {
+		var used int64
+		var top []string
+		for _, ds := range d.Dirs {
+			if filepath.Dir(ds.Path) != root {
+				continue
+			}
+			used += ds.KB
+			if len(top) < 3 {
+				top = append(top, filepath.Base(ds.Path)+" "+disk.Human(ds.KB))
+			}
+		}
+		usedTxt := disk.Human(used)
+		if len(d.Dirs) == 0 {
+			usedTxt = pal.Paint(ui.Dim, "n/a")
+		}
+		free := pal.Paint(ui.Dim, "n/a")
+		for _, fs := range d.Filesystems {
+			if fs.Path == root {
+				free = fmt.Sprintf("%s %s free of %s (%d%% used, %s)", pal.Light(freeColour(fs)), disk.Human(fs.AvailKB), disk.Human(fs.SizeKB), fs.UsePct, fs.Mount)
+			}
+		}
+		rows = append(rows, []string{root, usedTxt, strings.Join(top, " · "), free})
+	}
 	return ui.Table("", rows)
+}
+
+// diskRoots returns the SAP trees to measure (the demo root in demo mode).
+func diskRoots() []string {
+	if demoRoot != "" {
+		return []string{demoRoot}
+	}
+	return status.DefaultDiskRoots
 }
 
 // menuOps are the operations listed in the interactive menu.

@@ -180,10 +180,16 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 	return res, nil
 }
 
-// chownTree runs chown -R <sid>adm:sapsys when root; otherwise it explains why not.
+// chownTree runs chown -R <sid>adm:sapsys when root. As <sid>adm the files
+// already belong to <sid>adm:sapsys, so nothing needs doing; as any other
+// user it says what must be done later.
 func chownTree(ctx context.Context, e *Env, dir string, note *string) (string, error) {
 	if !e.IsRoot {
-		*note = "skipped: not root"
+		if e.User == e.T.SIDAdm {
+			*note = "not needed: running as " + e.T.SIDAdm
+		} else {
+			*note = "skipped: run as root later (running as " + e.User + ")"
+		}
 		return *note, nil
 	}
 	_, err := e.run(ctx, exec.Cmd{Path: "chown", Args: []string{"-R", e.T.SIDAdm + ":" + e.T.Group, dir}, Timeout: time.Hour})

@@ -19,6 +19,9 @@ func TestSummaryLines(t *testing.T) {
 		"(~) PARTIAL  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 (+)  ASCS01 (+)  sapapp2/02 (x)",
 		"(x) STOPPED  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 (x)  D11 (x)",
 		"(+) RUNNING  SAP Host Agent           sapci     Kernel 722 Patch 65",
+		"DISK      USED     LARGEST",
+		"/usr/sap  43.3 GB  ABC 32.0 GB · QAS 10.0 GB · trans 1.1 GB  (+) 117.9 GB free of 199.9 GB (41% used, /usr/sap)",
+		"/sapmnt   21.0 GB  ABC 12.0 GB · QAS 9.0 GB                  (~) 8.0 GB free of 50.0 GB (84% used, /sapmnt)",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("summary lacks %q\n%s", want, joined)

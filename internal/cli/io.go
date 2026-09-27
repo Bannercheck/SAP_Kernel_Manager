@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"strings"
 	"time"
 
@@ -158,7 +159,11 @@ func (p progress) Block(title, text string) {
 
 // newEnv builds the ops environment for a resolved target.
 func newEnv(t *system.Target) *ops.Env {
-	return &ops.Env{R: runner, P: platformNow(), T: t, Pr: progress{w: stdout, pal: currentPalette()}, IsRoot: isRoot}
+	user := currentUser()
+	if demoRoot != "" {
+		user = t.SIDAdm // the demo behaves like <sid>adm on a real host
+	}
+	return &ops.Env{R: runner, P: platformNow(), T: t, Pr: progress{w: stdout, pal: currentPalette()}, IsRoot: isRoot, User: user}
 }
 
 // target resolves the system, asking for the SID when the host runs several.
@@ -176,7 +181,7 @@ func target(ctx context.Context, sid string) (*system.Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(stdout, "  System %s · user %s · kernel directories:\n", pal.Paint(ui.Bold, t.SID), t.SIDAdm)
+	fmt.Fprintf(stdout, "  System %s · %s\n  Kernel directories:\n", pal.Paint(ui.Bold, t.SID), runAsNote(t, pal))
 	for i, d := range kernelDirs(t) {
 		note := ""
 		if i == 0 {
@@ -186,6 +191,31 @@ func target(ctx context.Context, sid string) (*system.Target, error) {
 	}
 	fmt.Fprintln(stdout)
 	return t, nil
+}
+
+// runAsNote explains which user performs the file operations.
+func runAsNote(t *system.Target, pal ui.Palette) string {
+	me := currentUser()
+	switch {
+	case demoRoot != "":
+		return fmt.Sprintf("running as %s · demo: acting as %s", me, t.SIDAdm)
+	case isRoot:
+		return fmt.Sprintf("running as root → file operations and sapcontrol via su - %s", t.SIDAdm)
+	case me == t.SIDAdm:
+		return fmt.Sprintf("running as %s %s (new files belong to %s:%s)", me, pal.Check(), t.SIDAdm, t.Group)
+	}
+	return pal.Paint(ui.Yellow, fmt.Sprintf("! running as %s: not root and not %s — files will belong to %s; run chown -R %s:%s as root afterwards",
+		me, t.SIDAdm, me, t.SIDAdm, t.Group))
+}
+
+func currentUser() string {
+	if u := os.Getenv("USER"); u != "" && !isRoot {
+		return u
+	}
+	if u, err := user.Current(); err == nil {
+		return u.Username
+	}
+	return os.Getenv("USER")
 }
 
 // fail prints an error in red and returns the generic exit code.

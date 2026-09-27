@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
@@ -116,7 +117,7 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 		}
 
 		fmt.Fprintln(w, "  Instances")
-		rows := [][]string{{"NR", "NAME", "TYPE", "HOST", "SAPSTARTSRV", "STATUS", "PROFILE"}}
+		rows := [][]string{pal.Headers("NR", "NAME", "TYPE", "HOST", "SAPSTARTSRV", "STATUS", "PROFILE")}
 		for _, in := range sys.Instances {
 			rows = append(rows, []string{in.Nr, orDash(in.Name), in.TypeDesc, in.Host,
 				sapstartsrvLight(pal, in.Sapstartsrv),
@@ -134,6 +135,8 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 			fmt.Fprintf(w, "    %s %s\n", pal.Cross(), e)
 		}
 	}
+
+	renderDisk(w, rep.Disk, pal)
 
 	if len(rep.Warnings) > 0 {
 		fmt.Fprintln(w, "\n"+pal.Paint(ui.Yellow, "WARNINGS"))
@@ -202,4 +205,55 @@ func orDash(s string) string {
 		return "-"
 	}
 	return s
+}
+
+// freeColour grades free space: green above 20 %, yellow above 10 %, red below.
+func freeColour(fs disk.Filesystem) ui.Colour {
+	switch {
+	case fs.SizeKB == 0:
+		return ui.Dim
+	case fs.AvailKB*100/fs.SizeKB > 20:
+		return ui.Green
+	case fs.AvailKB*100/fs.SizeKB > 10:
+		return ui.Yellow
+	}
+	return ui.Red
+}
+
+// renderDisk prints free space per file system and the directory sizes.
+func renderDisk(w io.Writer, d status.Disk, pal ui.Palette) {
+	fmt.Fprintln(w, "\n"+pal.Paint(ui.Cyan, "DISK"))
+	if d.Error != "" && len(d.Filesystems) == 0 {
+		fmt.Fprintf(w, "  %s %s\n", pal.Cross(), d.Error)
+		return
+	}
+	rows := [][]string{pal.Headers("FILE SYSTEM", "MOUNT", "SIZE", "USED", "FREE", "USE%", "")}
+	for _, fs := range d.Filesystems {
+		rows = append(rows, []string{fs.Device, fs.Mount, disk.Human(fs.SizeKB), disk.Human(fs.UsedKB), disk.Human(fs.AvailKB),
+			fmt.Sprintf("%d%%", fs.UsePct), pal.Light(freeColour(fs))})
+	}
+	for _, l := range ui.Table("  ", rows) {
+		fmt.Fprintln(w, l)
+	}
+	if len(d.Dirs) > 0 {
+		fmt.Fprintf(w, "\n  %s\n", pal.Header("DIRECTORY SIZES  ("+strings.Join(d.Roots, ", ")+")"))
+		var total int64
+		rows = [][]string{pal.Headers("SIZE", "DIRECTORY")}
+		for i, ds := range d.Dirs {
+			total += ds.KB
+			if i < 20 {
+				rows = append(rows, []string{disk.Human(ds.KB), ds.Path})
+			}
+		}
+		if len(d.Dirs) > 20 {
+			rows = append(rows, []string{"", pal.Paint(ui.Dim, fmt.Sprintf("... %d more", len(d.Dirs)-20))})
+		}
+		rows = append(rows, []string{pal.Paint(ui.Bold, disk.Human(total)), pal.Paint(ui.Bold, "total")})
+		for _, l := range ui.Table("  ", rows) {
+			fmt.Fprintln(w, l)
+		}
+	}
+	if d.Error != "" {
+		fmt.Fprintf(w, "  %s %s\n", pal.Paint(ui.Yellow, "!"), d.Error)
+	}
 }

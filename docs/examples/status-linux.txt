@@ -26,7 +26,7 @@ $ ./kernelman.sh status
                                D00      /usr/sap/ABC/D00/exe
                                ASCS01   /usr/sap/ABC/ASCS01/exe
   Instances
-    NR  NAME    TYPE                       HOST     SAPSTARTSRV  STATUS   PROFILE
+    [36m[1mNR[0m[0m  [36m[1mNAME[0m[0m    [36m[1mTYPE[0m[0m                       [36m[1mHOST[0m[0m     [36m[1mSAPSTARTSRV[0m[0m  [36m[1mSTATUS[0m[0m   [36m[1mPROFILE[0m[0m
     00  D00     Application Server (ABAP)  sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_D00_sapci
     01  ASCS01  ABAP Central Services      sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
     02  -       Application Server (ABAP)  sapapp2  [90m○[0m            [31m●[0m GRAY   -
@@ -48,9 +48,25 @@ $ ./kernelman.sh status
                                ASCS10   /usr/sap/QAS/ASCS10/exe
                                D11      /usr/sap/QAS/D11/exe
   Instances
-    NR  NAME    TYPE                       HOST   SAPSTARTSRV  STATUS  PROFILE
+    [36m[1mNR[0m[0m  [36m[1mNAME[0m[0m    [36m[1mTYPE[0m[0m                       [36m[1mHOST[0m[0m   [36m[1mSAPSTARTSRV[0m[0m  [36m[1mSTATUS[0m[0m  [36m[1mPROFILE[0m[0m
     10  ASCS10  ABAP Central Services      sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
     11  D11     Application Server (ABAP)  sapci  [31m●[0m            [31m●[0m GRAY  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
+
+[36mDISK[0m
+  [36m[1mFILE SYSTEM[0m[0m                [36m[1mMOUNT[0m[0m     [36m[1mSIZE[0m[0m      [36m[1mUSED[0m[0m     [36m[1mFREE[0m[0m      [36m[1mUSE%[0m[0m
+  /dev/mapper/vg_sap-usrsap  /usr/sap  199.9 GB  82.0 GB  117.9 GB  41%   [32m●[0m
+  sapnfs:/export/sapmnt      /sapmnt   50.0 GB   42.0 GB  8.0 GB    84%   [33m●[0m
+
+  [36m[1mDIRECTORY SIZES  (/usr/sap, /sapmnt)[0m[0m
+  [36m[1mSIZE[0m[0m      [36m[1mDIRECTORY[0m[0m
+  32.0 GB   /usr/sap/ABC
+  12.0 GB   /sapmnt/ABC
+  10.0 GB   /usr/sap/QAS
+  9.0 GB    /sapmnt/QAS
+  1.1 GB    /usr/sap/trans
+  200.0 MB  /usr/sap/hostctrl
+  2.0 MB    /usr/sap/tmp
+  [1m64.3 GB[0m   [1mtotal[0m
 
 [33mWARNINGS[0m
   - /usr/sap/sapservices: permission denied

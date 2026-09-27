@@ -135,7 +135,7 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 // showArchives prints the archives in apply order plus the resulting level.
 func showArchives(res *ops.ScanResult) {
 	pal := currentPalette()
-	rows := [][]string{{"#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "MODIFIED", "FOUND IN"}}
+	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "MODIFIED", "FOUND IN")}
 	for i, f := range res.Today {
 		kind := f.Label
 		if f.Full {

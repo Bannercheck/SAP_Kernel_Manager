@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 )
@@ -61,8 +63,13 @@ func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
 	}
 	res := &BackupResult{LogFile: filepath.Join(e.T.StateDir, "backup_"+e.now().Format("20060102_150405")+".log")}
 	var log strings.Builder
-	n := 3*len(dirs) + 1
-	step := 0
+	n := 3*len(dirs) + 2
+	step := 1
+	if err := e.step(step, n, "Check free space", func() (string, error) {
+		return checkFreeSpace(ctx, e, dirs)
+	}); err != nil {
+		return res, err
+	}
 	for _, src := range dirs {
 		db := DirBackup{Source: src, Dest: BackupName(src, e.now())}
 		var srcFiles int
@@ -119,6 +126,35 @@ func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
 		}
 	})
 	return res, nil
+}
+
+// checkFreeSpace makes sure every file system that will receive a backup
+// has room for it (sizes summed per mount, 10 % headroom).
+func checkFreeSpace(ctx context.Context, e *Env, dirs []string) (string, error) {
+	needKB := map[string]int64{}
+	fsByMount := map[string]disk.Filesystem{}
+	for _, d := range dirs {
+		_, bytes, err := treeStats(d)
+		if err != nil {
+			return "", err
+		}
+		fss, err := disk.DF(ctx, e.R, filepath.Dir(d))
+		if err != nil {
+			return "", err
+		}
+		needKB[fss[0].Mount] += bytes / 1024
+		fsByMount[fss[0].Mount] = fss[0]
+	}
+	var parts []string
+	for mount, need := range needKB {
+		fs := fsByMount[mount]
+		if fs.AvailKB < need+need/10 {
+			return "", fmt.Errorf("not enough space on %s: need %s, free %s", mount, disk.Human(need), disk.Human(fs.AvailKB))
+		}
+		parts = append(parts, fmt.Sprintf("%s: need %s, free %s", mount, disk.Human(need), disk.Human(fs.AvailKB)))
+	}
+	sort.Strings(parts)
+	return strings.Join(parts, " · "), nil
 }
 
 // shorten keeps the first max lines of a listing and says how many follow.

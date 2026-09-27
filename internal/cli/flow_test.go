@@ -182,7 +182,7 @@ func TestFlowBackup(t *testing.T) {
 	fe.install(t)
 	out := runMenu(t, "backup", "2\ny\nm\nq\n") // 2, Y = yes, M = main menu, quit
 	want := filepath.Join(filepath.Dir(fe.kernelDir), "linuxx86_64_"+time.Now().Format("20060102"))
-	mustContain(t, out, "[2/10] Copy to "+want, "[3/10] Verify linuxx86_64_", "9 files match", "Backup "+want, "disp+work",
+	mustContain(t, out, "[1/11] Check free space ... ok", "[3/11] Copy to "+want, "[4/11] Verify linuxx86_64_", "9 files match", "Backup "+want, "disp+work",
 		"exe_"+time.Now().Format("20060102"), "Backup ready: 3 directories, 15 files", "2) ✔ Kernel Backup")
 	if _, err := os.Stat(filepath.Join(want, "gwrd")); err != nil {
 		t.Errorf("backup missing: %v", err)

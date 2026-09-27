@@ -5,6 +5,8 @@ package status
 import (
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/disk"
+
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/kernel"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
@@ -16,7 +18,16 @@ type Report struct {
 	Host        HostInfo            `json:"host"`
 	HostAgent   discovery.HostAgent `json:"host_agent"`
 	Systems     []System            `json:"systems"`
+	Disk        Disk                `json:"disk"`
 	Warnings    []string            `json:"warnings,omitempty"`
+}
+
+// Disk is the space picture an administrator otherwise checks by hand.
+type Disk struct {
+	Roots       []string          `json:"roots"`       // /usr/sap, /sapmnt (those that exist)
+	Filesystems []disk.Filesystem `json:"filesystems"` // free space per distinct mount
+	Dirs        []disk.DirSize    `json:"dirs"`        // sizes of the directories under the roots, largest first
+	Error       string            `json:"error,omitempty"`
 }
 
 // HostInfo describes the machine kernelman runs on.
