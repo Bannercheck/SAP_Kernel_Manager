@@ -173,14 +173,14 @@ func mustContain(t *testing.T, out string, wants ...string) {
 func TestFlowMenuStatus(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "menu", "1\n0\nq\n")
-	mustContain(t, out, "1) ✔ SAP Status", "SYSTEM ABC · AS ABAP · Hostname sapci", "0) Back to main menu")
+	out := runMenu(t, "menu", "1\nm\nq\n")
+	mustContain(t, out, "1) ✔ SAP Status", "SYSTEM ABC · AS ABAP · Hostname sapci", "[M] Main menu  [Q] Quit")
 }
 
 func TestFlowBackup(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "backup", "2\n1\n0\nq\n") // 2, 1 = yes, 0 = back, quit
+	out := runMenu(t, "backup", "2\ny\nm\nq\n") // 2, Y = yes, M = main menu, quit
 	want := filepath.Join(filepath.Dir(fe.kernelDir), "linuxx86_64_"+time.Now().Format("20060102"))
 	mustContain(t, out, "[2/10] Copy to "+want, "[3/10] Verify linuxx86_64_", "9 files match", "Backup "+want, "disp+work",
 		"exe_"+time.Now().Format("20060102"), "Backup ready: 3 directories, 15 files", "2) ✔ Kernel Backup")
@@ -192,10 +192,10 @@ func TestFlowBackup(t *testing.T) {
 func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "files", "3\n1\n0\nq\n") // 3, 1 = yes, 0 = back, quit (no directory question: the server is scanned)
-	mustContain(t, out, "scanning for today's .SAR files", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
+	out := runMenu(t, "files", "3\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
+	mustContain(t, out, "=== Kernel File Transfer ===", "scanning "+filepath.Dir(fe.download)+" for .SAR files dated today", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
 		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
-		"4 archive(s) copied into 3 kernel directories", "3) ✔ Kernel Files")
+		"4 archive(s) copied into 3 kernel directories", "3) ✔ Kernel File Transfer")
 	for _, dir := range fe.target.KernelDirs {
 		for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {
 			if _, err := os.Stat(filepath.Join(dir, n)); err != nil {
@@ -214,8 +214,8 @@ func TestFlowStop(t *testing.T) {
 	// lights before, Stop's own probe, lights after → GREEN, GREEN, then down
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
-	out := runMenu(t, "stop", "4\n2\n0\nq\n") // 4, 2 = stop, 0 = back, quit
-	mustContain(t, out, "1) SAP Start   2) SAP Stop (Kapat)   0) Back to main menu", "⬤ RUNNING", "[1/5] StopSystem ALL ... ok",
+	out := runMenu(t, "stop", "4\nk\nm\nq\n") // 4, K = stop, M = main menu, quit
+	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [M] Main menu", "⬤ RUNNING", "[1/5] StopSystem ALL ... ok",
 		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "4) ✔ SAP Stop / Start")
 }
 
@@ -237,8 +237,8 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down, procs("GREEN", 3))
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
-	out := runMenu(t, "update", "5\n1\n1\n0\nq\n") // 5, 1 = confirm order, 1 = start afterwards, 0 = back, quit
-	mustContain(t, out, "backup from today", "1  SAPEXE_403-80007807.SAR", "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
+	out := runMenu(t, "update", "5\ny\ny\nm\nq\n") // 5, Y = confirm order, Y = start afterwards, M = main menu, quit
+	mustContain(t, out, "backup from today", "scanning "+filepath.Dir(fe.download), "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
 		"[4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
 		"[17/17] Read kernel version (disp+work -V) ... ok  793 Patch 423",
 		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "5) ✔ Kernel Update")
@@ -256,7 +256,7 @@ func TestFlowRollback(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(423), dispworkV(200))
-	out := runMenu(t, "rollback", "6\n\n1\n0\n0\nq\n") // 6, backup default (Enter keeps it), 1 = confirm, 0 = no start, 0 = back, quit
+	out := runMenu(t, "rollback", "6\n\ny\nn\nm\nq\n") // 6, backup default (Enter keeps it), Y = confirm, N = no start, M = main menu, quit
 	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/8] Copy "+bk.Dirs[0].Dest, "[2/8] Copy "+bk.Dirs[1].Dest,
 		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "6) ✔ Kernel Rollback")
 	b, _ := os.ReadFile(filepath.Join(fe.kernelDir, "gwrd"))

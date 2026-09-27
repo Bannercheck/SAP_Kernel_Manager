@@ -49,7 +49,7 @@ examples: build
 	@KERNELMAN_WRITE_EXAMPLE=1 go test ./internal/cli >/dev/null
 	@{ echo '$$ ./kernelman.sh version'; ./bin/kernelman version; } > docs/examples/version.txt
 	@{ echo '$$ ./kernelman.sh status      # SAP kurulu olmayan bir hostta'; $(EXENV) ./bin/kernelman status; echo "exit code: $$?"; } > docs/examples/status-nosap.txt
-	@rm -rf /tmp/kernelman-demo-example && { echo '$$ ./kernelman.sh demo         # simüle SAP hostu · 2 → 1 → 0 · 4 → 2 → 0 · q'; printf '2\n1\n0\n4\n2\n0\nq\n' | KERNELMAN_DEMO=1 KERNELMAN_DEMO_ROOT=/tmp/kernelman-demo-example KERNELMAN_MENU=1 $(EXENV) ./bin/kernelman | sed 's|/tmp/kernelman-demo-example|~/.kernelman/demo|g'; } > docs/examples/demo.txt
+	@rm -rf /tmp/kernelman-demo-example && { echo '$$ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 4 → K → M · q'; printf '2\ny\nm\n4\nk\nm\nq\n' | KERNELMAN_DEMO=1 KERNELMAN_DEMO_ROOT=/tmp/kernelman-demo-example KERNELMAN_MENU=1 $(EXENV) ./bin/kernelman | sed 's|/tmp/kernelman-demo-example|~/.kernelman/demo|g'; } > docs/examples/demo.txt
 	@{ echo '$$ make cross'; $(MAKE) -s cross 2>&1 | sed 's/^/  /'; echo; echo '$$ ls -la dist dist/bin'; ls -la dist dist/bin | sed 's/^/  /'; echo; echo '$$ file dist/bin/*'; file dist/bin/* | sed 's/,.*//;s/^/  /'; } > docs/examples/cross-build.txt
 	@for f in docs/examples/*.txt; do python3 scripts/screen2png.py $$f $${f%.txt}.png "$(BIN) — $$(basename $${f%.txt})" >/dev/null || exit 1; done
 	@ls docs/examples/*.png

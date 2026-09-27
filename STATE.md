@@ -28,6 +28,10 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı (3. tur): tarama **tüm sunucu** (`/` kökü; /proc /sys /dev /usr/lib /usr/share /var/lib /hana/data … ve kernel dizinleri + yedekler atlanır,
+  ilerleme sayacı gösterilir). Kernel Update de snapshot kopyalarına değil sunucu taramasına bakar; FOUND IN gerçek indirme yeri.
+- 2026-09-27 · İstem tasarımı: numaralar yalnızca ana menüde. Evet/hayır `[Y] Yes [N] No`, durdur/başlat `[S] Start SAP [K] Stop SAP`, işlem sonunda
+  `[M] Main menu [Q] Quit`; tuşa basınca geçer, Enter tek başına seçim yapmaz. "Kernel Files" → **"Kernel File Transfer"**.
 - 2026-09-27 · Kullanıcı düzeltmeleri (2. tur): **bütün kernel dizinleri** (merkezi DIR_CT_RUN + her instance'ın DIR_EXECUTABLE) yedeklenir,
   SAR'lar hepsine kopyalanır, hepsinde sırayla açılır, hepsi chown edilir. Yedek adı **kendi adı + tarih, kendi yanında**:
   `.../D00/exe` → `.../D00/exe_20260927`, `.../uc/linuxx86_64` → `.../uc/linuxx86_64_20260927`. Tam `ls -la` listesi `<state>/backup_<ts>.log`.

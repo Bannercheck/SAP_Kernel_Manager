@@ -272,14 +272,14 @@ rollback tamam · `6` rollback başarısız (manuel) · `7` verify başarısız.
 |---|------|----------|---------------|
 | 1 | SAP Status | kernel, sapstartsrv/sapcontrol, SID, hostname, instance'lar (otomatik) | ışıklar |
 | 2 | Kernel Backup | **her kernel dizini** (DIR_CT_RUN + instance `exe` dizinleri) kendi yanına `<ad>_<YYYYMMDD>` olarak `cp -pR` (root ise `su - <sid>adm`); dosya sayısı karşılaştırılır | kısaltılmış `ls -la` + tam log |
-| 3 | Kernel Files | **sunucu taranır**, bugün tarihli `*.SAR` bulunur → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
+| 3 | Kernel File Transfer | **tüm sunucu taranır** (`/`), bugün tarihli `*.SAR` bulunur → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
 | 4 | SAP Stop / Start | `K`: StopSystem ALL → WaitforStopped → StopService · `S`: StartService (sidadm) → StartSystem ALL → WaitforStarted | `[i/n]` adımlar + ışıklar |
 | 5 | Kernel Update | durmuş sistem + bugünkü yedek şart → her kernel dizininde `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) → chown → `saproot.sh` → `disp+work -V` → `1` ile başlat | önce/sonra sürüm |
 | 6 | Kernel Rollback | her dizinin son `<ad>_<date>` yedeği üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |
 
 Sıralama kuralı: patch numarası artan; aynı seviyede SAPEXE → SAPEXEDB → tek bileşen yamaları. Böylece son hotfix (örn. `dw_423`)
 en son açılır ve kernel `793 patch 423` olur. Kernel dizini sapstartsrv kapalıyken de bulunur: snapshot (`/usr/sap/<SID>/.kernelman`)
-→ `/usr/sap/<SID>/SYS/exe/run` symlink. Her işlem `✔/✘` ile biter; `0) Back to main menu` ile ana sayfaya dönülür (Enter tek başına seçim yapmaz). Tüm istemler numaralıdır.
+→ `/usr/sap/<SID>/SYS/exe/run` symlink. Her işlem `✔/✘` ile biter; `[M] Main menu` ile ana sayfaya dönülür. Sorular tuşla cevaplanır (`[Y]/[N]`, `[S]/[K]`); Enter tek başına seçim yapmaz.
 
 ## 6. Platform notları
 

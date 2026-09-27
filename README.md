@@ -1,9 +1,9 @@
 # KernelMan — SAP Kernel Manager
 
 SAP NetWeaver / S/4HANA kernel güncellemesini Linux ve AIX üzerinde menüden adım adım yapan tek binary konsol aracı:
-**1** SAP Status · **2** Kernel Backup (her kernel dizini kendi yanına `<ad>_<tarih>`) · **3** Kernel Files (sunucuda bugün tarihli SAR'ları bulur) ·
+**1** SAP Status · **2** Kernel Backup (her kernel dizini kendi yanına `<ad>_<tarih>`) · **3** Kernel File Transfer (tüm sunucuda bugün tarihli SAR'ları bulur) ·
 **4** SAP Stop/Start · **5** Kernel Update (tüm kernel dizinlerinde patch sırasıyla `SAPCAR -xvf`, chown, saproot.sh, doğrulama) · **6** Kernel Rollback.
-Tüm sorular menü gibi numaralıdır (`1` evet, `0` geri).
+Sorular tuşla cevaplanır: `Y`/`N`, `S`/`K`, `M` ana menü.
 
 - Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - İlerleme / yol haritası: [`STATE.md`](STATE.md)

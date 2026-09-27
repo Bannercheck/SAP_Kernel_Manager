@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
 
@@ -40,18 +39,12 @@ func UpdateOp(args []string) int {
 		return ExitError
 	}
 
-	files, dir := archivesForUpdate(t, *from)
-	if len(files) == 0 {
-		var ok bool
-		files, ok = pickArchives(ctx, t, *from, true)
-		if !ok {
-			return ExitError
-		}
-		dir = filepath.Dir(files[0].Path)
-	} else {
-		showArchives(&ops.ScanResult{Today: files})
+	files, ok := pickArchives(ctx, t, *from, true)
+	if !ok {
+		return ExitError
 	}
-	if !*yes && !confirm(fmt.Sprintf("Extract %d archive(s) into %d kernel directories in this order?", len(files), len(kernelDirs(t)))) {
+	dir := filepath.Dir(files[0].Path)
+	if !*yes && !confirm(fmt.Sprintf("Extract these %d archive(s) into %d kernel directories in this order?", len(files), len(kernelDirs(t)))) {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
@@ -138,7 +131,7 @@ func ensureStopped(ctx context.Context, e *ops.Env, yes bool) bool {
 	}
 	pal := currentPalette()
 	fmt.Fprintf(stdout, "  %s system %s is running; the kernel can only be replaced while it is stopped.\n", pal.Paint(ui.Yellow, "!"), e.T.SID)
-	if !yes && pick(option{"1", "Stop it now", []string{"k", "s", "stop", "kapat"}}, option{"0", "Cancel", []string{"c", "cancel"}}) != "1" {
+	if !yes && !confirm("Stop it now?") {
 		fmt.Fprintln(stdout, "  cancelled")
 		return false
 	}
@@ -169,31 +162,8 @@ func ensureBackup(ctx context.Context, e *ops.Env, yes bool) bool {
 	return true
 }
 
-// archivesForUpdate returns the archives Kernel Files placed in the kernel directory.
-func archivesForUpdate(t *system.Target, from string) ([]ops.SARFile, string) {
-	if from != "" || t.Snapshot == nil || len(t.Snapshot.CopiedSARs) == 0 {
-		return nil, from
-	}
-	var files []ops.SARFile
-	for _, name := range t.Snapshot.CopiedSARs {
-		p := filepath.Join(t.KernelDir, name)
-		info, err := os.Stat(p)
-		if err != nil {
-			continue
-		}
-		f, ok := ops.ParseSARName(name)
-		if !ok {
-			continue
-		}
-		f.Path, f.Size, f.ModTime = p, info.Size(), info.ModTime()
-		files = append(files, f)
-	}
-	ops.SortForApply(files)
-	return files, t.Snapshot.LastDownloadDir
-}
-
 func offerStart(ctx context.Context, e *ops.Env, start bool) int {
-	if start || pick(option{"1", "Start the system now", []string{"s", "start"}}, option{"0", "Back to main menu", []string{"b", "back"}}) == "1" {
+	if start || confirm("Start the system now?") {
 		return runStart(ctx, e)
 	}
 	return ExitOK

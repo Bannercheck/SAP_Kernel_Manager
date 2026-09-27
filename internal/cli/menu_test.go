@@ -35,7 +35,7 @@ func TestMenuMarksResults(t *testing.T) {
 	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
 	defer func() { summaryFunc = liveSummary }()
 
-	in := strings.NewReader("1\n\n0\nzzz\nq\n") // SAP Status ok, Enter is ignored, 0 = back, bad choice, quit
+	in := strings.NewReader("1\n\nm\nzzz\nq\n") // SAP Status ok, Enter is ignored, M = main menu, bad choice, quit
 	var out bytes.Buffer
 	if code := Menu(in, &out, ui.Palette{}); code != ExitOK {
 		t.Fatalf("exit code %d", code)
@@ -45,7 +45,7 @@ func TestMenuMarksResults(t *testing.T) {
 		"(+) ABC  ABAP  running",
 		"1) OK SAP Status",
 		"--- SAP Status: OK done",
-		"0) Back to main menu   q) Quit",
+		"[M] Main menu  [Q] Quit",
 		`!! unknown choice "zzz"`,
 		"6)   Kernel Rollback",
 	} {

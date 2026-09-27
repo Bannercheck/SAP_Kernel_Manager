@@ -13,9 +13,9 @@ chmod +x kernelman.sh bin/*
 ./kernelman.sh demo                       # menü, DEMO rozetiyle
 ```
 
-Deneme sırası (her soruda menüdeki gibi numara girilir; `0` = geri, Enter tek başına seçim yapmaz):
-**1** SAP Status → **2** Kernel Backup (`1` evet) → **3** Kernel Files (sunucuyu kendisi tarar, `1` evet)
-→ **4** SAP Stop/Start (`2` durdur) → **5** Kernel Update (`1` onay, sonra `1` başlat) → **6** Kernel Rollback (`1` durdur, `1` onay).
+Deneme sırası (sorulara tuşla cevap verilir: `Y` evet, `N` hayır, `M` ana menü; Enter tek başına seçim yapmaz):
+**1** SAP Status → **2** Kernel Backup (`Y`) → **3** Kernel File Transfer (sunucuyu kendisi tarar, `Y`)
+→ **4** SAP Stop/Start (`K` durdur) → **5** Kernel Update (`Y` onay, sonra `Y` başlat) → **6** Kernel Rollback (`Y` durdur, `Y` onay).
 
 Sonuçları dosya sisteminde görebilirsiniz:
 

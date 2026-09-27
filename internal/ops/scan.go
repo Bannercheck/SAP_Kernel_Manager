@@ -10,14 +10,20 @@ import (
 	"time"
 )
 
-// DefaultScanRoots are searched, in order, for archives placed on the server
-// today. They cover where people usually put downloads on SAP hosts.
-var DefaultScanRoots = []string{"/usr/sap", "/sapmnt", "/tmp", "/var/tmp", "/home", "/root", "/export", "/mnt", "/media",
-	"/opt", "/download", "/downloads", "/software", "/install", "/stage", "/sap", "/data"}
+// DefaultScanRoots: the whole server. Pseudo file systems, OS library trees
+// and database data areas are pruned (see PrunePaths / pruneNames) because
+// nobody downloads kernel archives there and they hold most of the entries.
+var DefaultScanRoots = []string{"/"}
 
-// pruneNames are directory names never descended into.
-var pruneNames = map[string]bool{"proc": true, "sys": true, "dev": true, "run": true, "lost+found": true, ".snapshot": true,
-	"node_modules": true, ".git": true}
+// PrunePaths are absolute subtrees never descended into.
+var PrunePaths = []string{"/proc", "/sys", "/dev", "/run", "/boot", "/lost+found", "/usr/lib", "/usr/lib64", "/usr/libexec",
+	"/usr/share", "/usr/include", "/usr/src", "/var/lib", "/var/cache", "/var/log", "/var/spool", "/var/run", "/etc",
+	"/hana/data", "/hana/log", "/System", "/Library", "/private/var", "/Applications"}
+
+// pruneNames are directory names never descended into, wherever they are.
+var pruneNames = map[string]bool{"proc": true, "sys": true, "dev": true, "lost+found": true, ".snapshot": true,
+	"node_modules": true, ".git": true, "sapdata1": true, "sapdata2": true, "sapdata3": true, "sapdata4": true,
+	"origlogA": true, "origlogB": true, "mirrlogA": true, "mirrlogB": true, "oraarch": true, "saparch": true}
 
 // ScanOptions controls FindTodaySARs.
 type ScanOptions struct {
@@ -73,12 +79,12 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 				return nil // unreadable entry: skip
 			}
 			if de.IsDir() {
-				if path != root && (pruneNames[de.Name()] || excluded(path, opts.Exclude) ||
+				if path != root && (pruneNames[de.Name()] || excluded(path, PrunePaths) || excluded(path, opts.Exclude) ||
 					strings.Count(path, string(filepath.Separator))-rootDepth > depth) {
 					return fs.SkipDir
 				}
 				res.Dirs++
-				if opts.Progress != nil && res.Dirs%500 == 0 {
+				if opts.Progress != nil && res.Dirs%2000 == 0 {
 					opts.Progress(res.Dirs, path)
 				}
 				return nil

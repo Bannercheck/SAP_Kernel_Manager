@@ -70,23 +70,28 @@ func ask(question, def string) string {
 	return line
 }
 
-// option is one numbered choice of pick.
-type option struct {
-	Key     string // what the user types: "1", "2", "0", "q"
+// choice is one key of choose: the letter the user presses and its label.
+type choice struct {
+	Key     string // "Y", "N", "S", "K", "M", "Q"
 	Label   string
-	Aliases []string // also accepted (letters)
+	Aliases []string
 }
 
-// pick shows numbered choices like the main menu and reads until one is
-// chosen. Enter alone never selects anything: it re-asks.
-func pick(opts ...option) string {
+// choose shows the keys inline, e.g. "[Y] Yes  [N] No  ›", and reads until
+// one is pressed (letters, case-insensitive; Enter alone re-asks).
+func choose(question string, opts ...choice) string {
 	pal := currentPalette()
 	for {
 		var parts []string
 		for _, o := range opts {
-			parts = append(parts, pal.Paint(ui.Bold, o.Key+")")+" "+o.Label)
+			parts = append(parts, pal.Paint(ui.Bold, "["+o.Key+"]")+" "+o.Label)
 		}
-		fmt.Fprintf(stdout, "  %s\n  Select: ", strings.Join(parts, "   "))
+		if question != "" {
+			fmt.Fprintf(stdout, "\n  %s  ", question)
+		} else {
+			fmt.Fprint(stdout, "\n  ")
+		}
+		fmt.Fprintf(stdout, "%s  %s ", strings.Join(parts, "  "), pal.Paint(ui.Dim, "›"))
 		line, err := input.ReadString('\n')
 		in := strings.ToLower(strings.TrimSpace(line))
 		fmt.Fprintln(stdout, in)
@@ -100,20 +105,21 @@ func pick(opts ...option) string {
 				}
 			}
 		}
-		if err != nil { // end of input: take the last (back/cancel) option
+		if err != nil { // end of input: take the last (safe) option
 			return opts[len(opts)-1].Key
-		}
-		if in != "" {
-			fmt.Fprintf(stdout, "  %s not a choice: %q\n", pal.Cross(), in)
 		}
 	}
 }
 
-// confirm asks a yes/no question with numbered answers.
-func confirm(question string) bool {
-	fmt.Fprintf(stdout, "\n  %s\n", question)
-	return pick(option{"1", "Yes", []string{"y", "yes", "e", "evet"}}, option{"0", "No", []string{"n", "no", "h", "hayır", "hayir"}}) == "1"
-}
+var (
+	yes      = choice{"Y", "Yes", []string{"yes", "e", "evet"}}
+	no       = choice{"N", "No", []string{"no", "h", "hayır", "hayir"}}
+	mainMenu = choice{"M", "Main menu", []string{"menu", "main", "0", "b", "back"}}
+	quit     = choice{"Q", "Quit", []string{"quit", "exit"}}
+)
+
+// confirm asks a yes/no question answered with Y or N.
+func confirm(question string) bool { return choose(question, yes, no) == "Y" }
 
 // progress renders ops.Progress with colours.
 type progress struct {

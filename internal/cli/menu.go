@@ -58,7 +58,7 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 			mark = pal.Cross() + " " + pal.Paint(ui.Red, fmt.Sprintf("failed (exit code %d)", code))
 		}
 		fmt.Fprintf(out, "\n--- %s: %s\n", op.Name, mark)
-		if pick(option{"0", "Back to main menu", []string{"b", "back", "m", "menu"}}, option{"q", "Quit", []string{"quit", "exit"}}) == "q" {
+		if choose("", mainMenu, quit) == "Q" {
 			return code
 		}
 		summary = summaryFunc(pal) // SAP Stop/Start change the lights
@@ -92,7 +92,7 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 				mark = pal.Cross()
 			}
 		}
-		fmt.Fprintf(w, "  %2d) %s %-18s %s\n", i+1, mark, op.Name, pal.Paint(ui.Dim, op.Summary))
+		fmt.Fprintf(w, "  %2d) %s %-21s %s\n", i+1, mark, op.Name, pal.Paint(ui.Dim, op.Summary))
 	}
 	fmt.Fprintln(w, "   q)   Quit")
 	fmt.Fprintln(w)

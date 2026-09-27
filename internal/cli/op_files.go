@@ -25,8 +25,8 @@ func kernelDirs(t *system.Target) []string {
 	return []string{t.KernelDir}
 }
 
-// FilesOp implements Kernel Files: find today's *.SAR anywhere on the
-// server, copy them into every kernel directory, chown, list.
+// FilesOp implements Kernel File Transfer: find today's *.SAR anywhere on
+// the server, copy them into every kernel directory, chown, list.
 func FilesOp(args []string) int {
 	fs := flag.NewFlagSet("files", flag.ContinueOnError)
 	sid := fs.String("sid", "", "SAP system")
@@ -70,10 +70,7 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 		roots = filepath.SplitList(env)
 	}
 	if len(roots) == 0 {
-		if cwd, err := os.Getwd(); err == nil {
-			roots = append(roots, cwd)
-		}
-		roots = append(roots, ops.DefaultScanRoots...)
+		roots = ops.DefaultScanRoots // the whole server
 	}
 	for {
 		res := scanFor(ctx, t, roots)
@@ -109,8 +106,22 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 		exclude = append(exclude, d)
 		exclude = append(exclude, ops.BackupSiblings(d)...)
 	}
-	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, "scanning for today's .SAR files: "+strings.Join(roots, " ")))
-	res, err := ops.FindTodaySARs(ctx, ops.ScanOptions{Roots: roots, Day: time.Now(), Exclude: exclude})
+	where := strings.Join(roots, " ")
+	if len(roots) == 1 && roots[0] == "/" {
+		where = "the whole server (/)"
+	}
+	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, fmt.Sprintf("scanning %s for .SAR files dated today (%s); system directories, kernel directories and backups are skipped",
+		where, time.Now().Format("2006-01-02"))))
+	var progress func(int, string)
+	if f, ok := stdout.(*os.File); ok && ui.IsTerminal(f) {
+		progress = func(n int, cur string) {
+			fmt.Fprintf(stdout, "\r  %s", pal.Paint(ui.Dim, fmt.Sprintf("%d directories scanned … %s", n, cur)))
+		}
+	}
+	res, err := ops.FindTodaySARs(ctx, ops.ScanOptions{Roots: roots, Day: time.Now(), Exclude: exclude, Progress: progress})
+	if progress != nil {
+		fmt.Fprint(stdout, "\r\033[K")
+	}
 	if err != nil {
 		fmt.Fprintf(stdout, "  %s scan: %v\n", pal.Paint(ui.Yellow, "!"), err)
 	}
