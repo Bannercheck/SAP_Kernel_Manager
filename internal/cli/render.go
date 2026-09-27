@@ -220,7 +220,46 @@ func freeColour(fs disk.Filesystem) ui.Colour {
 	return ui.Red
 }
 
-// renderDisk prints free space per file system and the directory sizes.
+// diskTreeLines renders one root as a tree: the root line carries the free
+// space light, children carry their size; at most maxKids per node, the
+// rest summarised.
+func diskTreeLines(d status.Disk, root disk.Node, pal ui.Palette, maxKids, depth int) []string {
+	free := pal.Paint(ui.Dim, "free space n/a")
+	for _, fs := range d.Filesystems {
+		if fs.Path == root.Path {
+			free = fmt.Sprintf("%s %s free of %s (%d%% used, %s)", pal.Light(freeColour(fs)), disk.Human(fs.AvailKB), disk.Human(fs.SizeKB), fs.UsePct, fs.Mount)
+		}
+	}
+	lines := []string{fmt.Sprintf("%s  %s   %s", pal.Paint(ui.Bold, root.Path), pal.Paint(ui.Bold, disk.Human(root.KB)), free)}
+	var walk func(n disk.Node, prefix string, level int)
+	walk = func(n disk.Node, prefix string, level int) {
+		if level > depth {
+			return
+		}
+		kids := n.Children
+		var rest int64
+		hidden := 0
+		if len(kids) > maxKids {
+			for _, k := range kids[maxKids:] {
+				rest += k.KB
+			}
+			hidden = len(kids) - maxKids
+			kids = kids[:maxKids]
+		}
+		for i, k := range kids {
+			last := i == len(kids)-1 && hidden == 0
+			lines = append(lines, fmt.Sprintf("%s%s%-14s %s", prefix, pal.Branch(last), k.Name, disk.Human(k.KB)))
+			walk(k, prefix+pal.Trunk(last), level+1)
+		}
+		if hidden > 0 {
+			lines = append(lines, fmt.Sprintf("%s%s%s", prefix, pal.Branch(true), pal.Paint(ui.Dim, fmt.Sprintf("… %d more (%s)", hidden, disk.Human(rest)))))
+		}
+	}
+	walk(root, "", 1)
+	return lines
+}
+
+// renderDisk prints the file systems and the size tree of every SAP root.
 func renderDisk(w io.Writer, d status.Disk, pal ui.Palette) {
 	fmt.Fprintln(w, "\n"+pal.Paint(ui.Cyan, "DISK"))
 	if d.Error != "" && len(d.Filesystems) == 0 {
@@ -235,22 +274,10 @@ func renderDisk(w io.Writer, d status.Disk, pal ui.Palette) {
 	for _, l := range ui.Table("  ", rows) {
 		fmt.Fprintln(w, l)
 	}
-	if len(d.Dirs) > 0 {
-		fmt.Fprintf(w, "\n  %s\n", pal.Header("DIRECTORY SIZES  ("+strings.Join(d.Roots, ", ")+")"))
-		var total int64
-		rows = [][]string{pal.Headers("SIZE", "DIRECTORY")}
-		for i, ds := range d.Dirs {
-			total += ds.KB
-			if i < 20 {
-				rows = append(rows, []string{disk.Human(ds.KB), ds.Path})
-			}
-		}
-		if len(d.Dirs) > 20 {
-			rows = append(rows, []string{"", pal.Paint(ui.Dim, fmt.Sprintf("... %d more", len(d.Dirs)-20))})
-		}
-		rows = append(rows, []string{pal.Paint(ui.Bold, disk.Human(total)), pal.Paint(ui.Bold, "total")})
-		for _, l := range ui.Table("  ", rows) {
-			fmt.Fprintln(w, l)
+	for _, tree := range d.Trees {
+		fmt.Fprintln(w)
+		for _, l := range diskTreeLines(d, tree, pal, 8, 2) {
+			fmt.Fprintln(w, "  "+l)
 		}
 	}
 	if d.Error != "" {

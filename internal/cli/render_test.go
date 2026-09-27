@@ -61,8 +61,22 @@ func exampleReport() *status.Report {
 				{Device: "/dev/mapper/vg_sap-usrsap", Mount: "/usr/sap", Path: "/usr/sap", SizeKB: 209612800, UsedKB: 86016000, AvailKB: 123596800, UsePct: 41},
 				{Device: "sapnfs:/export/sapmnt", Mount: "/sapmnt", Path: "/sapmnt", SizeKB: 52428800, UsedKB: 44040192, AvailKB: 8388608, UsePct: 84},
 			},
-			Dirs: []disk.DirSize{{Path: "/usr/sap/ABC", KB: 33554432}, {Path: "/sapmnt/ABC", KB: 12582912}, {Path: "/usr/sap/QAS", KB: 10485760},
-				{Path: "/sapmnt/QAS", KB: 9437184}, {Path: "/usr/sap/trans", KB: 1153433}, {Path: "/usr/sap/hostctrl", KB: 204800}, {Path: "/usr/sap/tmp", KB: 2048}},
+			Trees: []disk.Node{
+				{Path: "/usr/sap", Name: "/usr/sap", KB: 45400473, Children: []disk.Node{
+					{Path: "/usr/sap/ABC", Name: "ABC", KB: 33554432, Children: []disk.Node{
+						{Path: "/usr/sap/ABC/D00", Name: "D00", KB: 12582912}, {Path: "/usr/sap/ABC/SYS", Name: "SYS", KB: 8808038},
+						{Path: "/usr/sap/ABC/ASCS01", Name: "ASCS01", KB: 1258291}, {Path: "/usr/sap/ABC/home", Name: "home", KB: 20480}}},
+					{Path: "/usr/sap/QAS", Name: "QAS", KB: 10485760, Children: []disk.Node{
+						{Path: "/usr/sap/QAS/D11", Name: "D11", KB: 6291456}, {Path: "/usr/sap/QAS/ASCS10", Name: "ASCS10", KB: 1048576}}},
+					{Path: "/usr/sap/trans", Name: "trans", KB: 1153433, Children: []disk.Node{
+						{Path: "/usr/sap/trans/data", Name: "data", KB: 734003}, {Path: "/usr/sap/trans/cofiles", Name: "cofiles", KB: 20480}}},
+					{Path: "/usr/sap/hostctrl", Name: "hostctrl", KB: 204800},
+					{Path: "/usr/sap/tmp", Name: "tmp", KB: 2048}}},
+				{Path: "/sapmnt", Name: "/sapmnt", KB: 22020096, Children: []disk.Node{
+					{Path: "/sapmnt/ABC", Name: "ABC", KB: 12582912, Children: []disk.Node{
+						{Path: "/sapmnt/ABC/exe", Name: "exe", KB: 9437184}, {Path: "/sapmnt/ABC/exe_20260920", Name: "exe_20260920", KB: 3145728}}},
+					{Path: "/sapmnt/QAS", Name: "QAS", KB: 9437184}}},
+			},
 		},
 		Warnings: []string{"/usr/sap/sapservices: permission denied"},
 	}
@@ -77,7 +91,9 @@ func TestRenderStatus(t *testing.T) {
 		"Global Kernel Directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "Remote/Unknown", "SAP HANA (hdb)",
 		"755–758", "SAP Host Agent               (+) RUNNING · 722 Patch 65", "SYSTEM QAS · AS ABAP · Hostname sapci · (x) STOPPED (GRAY)",
 		"DISK", "/usr/sap  199.9 GB  82.0 GB  117.9 GB  41%   (+)", "/sapmnt   50.0 GB   42.0 GB  8.0 GB    84%   (~)",
-		"DIRECTORY SIZES  (/usr/sap, /sapmnt)", "32.0 GB   /usr/sap/ABC", "64.3 GB   total", "WARNINGS"} {
+		"/usr/sap  43.3 GB   (+) 117.9 GB free of 199.9 GB (41% used, /usr/sap)",
+		"|-- ABC            32.0 GB", "|   |-- D00            12.0 GB", "|   `-- home           20.0 MB", "`-- tmp            2.0 MB",
+		"/sapmnt  21.0 GB   (~) 8.0 GB free of 50.0 GB (84% used, /sapmnt)", "`-- QAS            9.0 GB", "WARNINGS"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}

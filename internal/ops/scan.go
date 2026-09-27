@@ -2,7 +2,6 @@ package ops
 
 import (
 	"context"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,8 +21,12 @@ var PrunePaths = []string{"/proc", "/sys", "/dev", "/run", "/boot", "/lost+found
 
 // pruneNames are directory names never descended into, wherever they are.
 var pruneNames = map[string]bool{"proc": true, "sys": true, "dev": true, "lost+found": true, ".snapshot": true,
-	"node_modules": true, ".git": true, "sapdata1": true, "sapdata2": true, "sapdata3": true, "sapdata4": true,
-	"origlogA": true, "origlogB": true, "mirrlogA": true, "mirrlogB": true, "oraarch": true, "saparch": true}
+	"node_modules": true, ".git": true, ".Trash": true, "Library": true, "sapdata1": true, "sapdata2": true, "sapdata3": true,
+	"sapdata4": true, "origlogA": true, "origlogB": true, "mirrlogA": true, "mirrlogB": true, "oraarch": true, "saparch": true}
+
+// ChangeTime returns a file's inode change time; tests replace it because
+// every file they create has today's change time.
+var ChangeTime = changeTime
 
 // ScanOptions controls FindTodaySARs.
 type ScanOptions struct {
@@ -36,16 +39,21 @@ type ScanOptions struct {
 
 // ScanResult is what the search found.
 type ScanResult struct {
-	Today      []SARFile // archives dated Day, apply order, one per file name
-	Older      int       // archives seen with another date
+	Today      []SARFile // archives placed or modified on Day, apply order, one per file name
+	Older      []SARFile // archives with another date, newest first
 	Duplicates []string  // names found in more than one place (the newest copy is kept)
 	Dirs       int       // directories visited
 	Roots      []string  // roots that existed and were searched
+	Unreadable int       // directories that could not be read (permissions)
+	UnreadEx   []string  // a few examples of unreadable directories
 }
 
-// FindTodaySARs walks the roots and returns *.SAR/*.sar files modified on
-// opts.Day. It never follows symlinks, skips system pseudo file systems and
-// the excluded subtrees, and stops descending at MaxDepth.
+// FindTodaySARs walks the roots and returns *.SAR/*.sar files placed on the
+// server on opts.Day: a file counts when its modification time OR its
+// change time (set when a file is copied here even if scp -p kept the old
+// modification time) falls on that day. Directory symlinks are followed
+// once, pseudo file systems and excluded subtrees are skipped, unreadable
+// directories are counted instead of aborting the scan.
 func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	roots := opts.Roots
 	if len(roots) == 0 {
@@ -56,9 +64,91 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		depth = 12
 	}
 	y, m, d := opts.Day.Date()
+	sameDay := func(t time.Time) bool {
+		ty, tm, td := t.Date()
+		return ty == y && tm == m && td == d
+	}
 	res := &ScanResult{}
 	byName := map[string]SARFile{}
+	var older []SARFile
+	visited := map[string]bool{} // real paths of directories already walked (symlink loops)
 	seenRoot := map[string]bool{}
+
+	var walk func(dir string, level int) error
+	walk = func(dir string, level int) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		real, err := filepath.EvalSymlinks(dir)
+		if err != nil {
+			return nil
+		}
+		if visited[real] {
+			return nil
+		}
+		visited[real] = true
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			res.Unreadable++
+			if len(res.UnreadEx) < 3 {
+				res.UnreadEx = append(res.UnreadEx, dir)
+			}
+			return nil
+		}
+		res.Dirs++
+		if opts.Progress != nil && res.Dirs%2000 == 0 {
+			opts.Progress(res.Dirs, dir)
+		}
+		for _, de := range entries {
+			path := filepath.Join(dir, de.Name())
+			isDir := de.IsDir()
+			if de.Type()&os.ModeSymlink != 0 { // follow links to directories, look at links to files
+				st, err := os.Stat(path)
+				if err != nil {
+					continue
+				}
+				isDir = st.IsDir()
+			}
+			if isDir {
+				if pruneNames[de.Name()] || excluded(path, PrunePaths) || excluded(path, opts.Exclude) || level+1 > depth {
+					continue
+				}
+				if err := walk(path, level+1); err != nil {
+					return err
+				}
+				continue
+			}
+			if !strings.EqualFold(filepath.Ext(de.Name()), ".sar") {
+				continue
+			}
+			info, err := os.Stat(path)
+			if err != nil || !info.Mode().IsRegular() {
+				continue
+			}
+			f, ok := ParseSARName(de.Name())
+			if !ok {
+				f = SARFile{Name: de.Name(), Component: "?", Label: "?"}
+			}
+			f.Path, f.Size, f.ModTime = path, info.Size(), info.ModTime()
+			placed := f.ModTime
+			if ct := ChangeTime(info); ct.After(placed) {
+				placed = ct
+			}
+			if !sameDay(f.ModTime) && !sameDay(placed) {
+				older = append(older, f)
+				continue
+			}
+			if prev, dup := byName[f.Name]; dup {
+				res.Duplicates = append(res.Duplicates, f.Name)
+				if !placed.After(prev.ModTime) {
+					continue
+				}
+			}
+			byName[f.Name] = f
+		}
+		return nil
+	}
+
 	for _, root := range roots {
 		root = filepath.Clean(root)
 		if seenRoot[root] {
@@ -70,62 +160,16 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 			continue
 		}
 		res.Roots = append(res.Roots, root)
-		rootDepth := strings.Count(root, string(filepath.Separator))
-		err = filepath.WalkDir(root, func(path string, de fs.DirEntry, werr error) error {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			if werr != nil {
-				return nil // unreadable entry: skip
-			}
-			if de.IsDir() {
-				if path != root && (pruneNames[de.Name()] || excluded(path, PrunePaths) || excluded(path, opts.Exclude) ||
-					strings.Count(path, string(filepath.Separator))-rootDepth > depth) {
-					return fs.SkipDir
-				}
-				res.Dirs++
-				if opts.Progress != nil && res.Dirs%2000 == 0 {
-					opts.Progress(res.Dirs, path)
-				}
-				return nil
-			}
-			if !de.Type().IsRegular() || !strings.EqualFold(filepath.Ext(de.Name()), ".sar") {
-				return nil
-			}
-			info, err := de.Info()
-			if err != nil {
-				return nil
-			}
-			fy, fm, fd := info.ModTime().Date()
-			if fy != y || fm != m || fd != d {
-				res.Older++
-				return nil
-			}
-			f, ok := ParseSARName(de.Name())
-			if !ok {
-				f = SARFile{Name: de.Name(), Component: "?"}
-			}
-			f.Path, f.Size, f.ModTime = path, info.Size(), info.ModTime()
-			if prev, dup := byName[f.Name]; dup {
-				res.Duplicates = append(res.Duplicates, f.Name)
-				if !f.ModTime.After(prev.ModTime) {
-					return nil
-				}
-			}
-			byName[f.Name] = f
-			return nil
-		})
-		if err != nil && err != ctx.Err() {
+		if err := walk(root, 0); err != nil {
 			return res, err
-		}
-		if ctx.Err() != nil {
-			return res, ctx.Err()
 		}
 	}
 	for _, f := range byName {
 		res.Today = append(res.Today, f)
 	}
 	SortForApply(res.Today)
+	sort.Slice(older, func(i, j int) bool { return older[i].ModTime.After(older[j].ModTime) })
+	res.Older = older
 	sort.Strings(res.Duplicates)
 	return res, nil
 }

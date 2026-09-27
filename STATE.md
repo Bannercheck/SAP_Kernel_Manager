@@ -29,6 +29,12 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı: disk kısmı **ağaç** olsun → `disk.Tree` (`du -k` tek geçiş, derinliğe göre süzme, gizli dizinler hariç); ana menüde
+  1 seviye (kök + en büyük 6 alt dizin, boş alan kök satırında), SAP Status'ta 2 seviye (SID → D00/SYS/ASCS…, düğüm başına 8).
+- 2026-09-27 · Kullanıcı: `/home/tcxxx` altındaki SAR bulunamıyordu. Nedenler ve düzeltmeler: (1) `<sid>adm` için 700'lük ev dizini okunamaz →
+  okunamayan dizinler sayılıp örnekleriyle ve "root ile çalıştırın" ipucuyla gösterilir; (2) `/home` symlink ise izlenmiyordu → dizin bağlantıları
+  izlenir (gerçek yol ile döngü koruması); (3) `scp -p`/sftp eski mtime'ı korur → mtime **veya ctime** bugünse "bugün konmuş" sayılır;
+  (4) bugünkü yoksa eski arşivler (en yeni önce) listelenir ve "bunları kullanayım mı?" sorulur; (5) demo modunda ev dizini de taranır.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

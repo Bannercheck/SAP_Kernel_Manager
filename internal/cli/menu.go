@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	osuser "os/user"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -144,37 +143,24 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 	return lines
 }
 
-// DiskLines renders "/usr/sap 42.1 GB used (ABC 31 GB · trans 1 GB) · ⬤ 118 GB free of 200 GB" per root.
+// DiskLines renders the disk part of the home screen: each SAP root as a
+// one-level tree with the free-space light on the root line.
 func DiskLines(d status.Disk, pal ui.Palette) []string {
 	if len(d.Roots) == 0 {
 		return nil
 	}
-	rows := [][]string{pal.Headers("DISK", "USED", "LARGEST", "FREE")}
-	for _, root := range d.Roots {
-		var used int64
-		var top []string
-		for _, ds := range d.Dirs {
-			if filepath.Dir(ds.Path) != root {
-				continue
-			}
-			used += ds.KB
-			if len(top) < 3 {
-				top = append(top, filepath.Base(ds.Path)+" "+disk.Human(ds.KB))
-			}
-		}
-		usedTxt := disk.Human(used)
-		if len(d.Dirs) == 0 {
-			usedTxt = pal.Paint(ui.Dim, "n/a")
-		}
-		free := pal.Paint(ui.Dim, "n/a")
+	lines := []string{pal.Header("DISK")}
+	if len(d.Trees) == 0 {
 		for _, fs := range d.Filesystems {
-			if fs.Path == root {
-				free = fmt.Sprintf("%s %s free of %s (%d%% used, %s)", pal.Light(freeColour(fs)), disk.Human(fs.AvailKB), disk.Human(fs.SizeKB), fs.UsePct, fs.Mount)
-			}
+			lines = append(lines, fmt.Sprintf("%s  %s %s free of %s (%d%% used, %s)", pal.Paint(ui.Bold, fs.Path),
+				pal.Light(freeColour(fs)), disk.Human(fs.AvailKB), disk.Human(fs.SizeKB), fs.UsePct, fs.Mount))
 		}
-		rows = append(rows, []string{root, usedTxt, strings.Join(top, " · "), free})
+		return lines
 	}
-	return ui.Table("", rows)
+	for _, tree := range d.Trees {
+		lines = append(lines, diskTreeLines(d, tree, pal, 6, 1)...)
+	}
+	return lines
 }
 
 // diskRoots returns the SAP trees to measure (the demo root in demo mode).

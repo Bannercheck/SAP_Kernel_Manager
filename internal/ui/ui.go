@@ -144,6 +144,31 @@ func (p Palette) Badge(c Colour, word string) string {
 	return p.BigLight(c) + " " + p.Paint(c, p.Paint(Bold, word))
 }
 
+// Branch returns the tree connector for a child: "├── " or "└── " (ASCII: "|-- " / "`-- ").
+func (p Palette) Branch(last bool) string {
+	if p.Unicode {
+		if last {
+			return "└── "
+		}
+		return "├── "
+	}
+	if last {
+		return "`-- "
+	}
+	return "|-- "
+}
+
+// Trunk returns the continuation for deeper levels: "│   " or "    ".
+func (p Palette) Trunk(last bool) string {
+	if last {
+		return "    "
+	}
+	if p.Unicode {
+		return "│   "
+	}
+	return "|   "
+}
+
 // Check is the "done" marker, Cross the "failed" marker.
 func (p Palette) Check() string {
 	if p.Unicode {

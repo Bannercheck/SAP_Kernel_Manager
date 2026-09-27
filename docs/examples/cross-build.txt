@@ -8,25 +8,25 @@ $ make cross
 $ ls -la dist dist/bin
   dist:
   total 13860
-  drwxr-xr-x 5 root root    4096 Sep 27 22:25 .
+  drwxr-xr-x 5 root root    4096 Sep 27 22:26 .
   drwxr-xr-x 9 root root    4096 Sep 27 21:15 ..
-  -rw-r--r-- 1 root root     541 Sep 27 22:26 SHA256SUMS
-  drwxr-xr-x 2 root root    4096 Sep 27 22:26 bin
-  drwxr-xr-x 3 root root    4096 Sep 27 22:25 kernelman
-  -rw-r--r-- 1 root root 8455691 Sep 27 22:25 kernelman-linux-aix.tar.gz
-  -rw-r--r-- 1 root root 5705493 Sep 27 22:25 kernelman-macos-demo.zip
-  -rwxr-xr-x 1 root root    1081 Sep 27 22:26 kernelman.sh
-  drwxr-xr-x 3 root root    4096 Sep 27 22:25 macos
+  -rw-r--r-- 1 root root     541 Sep 27 22:38 SHA256SUMS
+  drwxr-xr-x 2 root root    4096 Sep 27 22:38 bin
+  drwxr-xr-x 3 root root    4096 Sep 27 22:26 kernelman
+  -rw-r--r-- 1 root root 8455918 Sep 27 22:26 kernelman-linux-aix.tar.gz
+  -rw-r--r-- 1 root root 5705378 Sep 27 22:26 kernelman-macos-demo.zip
+  -rwxr-xr-x 1 root root    1081 Sep 27 22:38 kernelman.sh
+  drwxr-xr-x 3 root root    4096 Sep 27 22:26 macos
   
   dist/bin:
-  total 34620
-  drwxr-xr-x 2 root root    4096 Sep 27 22:26 .
-  drwxr-xr-x 5 root root    4096 Sep 27 22:25 ..
-  -rwxr-xr-x 1 root root 7890696 Sep 27 22:26 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 7112832 Sep 27 22:26 kernelman-darwin-amd64
-  -rwxr-xr-x 1 root root 6664642 Sep 27 22:26 kernelman-darwin-arm64
-  -rwxr-xr-x 1 root root 6942904 Sep 27 22:26 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 6815928 Sep 27 22:26 kernelman-linux-ppc64le
+  total 34688
+  drwxr-xr-x 2 root root    4096 Sep 27 22:38 .
+  drwxr-xr-x 5 root root    4096 Sep 27 22:26 ..
+  -rwxr-xr-x 1 root root 7907316 Sep 27 22:38 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 7129312 Sep 27 22:38 kernelman-darwin-amd64
+  -rwxr-xr-x 1 root root 6681266 Sep 27 22:38 kernelman-darwin-arm64
+  -rwxr-xr-x 1 root root 6963384 Sep 27 22:38 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 6815928 Sep 27 22:38 kernelman-linux-ppc64le
 
 $ file dist/bin/*
   dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped

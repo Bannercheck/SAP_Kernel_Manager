@@ -128,6 +128,70 @@ func ParseDU(out string) []DirSize {
 	return sizes
 }
 
+// Node is a directory with its cumulative size and its largest children.
+type Node struct {
+	Path     string `json:"path"`
+	Name     string `json:"name"`
+	KB       int64  `json:"kb"`
+	Children []Node `json:"children,omitempty"`
+}
+
+// Tree measures root with one `du -k` pass and keeps directories down to
+// maxDepth levels below root (children sorted by size, largest first).
+// Hidden directories (".kernelman", ".snapshot") are left out.
+func Tree(ctx context.Context, r exec.Runner, root string, maxDepth int) (*Node, error) {
+	root = filepath.Clean(root)
+	if _, err := os.Stat(root); err != nil {
+		return nil, err
+	}
+	res, err := r.Run(ctx, exec.Cmd{Path: "du", Args: []string{"-k", root}, Timeout: 15 * time.Minute})
+	if err != nil {
+		return nil, err
+	}
+	n := BuildTree(root, ParseDU(res.Stdout), maxDepth)
+	if n == nil {
+		return nil, fmt.Errorf("du -k %s: no output (%s)", root, strings.TrimSpace(res.Stderr))
+	}
+	return n, nil
+}
+
+// BuildTree turns `du -k` lines (every directory with its cumulative size)
+// into a tree rooted at root, maxDepth levels deep.
+func BuildTree(root string, sizes []DirSize, maxDepth int) *Node {
+	kb := map[string]int64{}
+	for _, d := range sizes {
+		kb[filepath.Clean(d.Path)] = d.KB
+	}
+	rootKB, ok := kb[root]
+	if !ok {
+		return nil
+	}
+	node := &Node{Path: root, Name: root, KB: rootKB}
+	var fill func(n *Node, depth int)
+	fill = func(n *Node, depth int) {
+		if depth >= maxDepth {
+			return
+		}
+		for p, size := range kb {
+			if filepath.Dir(p) != n.Path || p == n.Path || strings.HasPrefix(filepath.Base(p), ".") {
+				continue
+			}
+			n.Children = append(n.Children, Node{Path: p, Name: filepath.Base(p), KB: size})
+		}
+		sort.Slice(n.Children, func(i, j int) bool {
+			if n.Children[i].KB != n.Children[j].KB {
+				return n.Children[i].KB > n.Children[j].KB
+			}
+			return n.Children[i].Name < n.Children[j].Name
+		})
+		for i := range n.Children {
+			fill(&n.Children[i], depth+1)
+		}
+	}
+	fill(node, 0)
+	return node
+}
+
 // Human renders kilobytes as MB/GB/TB.
 func Human(kb int64) string {
 	switch {

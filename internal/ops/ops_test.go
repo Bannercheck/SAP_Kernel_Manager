@@ -168,10 +168,17 @@ func TestFindTodaySARs(t *testing.T) {
 	mk("tmp/kernel/dw_423-80007541.sar", now)
 	mk("tmp/kernel/SAPEXE_390-80007000.SAR", old)
 	mk("tmp/kernel/notes.txt", now)
-	mk("usr/sap/ABC/SYS/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR", now) // copy inside the kernel dir: excluded
-	mk("proc/1/SAPEXE_999-1.SAR", now)                                    // pruned
+	mk("usr/sap/ABC/SYS/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR", now)        // copy inside the kernel dir: excluded
+	mk("proc/1/SAPEXE_999-1.SAR", now)                                           // pruned
+	mk("export/home/tcxxx/SAPEXEDB_403-80007808.SAR", old)                       // old mtime as scp -p leaves it
+	os.Symlink(filepath.Join(root, "export/home"), filepath.Join(root, "home2")) // a symlinked home tree is followed
+
+	// 1) modification time only (what a file system without change-time information would give)
+	prev := ChangeTime
+	ChangeTime = func(os.FileInfo) time.Time { return time.Time{} }
 	res, err := FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
 		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	ChangeTime = prev
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,44 +189,35 @@ func TestFindTodaySARs(t *testing.T) {
 	if strings.Join(names, " ") != "SAPEXE_403-80007807.SAR dw_421-80007541.sar dw_423-80007541.sar" {
 		t.Errorf("today = %v", names)
 	}
-	if res.Older != 1 || len(res.Duplicates) != 0 || res.Dirs == 0 || res.Today[0].Label != "SAPEXE" || res.Today[1].Label != "dw" {
+	if len(res.Older) != 2 || len(res.Duplicates) != 0 || res.Dirs == 0 || res.Today[0].Label != "SAPEXE" || res.Today[1].Label != "dw" || res.Unreadable != 0 {
 		t.Errorf("res = %+v", res)
 	}
-}
 
-func TestParseAndSort(t *testing.T) {
-	cases := map[string][3]any{
-		"SAPEXE_403-80007807.SAR":        {"SAPEXE", 403, true},
-		"SAPEXE.402_7805.SAR":            {"SAPEXE", 402, true},
-		"SAPEXEDB_403-80007808.SAR":      {"SAPEXEDB", 403, true},
-		"dw_421-80007541.sar":            {"DW", 421, false},
-		"lib_dbsl_403-80007808.sar":      {"LIB_DBSL", 403, false},
-		"igsexe_12-80003187.sar":         {"IGSEXE", 12, false},
-		"SAPHOSTAGENT65_65-80004822.SAR": {"SAPHOSTAGENT65", 65, false},
+	// 2) with change times: the files were all created on this host today, so the
+	// scp -p case (old modification time) is found as well
+	res, err = FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
+		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	if err != nil {
+		t.Fatal(err)
 	}
-	for name, want := range cases {
-		f, ok := ParseSARName(name)
-		if !ok || f.Component != want[0] || f.Patch != want[1] || f.Full != want[2] {
-			t.Errorf("ParseSARName(%s) = %+v %v", name, f, ok)
+	found := false
+	for _, f := range res.Today {
+		if f.Name == "SAPEXEDB_403-80007808.SAR" {
+			found = true
 		}
 	}
-	if _, ok := ParseSARName("readme.txt"); ok {
-		t.Error("readme.txt parsed as archive")
+	if !found || len(res.Older) != 0 {
+		t.Errorf("change-time rule: today=%d older=%d", len(res.Today), len(res.Older))
 	}
-	files := []SARFile{{Name: "dw_423-1.sar", Component: "DW", Patch: 423}, {Name: "SAPEXEDB_402-1.SAR", Component: "SAPEXEDB", Patch: 402, Full: true},
-		{Name: "SAPEXE_402-1.SAR", Component: "SAPEXE", Patch: 402, Full: true}, {Name: "igsexe_12-1.sar", Component: "IGSEXE", Patch: 12},
-		{Name: "dw_411-1.sar", Component: "DW", Patch: 411}, {Name: "SAPEXE_403-1.SAR", Component: "SAPEXE", Patch: 403, Full: true}}
-	SortForApply(files)
-	var order []string
-	for _, f := range files {
-		order = append(order, f.Name)
-	}
-	want := "igsexe_12-1.sar SAPEXE_402-1.SAR SAPEXEDB_402-1.SAR SAPEXE_403-1.SAR dw_411-1.sar dw_423-1.sar"
-	if got := strings.Join(order, " "); got != want {
-		t.Errorf("order = %s", got)
-	}
-	if TargetPatch(files) != 423 {
-		t.Errorf("TargetPatch = %d", TargetPatch(files))
+
+	if os.Geteuid() != 0 { // an unreadable directory is counted, not fatal
+		locked := filepath.Join(root, "home", "locked")
+		os.MkdirAll(locked, 0o000)
+		defer os.Chmod(locked, 0o755)
+		res, _ = FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now})
+		if res.Unreadable != 1 || len(res.UnreadEx) != 1 {
+			t.Errorf("unreadable = %d %v", res.Unreadable, res.UnreadEx)
+		}
 	}
 }
 

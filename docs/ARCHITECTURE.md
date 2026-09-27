@@ -273,7 +273,7 @@ rollback tamam · `6` rollback başarısız (manuel) · `7` verify başarısız.
 | 1 | SAP Status | kernel, sapstartsrv/sapcontrol, SID, hostname, instance'lar (otomatik) | ışıklar |
 | 2 | Kernel Backup | **her kernel dizini** (DIR_CT_RUN + instance `exe` dizinleri) kendi yanına `<ad>_<YYYYMMDD>` olarak `cp -pR` (root ise `su - <sid>adm`); dosya sayısı karşılaştırılır | kısaltılmış `ls -la` + tam log |
 | 3 | Kernel Download | S-user ile SAP for Me girişi (form takipçisi, MFA kodu terminalden), Software Center araması, release/platform/DB'ye göre seçim (stack + üst yamalar), **Y** ile `/usr/sap/download`'a indirme (resume, SHA-256, SAR imza); yedek: Basket linkleri | öneri tablosu + indirme |
-| 4 | Kernel File Transfer | **tüm sunucu taranır** (`/`), bugün tarihli `*.SAR` bulunur → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
+| 4 | Kernel File Transfer | **tüm sunucu taranır** (`/`, dizin symlink'leri izlenir, okunamayanlar raporlanır), bugün konmuş (mtime veya ctime) `*.SAR` bulunur; yoksa eski arşivler teklif edilir → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
 | 5 | SAP Stop / Start | `K`: StopSystem ALL → WaitforStopped → StopService · `S`: StartService (sidadm) → StartSystem ALL → WaitforStarted | `[i/n]` adımlar + ışıklar |
 | 6 | Kernel Update | durmuş sistem + bugünkü yedek şart → her kernel dizininde `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) → chown → `saproot.sh` → `disp+work -V` → `1` ile başlat | önce/sonra sürüm |
 | 7 | Kernel Rollback | her dizinin son `<ad>_<date>` yedeği üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |

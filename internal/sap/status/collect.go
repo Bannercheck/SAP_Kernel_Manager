@@ -87,10 +87,12 @@ func collectDisk(ctx context.Context, r exec.Runner, opts Options) Disk {
 	}
 	d.Filesystems = fs
 	if opts.DirSizes {
-		if sizes, err := disk.DU(ctx, r, d.Roots...); err != nil {
-			d.Error = strings.TrimSpace(d.Error + " " + err.Error())
-		} else {
-			d.Dirs = sizes
+		for _, root := range d.Roots {
+			if n, err := disk.Tree(ctx, r, root, 2); err != nil {
+				d.Error = strings.TrimSpace(d.Error + " " + err.Error())
+			} else {
+				d.Trees = append(d.Trees, *n)
+			}
 		}
 	}
 	return d

@@ -26,7 +26,7 @@ type Report struct {
 type Disk struct {
 	Roots       []string          `json:"roots"`       // /usr/sap, /sapmnt (those that exist)
 	Filesystems []disk.Filesystem `json:"filesystems"` // free space per distinct mount
-	Dirs        []disk.DirSize    `json:"dirs"`        // sizes of the directories under the roots, largest first
+	Trees       []disk.Node       `json:"trees"`       // one size tree per root, two levels deep
 	Error       string            `json:"error,omitempty"`
 }
 

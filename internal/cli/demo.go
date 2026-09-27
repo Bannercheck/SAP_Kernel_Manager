@@ -39,6 +39,9 @@ func EnableDemo(root string) error {
 	demoRoot = root
 	defaultDownloadDir = layout.Download
 	scanRoots = []string{root}
+	if home, err := os.UserHomeDir(); err == nil && home != "" { // the demo also finds files you put in your home
+		scanRoots = append(scanRoots, home)
+	}
 	return nil
 }
 

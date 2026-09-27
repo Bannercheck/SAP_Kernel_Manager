@@ -31,3 +31,19 @@ func TestParseDU(t *testing.T) {
 		t.Errorf("Human: %s %s %s %s", Human(1048576), Human(20480), Human(512), Human(3<<30))
 	}
 }
+
+func TestBuildTree(t *testing.T) {
+	out := "8\t/usr/sap/ABC/D00/work\n12000000\t/usr/sap/ABC/D00\n1200000\t/usr/sap/ABC/ASCS01\n8400000\t/usr/sap/ABC/SYS\n" +
+		"33554432\t/usr/sap/ABC\n10485760\t/usr/sap/QAS\n1153433\t/usr/sap/trans\n40\t/usr/sap/.kernelman\n45193625\t/usr/sap\n"
+	n := BuildTree("/usr/sap", ParseDU(out), 2)
+	if n == nil || n.KB != 45193625 || len(n.Children) != 3 || n.Children[0].Name != "ABC" || n.Children[2].Name != "trans" {
+		t.Fatalf("tree = %+v", n)
+	}
+	abc := n.Children[0]
+	if len(abc.Children) != 3 || abc.Children[0].Name != "D00" || abc.Children[1].Name != "SYS" || len(abc.Children[0].Children) != 0 {
+		t.Errorf("ABC children = %+v", abc.Children)
+	}
+	if BuildTree("/nope", ParseDU(out), 1) != nil {
+		t.Error("unknown root must give nil")
+	}
+}
