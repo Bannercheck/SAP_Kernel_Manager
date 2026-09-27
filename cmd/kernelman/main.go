@@ -45,6 +45,9 @@ func run(args []string) int {
 		cli.Usage(os.Stderr)
 		return cli.ExitUsage
 	}
+	if !pal.Unicode {
+		cli.SetOutput(ui.ASCIIWriter(os.Stdout))
+	}
 	return cli.Dispatch(op, args[1:])
 }
 

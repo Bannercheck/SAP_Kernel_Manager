@@ -1,13 +1,13 @@
 $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K → M · q
-[1mKernelMan — SAP Kernel Manager[0m   [90mac9d5b7-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 23:32
+[1mKernelMan — SAP Kernel Manager[0m   [90md238c05-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:38
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [33m●[0m 28.6 GB free of 252.0 GB (23% used, /)
+  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [33m●[0m 28.5 GB free of 252.0 GB (24% used, /)
   ├── ABC            156 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -37,7 +37,7 @@ Select an operation (number or name, q to quit): 2
     ~/.kernelman/demo/ABC/ASCS01/exe  →  ~/.kernelman/demo/ABC/ASCS01/exe_20260927
 
   Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.6 GB[0m
+  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.5 GB[0m
   [2/11] Check ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m17 files, 627 B[0m
   [3/11] Copy to ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260927 ... [32mok[0m  [90mcp -pR[0m
   [4/11] Verify linuxx86_64_20260927 ... [32mok[0m  [90m17 files match[0m
@@ -47,63 +47,63 @@ Select an operation (number or name, q to quit): 2
   [8/11] Check ~/.kernelman/demo/ABC/ASCS01/exe ... [32mok[0m  [90m5 files, 195 B[0m
   [9/11] Copy to ~/.kernelman/demo/ABC/ASCS01/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
   [10/11] Verify exe_20260927 ... [32mok[0m  [90m5 files match[0m
-  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260927_233228.log ... [32mok[0m  [90m3 directories[0m
+  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260927_233806.log ... [32mok[0m  [90m3 directories[0m
 
   [36mBackup ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260927[0m
     total 76
-    drwxr-xr-x 2 root root 4096 Sep 27 23:32 .
-    drwxr-xr-x 4 root root 4096 Sep 27 23:32 ..
-    -rw-r--r-- 1 root root    3 Sep 27 23:32 .demo_patch
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 R3trans
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 SAPCAR
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 dbhdbslib.so
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 enq_replicator
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 enq_server
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 gwrd
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 icman
+    drwxr-xr-x 2 root root 4096 Sep 27 23:38 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:38 ..
+    -rw-r--r-- 1 root root    3 Sep 27 23:38 .demo_patch
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 R3trans
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 SAPCAR
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 dbhdbslib.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 enq_replicator
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 enq_server
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 gwrd
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 icman
     ... 8 more entries
 
 
   [36mBackup ~/.kernelman/demo/ABC/D00/exe_20260927[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 27 23:32 .
-    drwxr-xr-x 4 root root 4096 Sep 27 23:32 ..
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:38 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:38 ..
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapstartsrv
 
 
   [36mBackup ~/.kernelman/demo/ABC/ASCS01/exe_20260927[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 27 23:32 .
-    drwxr-xr-x 4 root root 4096 Sep 27 23:32 ..
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 27 23:32 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:38 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:38 ..
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 27 23:38 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 27 files, 1017 B
     [1m~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260927
     ~/.kernelman/demo/ABC/D00/exe_20260927
     ~/.kernelman/demo/ABC/ASCS01/exe_20260927[0m
-    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260927_233228.log
+    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260927_233806.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90mac9d5b7-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 23:32
+[1mKernelMan — SAP Kernel Manager[0m   [90md238c05-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:38
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.6 GB free of 252.0 GB (23% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.5 GB free of 252.0 GB (24% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -143,15 +143,15 @@ Select an operation (number or name, q to quit): 5
 --- SAP Stop / Start: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90mac9d5b7-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 23:32
+[1mKernelMan — SAP Kernel Manager[0m   [90md238c05-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:38
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [31m●[0m  ASCS01 [31m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.6 GB free of 252.0 GB (23% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.5 GB free of 252.0 GB (24% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB

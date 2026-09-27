@@ -62,6 +62,31 @@ func TestMenuMarksResults(t *testing.T) {
 	}
 }
 
+func TestMenuEscapeCancelsAndAsciiOutput(t *testing.T) {
+	summaryFunc = func(ui.Palette) []string { return []string{"(+) ABC  ABAP  running"} }
+	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
+	defer func() { summaryFunc = liveSummary }()
+
+	// Esc alone, Esc followed by N, an arrow key, then quit: nothing raw may reach the screen.
+	in := strings.NewReader("\x1b\n1\n\x1bn\n\x1b[Aq\n")
+	var out bytes.Buffer
+	if code := Menu(in, &out, ui.Palette{}); code != ExitOK {
+		t.Fatalf("exit code %d", code)
+	}
+	s := out.String()
+	if strings.Contains(s, "\x1b") || strings.Contains(s, "\x1bn") {
+		t.Errorf("escape bytes echoed to the terminal:\n%q", s)
+	}
+	for _, bad := range []string{"·", "→", "…", "›", "—"} {
+		if strings.Contains(s, bad) {
+			t.Errorf("Unicode glyph %q on a non-UTF-8 screen:\n%s", bad, s)
+		}
+	}
+	if !strings.Contains(s, "--- SAP Status: OK done") || !strings.Contains(s, "Hostname ") {
+		t.Errorf("status did not run or header missing:\n%s", s)
+	}
+}
+
 func TestMenuChoice(t *testing.T) {
 	for _, in := range []string{"1", "status", "SAP Status", "sap status"} {
 		if op, ok := menuChoice(in); !ok || op.ID != "status" {

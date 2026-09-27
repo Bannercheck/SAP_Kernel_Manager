@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -260,16 +259,11 @@ func collectItems(basket string, urls []string, yes bool) []download.Item {
 		return download.ParseBasket(string(b))
 	case "P":
 		fmt.Fprintln(stdout, "  Paste one link per line, finish with an empty line:")
-		sc := bufio.NewScanner(input)
 		var text strings.Builder
 		for {
 			fmt.Fprint(stdout, "  › ")
-			if !sc.Scan() {
-				break
-			}
-			line := strings.TrimSpace(sc.Text())
-			fmt.Fprintln(stdout, line)
-			if line == "" {
+			line, esc, err := readLine()
+			if line == "" || esc || err != nil {
 				break
 			}
 			text.WriteString(line + "\n")

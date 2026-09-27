@@ -456,3 +456,6 @@ func TestFlowShip(t *testing.T) {
 		"[3/5] Copy 4 archive(s) to app2:/usr/sap/download", "[4/5] Copy KernelMan to app2:/usr/sap/download/kernelman", "[5/5] Verify checksums on app2 ... ok  6 files match",
 		"── abcadm@app3 ──", "app2  ✔ sent", "app3  ✔ sent", "On each server: cd /usr/sap/download/kernelman && ./kernelman.sh", "8) ✔ Send to Other Servers")
 }
+
+// Transcripts must show the typed answers whether or not the test runs from a terminal.
+func init() { echoInput = true }

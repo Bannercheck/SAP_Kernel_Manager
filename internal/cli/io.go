@@ -27,9 +27,15 @@ var (
 	plat    platform.Platform
 	palette *ui.Palette
 	isRoot  = os.Geteuid() == 0
+	// echoInput repeats what was typed so transcripts (piped input) show the
+	// answers; a terminal already echoes, and raw input is never written back.
+	echoInput = !ui.IsTerminal(os.Stdin)
 	// defaultDownloadDir is offered when no download directory is remembered ("" = current directory).
 	defaultDownloadDir string
 )
+
+// SetOutput redirects every screen written by the operations (default os.Stdout).
+func SetOutput(w io.Writer) { stdout = w }
 
 func platformNow() platform.Platform {
 	if plat == nil {
@@ -55,17 +61,28 @@ var resolveTarget = func(ctx context.Context, sid string) (*system.Target, []str
 	return system.Resolve(ctx, runner, platformNow(), sid)
 }
 
-// ask prints a question and reads one line; empty input returns def.
+// readLine reads one typed line with control and escape bytes removed and
+// reports whether Esc was pressed. Only the cleaned text is ever echoed.
+func readLine() (line string, esc bool, err error) {
+	raw, err := input.ReadString('\n')
+	line, esc = ui.CleanInput(raw)
+	if echoInput {
+		fmt.Fprintln(stdout, line)
+	} else if esc || err == nil {
+		fmt.Fprintln(stdout) // the terminal echoed the keys; finish the line
+	}
+	return line, esc, err
+}
+
+// ask prints a question and reads one line; empty input or Esc returns def.
 func ask(question, def string) string {
 	if def != "" {
 		fmt.Fprintf(stdout, "%s [%s]: ", question, def)
 	} else {
 		fmt.Fprintf(stdout, "%s: ", question)
 	}
-	line, _ := input.ReadString('\n')
-	line = strings.TrimSpace(line)
-	fmt.Fprintln(stdout, line)
-	if line == "" {
+	line, esc, _ := readLine()
+	if line == "" || esc {
 		return def
 	}
 	return line
@@ -79,7 +96,8 @@ type choice struct {
 }
 
 // choose shows the keys inline, e.g. "[Y] Yes  [N] No  ›", and reads until
-// one is pressed (letters, case-insensitive; Enter alone re-asks).
+// one is pressed (letters, case-insensitive; Enter alone re-asks; Esc takes
+// the cancelling option: No, else Main menu, else the last one).
 func choose(question string, opts ...choice) string {
 	pal := currentPalette()
 	for {
@@ -93,9 +111,11 @@ func choose(question string, opts ...choice) string {
 			fmt.Fprint(stdout, "\n  ")
 		}
 		fmt.Fprintf(stdout, "%s  %s ", strings.Join(parts, "  "), pal.Paint(ui.Dim, "›"))
-		line, err := input.ReadString('\n')
-		in := strings.ToLower(strings.TrimSpace(line))
-		fmt.Fprintln(stdout, in)
+		line, esc, err := readLine()
+		in := strings.ToLower(line)
+		if esc {
+			return cancelKey(opts)
+		}
 		for _, o := range opts {
 			if in == strings.ToLower(o.Key) {
 				return o.Key
@@ -110,6 +130,18 @@ func choose(question string, opts ...choice) string {
 			return opts[len(opts)-1].Key
 		}
 	}
+}
+
+// cancelKey is the option Esc selects.
+func cancelKey(opts []choice) string {
+	for _, k := range []string{"N", "M"} {
+		for _, o := range opts {
+			if o.Key == k {
+				return k
+			}
+		}
+	}
+	return opts[len(opts)-1].Key
 }
 
 var (

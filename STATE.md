@@ -41,6 +41,10 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   izlenir (gerçek yol ile döngü koruması); (3) demo modunda ev dizini de taranır.
 - 2026-09-27 · Kullanıcı: **yalnızca bugün tarihli** (mtime) dosyalar; ctime kuralı ve "eski arşivleri kullanayım mı?" teklifi geri alındı.
   Eskiler sadece sayı olarak raporlanır; eski bir dosya `touch` ile bugüne alınabilir (ekranda ipucu).
+- 2026-09-27 · Kullanıcı: "İptal/N'ye basınca terminal bozuk karakterlere dönüyor". Neden: Esc tuşu (`\x1b`) satırla
+  birlikte okunup ekrana **ham** geri yazılıyordu; `ESC n` terminalin karakter setini değiştirir (LS2). Çözüm: `ui.CleanInput`
+  (kaçış/kontrol baytları atılır, Esc = iptal → N / M), TTY'de girdi tekrar yazdırılmaz (`echoInput`), UTF-8 olmayan
+  terminallerde süs karakterleri (`· → … › —` ve ağaç/ışık glifleri) `ui.ASCIIWriter` ile ASCII'ye çevrilir.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

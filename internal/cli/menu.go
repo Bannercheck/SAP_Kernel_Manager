@@ -25,6 +25,9 @@ var summaryFunc = liveSummary
 // are read from in so the menu can be driven by tests and transcripts.
 func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 	rd := bufio.NewReader(in)
+	if !pal.Unicode {
+		out = ui.ASCIIWriter(out) // non-UTF-8 terminal: no mojibake from decorative glyphs
+	}
 	prevIn, prevOut, prevPal := input, stdout, palette
 	input, stdout, palette = rd, out, &pal
 	defer func() { input, stdout, palette = prevIn, prevOut, prevPal }()
@@ -33,13 +36,10 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 	for {
 		printMenu(out, pal, results, summary)
 		fmt.Fprint(out, "Select an operation (number or name, q to quit): ")
-		line, err := rd.ReadString('\n')
-		choice := strings.TrimSpace(line)
+		choice, _, err := readLine()
 		if err != nil && choice == "" {
-			fmt.Fprintln(out)
 			return ExitOK
 		}
-		fmt.Fprintln(out, choice)
 		switch strings.ToLower(choice) {
 		case "q", "quit", "exit", "0":
 			return ExitOK
