@@ -13,7 +13,7 @@ TARGETS := linux/amd64 linux/ppc64le aix/ppc64
 # developer/demo targets (no SAP, `kernelman demo` only)
 DEV_TARGETS := darwin/arm64 darwin/amd64
 
-.PHONY: build check test vet fmt cross clean examples macos
+.PHONY: build check test vet fmt cross clean examples macos package
 
 build:
 	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/kernelman
@@ -53,6 +53,13 @@ examples: build
 	@{ echo '$$ make cross'; $(MAKE) -s cross 2>&1 | sed 's/^/  /'; echo; echo '$$ ls -la dist dist/bin'; ls -la dist dist/bin | sed 's/^/  /'; echo; echo '$$ file dist/bin/*'; file dist/bin/* | sed 's/,.*//;s/^/  /'; } > docs/examples/cross-build.txt
 	@for f in docs/examples/*.txt; do python3 scripts/screen2png.py $$f $${f%.txt}.png "$(BIN) — $$(basename $${f%.txt})" >/dev/null || exit 1; done
 	@ls docs/examples/*.png
+
+# Server package for Linux/AIX: launcher + binaries + checksums, as tar.gz (AIX has tar/gzip, not always unzip)
+package: cross
+	@rm -rf dist/kernelman && mkdir -p dist/kernelman/bin
+	@cp dist/bin/$(BIN)-linux-* dist/bin/$(BIN)-aix-* dist/kernelman/bin/ && cp scripts/kernelman.sh dist/kernelman/ && cp README.md dist/kernelman/
+	@cd dist/kernelman && sha256sum bin/* kernelman.sh > SHA256SUMS
+	@cd dist && rm -f kernelman-$(VERSION).tar.gz && tar czf kernelman-$(VERSION).tar.gz kernelman && ls -la kernelman-$(VERSION).tar.gz
 
 # macOS demo package: launcher + darwin binaries + Turkish quick start
 macos: cross
