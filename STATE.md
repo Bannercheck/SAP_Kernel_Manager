@@ -29,6 +29,11 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı: diğer sunuculara kopyalama + KernelMan'in kendisi de gitsin → menü 8 **Send to Other Servers** (`internal/ship`):
+  bugünkü SAR'lar + KernelMan dağıtımı (`kernelman.sh` + `bin/*`; `os.Executable()` ile bulunur, dağıtım klasöründen çalışmıyorsa gömülü
+  başlatıcı + çalışan binary'den geçici olarak derlenir) → `ssh mkdir -p`, `scp -pr`, `chmod`, iki tarafta `cksum` karşılaştırması, uzak `ls -la`.
+  Hedef `/usr/sap/download` (arşivler) ve `/usr/sap/download/kernelman` (program). ssh anahtarı yoksa parolayı ssh sorar. Host başına sonuç tablosu.
+  Başlatıcının tek kaynağı artık `internal/ship/kernelman.sh` (Makefile oradan kopyalar).
 - 2026-09-27 · Kullanıcı: disk kısmı **ağaç** olsun → `disk.Tree` (`du -k` tek geçiş, derinliğe göre süzme, gizli dizinler hariç); ana menüde
   1 seviye (kök + en büyük 6 alt dizin, boş alan kök satırında), SAP Status'ta 2 seviye (SID → D00/SYS/ASCS…, düğüm başına 8).
 - 2026-09-27 · Kullanıcı: `/home/tcxxx` altındaki SAR bulunamıyordu. Nedenler ve düzeltmeler: (1) `<sid>adm` için 700'lük ev dizini okunamaz →
@@ -49,7 +54,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   desteklediği yol), `.part` ile kaldığı yerden devam, yeniden deneme, SHA-256, "CAR 2." imza kontrolü, HTML dönerse (MFA/yetki) açık hata.
   Hedef `/usr/sap/download` → dosyalar bugün tarihli olur, Kernel File Transfer bulur. **Software Center araması yok**: SAML + MFA tarayıcı
   oturumu gerektirir, buradan doğrulanamaz; ileride `community.sap_launchpad` akışı örnek alınabilir.
-- 2026-09-27 · Menü numaraları: 1 Status · 2 Backup · 3 Download · 4 File Transfer · 5 Stop/Start · 6 Update · 7 Rollback.
+- 2026-09-27 · Menü numaraları: 1 Status · 2 Backup · 3 Download · 4 File Transfer · 5 Stop/Start · 6 Update · 7 Rollback · 8 Send to Other Servers.
 - 2026-09-27 · Kullanıcı (4. tur): **disk bölümü** — ana menüde `/usr/sap` ve `/sapmnt` için kullanılan alan (en büyük 3 alt dizinle) + boş alan ışığı
   (yeşil >%20, sarı >%10, kırmızı); SAP Status'ta `df -Pk` tablosu + `du -sk` dizin boyutları (en büyük 20 + toplam). Kernel Backup öncesi
   "Check free space" adımı (mount başına gereken + %10 pay). `internal/disk` paketi (Linux/AIX uyumlu `df -Pk`, `du -sk`).

@@ -3,7 +3,8 @@
 SAP NetWeaver / S/4HANA kernel güncellemesini Linux ve AIX üzerinde menüden adım adım yapan tek binary konsol aracı:
 **1** SAP Status · **2** Kernel Backup (her kernel dizini kendi yanına `<ad>_<tarih>`) · **3** Kernel Download (isteğe bağlı, internet ister; S-user ile SAP Software Center'da bu kernel'in
 arşivlerini bulur, onayınızla `/usr/sap/download`'a indirir; MFA kodu terminalden sorulur) · **4** Kernel File Transfer (tüm sunucuda bugün tarihli SAR'ları bulur) · **5** SAP Stop/Start ·
-**6** Kernel Update (tüm kernel dizinlerinde patch sırasıyla `SAPCAR -xvf`, chown, saproot.sh, doğrulama) · **7** Kernel Rollback.
+**6** Kernel Update (tüm kernel dizinlerinde patch sırasıyla `SAPCAR -xvf`, chown, saproot.sh, doğrulama) · **7** Kernel Rollback ·
+**8** Send to Other Servers (bugünkü SAR'lar + KernelMan'in kendisi `scp` ile diğer hostlara, `cksum` doğrulamalı).
 Sorular tuşla cevaplanır: `Y`/`N`, `S`/`K`, `M` ana menü.
 
 - Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
@@ -27,6 +28,7 @@ cd /usr/sap && ./kernelman.sh      # root veya <sid>adm; argümansız = menü
 ./kernelman.sh download                                      # S-user sorulur, arşivler bulunur, Y ile indirilir
 ./kernelman.sh download --basket ~/DownloadBasket.txt        # yedek yol: Download Basket dışa aktarımı
 ./kernelman.sh files --yes && ./kernelman.sh update --yes --start   # --from DIR ile tarama tek dizine daraltılır
+./kernelman.sh ship --hosts app2,app3 --yes                  # arşivler + KernelMan → /usr/sap/download (ssh/scp)
 ```
 
 `<sid>adm` ile çalıştırmak yeterlidir (dosyalar zaten `<sid>adm:sapsys` olur). Root ile çalıştırılırsa dosya işlemleri ve sapcontrol

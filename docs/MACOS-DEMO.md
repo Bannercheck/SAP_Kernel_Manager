@@ -16,7 +16,7 @@ chmod +x kernelman.sh bin/*
 Deneme sırası (sorulara tuşla cevap verilir: `Y` evet, `N` hayır, `M` ana menü; Enter tek başına seçim yapmaz):
 **1** SAP Status → **2** Kernel Backup (`Y`) → **4** Kernel File Transfer (sunucuyu kendisi tarar, `Y`)
 → **5** SAP Stop/Start (`K` durdur) → **6** Kernel Update (`Y` onay, sonra `Y` başlat) → **7** Kernel Rollback (`Y` durdur, `Y` onay).
-**3** Kernel Download isteğe bağlıdır: gerçek S-user ve SAP erişimi ister; erişim yoksa kendisi söyler ve geri döner.
+**8** Send to Other Servers gerçek ssh/scp ister. **3** Kernel Download isteğe bağlıdır: gerçek S-user ve SAP erişimi ister; erişim yoksa kendisi söyler ve geri döner.
 
 Sonuçları dosya sisteminde görebilirsiniz:
 

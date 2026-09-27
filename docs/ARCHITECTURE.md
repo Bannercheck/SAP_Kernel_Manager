@@ -276,6 +276,7 @@ rollback tamam · `6` rollback başarısız (manuel) · `7` verify başarısız.
 | 4 | Kernel File Transfer | **tüm sunucu taranır** (`/`, dizin symlink'leri izlenir, okunamayanlar raporlanır), bugün konmuş (mtime veya ctime) `*.SAR` bulunur; yoksa eski arşivler teklif edilir → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
 | 5 | SAP Stop / Start | `K`: StopSystem ALL → WaitforStopped → StopService · `S`: StartService (sidadm) → StartSystem ALL → WaitforStarted | `[i/n]` adımlar + ışıklar |
 | 6 | Kernel Update | durmuş sistem + bugünkü yedek şart → her kernel dizininde `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) → chown → `saproot.sh` → `disp+work -V` → `1` ile başlat | önce/sonra sürüm |
+| 8 | Send to Other Servers | bugünkü SAR'lar + KernelMan dağıtımı (`kernelman.sh`, `bin/*`) `scp -pr` ile hedeflere; `cksum` doğrulaması; hedefte `/usr/sap/download/kernelman/kernelman.sh` | host başına sonuç |
 | 7 | Kernel Rollback | her dizinin son `<ad>_<date>` yedeği üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |
 
 Sıralama kuralı: patch numarası artan; aynı seviyede SAPEXE → SAPEXEDB → tek bileşen yamaları. Böylece son hotfix (örn. `dw_423`)

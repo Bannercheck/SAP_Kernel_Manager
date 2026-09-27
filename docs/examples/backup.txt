@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 22:38
+  Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -25,6 +25,7 @@ $ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
    5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
+   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): 2
@@ -32,71 +33,71 @@ Select an operation (number or name, q to quit): 2
 [1m=== Kernel Backup ===[0m
   System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
   Kernel directories:
-    /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe
+    /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe
 
   [36mKernel directories → backups[0m
-    /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64  →  /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe  →  /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe_20260927
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe  →  /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe_20260927
+    /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64  →  /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe  →  /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe_20260927
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe  →  /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe_20260927
 
   Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
   [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.6 GB[0m
-  [2/11] Check /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
-  [3/11] Copy to /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927 ... [32mok[0m  [90mcp -pR[0m
+  [2/11] Check /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
+  [3/11] Copy to /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927 ... [32mok[0m  [90mcp -pR[0m
   [4/11] Verify linuxx86_64_20260927 ... [32mok[0m  [90m9 files match[0m
-  [5/11] Check /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe ... [32mok[0m  [90m3 files, 51 B[0m
-  [6/11] Copy to /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
+  [5/11] Check /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe ... [32mok[0m  [90m3 files, 51 B[0m
+  [6/11] Copy to /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
   [7/11] Verify exe_20260927 ... [32mok[0m  [90m3 files match[0m
-  [8/11] Check /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m3 files, 51 B[0m
-  [9/11] Copy to /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
+  [8/11] Check /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m3 files, 51 B[0m
+  [9/11] Copy to /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
   [10/11] Verify exe_20260927 ... [32mok[0m  [90m3 files match[0m
-  [11/11] Write listing /tmp/TestFlowBackup3356785916/001/state/backup_20260927_223834.log ... [32mok[0m  [90m3 directories[0m
+  [11/11] Write listing /tmp/TestFlowBackup3381447687/001/state/backup_20260927_231031.log ... [32mok[0m  [90m3 directories[0m
 
-  [36mBackup /tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927[0m
+  [36mBackup /tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927[0m
     total 44
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 SAPCAR
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 gwrd
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 icman
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 libsapu16.so
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 msg_server
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapcpe
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 saproot.sh
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 SAPCAR
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 gwrd
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 icman
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 libsapu16.so
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 msg_server
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapcpe
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 saproot.sh
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapstartsrv
 
 
-  [36mBackup /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe_20260927[0m
+  [36mBackup /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe_20260927[0m
     total 20
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapcontrol
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapstartsrv
 
 
-  [36mBackup /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe_20260927[0m
+  [36mBackup /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe_20260927[0m
     total 20
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 27 22:38 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapcontrol
+    -rwxr-xr-x 1 root root   17 Sep 27 23:10 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 15 files, 255 B
-    [1m/tmp/TestFlowBackup3356785916/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/D00/exe_20260927
-    /tmp/TestFlowBackup3356785916/001/usr/sap/ABC/ASCS01/exe_20260927[0m
-    full listings: /tmp/TestFlowBackup3356785916/001/state/backup_20260927_223834.log
+    [1m/tmp/TestFlowBackup3381447687/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/D00/exe_20260927
+    /tmp/TestFlowBackup3381447687/001/usr/sap/ABC/ASCS01/exe_20260927[0m
+    full listings: /tmp/TestFlowBackup3381447687/001/state/backup_20260927_231031.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 22:38
+  Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -121,6 +122,7 @@ Select an operation (number or name, q to quit): 2
    5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
+   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): q

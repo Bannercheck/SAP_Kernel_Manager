@@ -54,13 +54,18 @@ func (e *Env) asAdm() string {
 	return ""
 }
 
-// step runs fn as numbered step i of n and reports the outcome.
-func (e *Env) step(i, n int, title string, fn func() (string, error)) error {
+// Step runs fn as numbered step i of n and reports the outcome through Pr.
+func (e *Env) Step(i, n int, title string, fn func() (string, error)) error {
 	e.Pr.Begin(i, n, title)
 	start := e.now()
 	detail, err := fn()
 	e.Pr.End(err, detail, e.now().Sub(start))
 	return err
+}
+
+// step is the internal alias of Step.
+func (e *Env) step(i, n int, title string, fn func() (string, error)) error {
+	return e.Step(i, n, title, fn)
 }
 
 // run executes a command and turns a non-zero exit into an error.

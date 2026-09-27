@@ -1,4 +1,4 @@
-$ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
+$ ./kernelman.sh              # menü · 8 ⏎ y ⏎ app2, app3 ⏎  ⏎  ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
   Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
@@ -28,29 +28,72 @@ $ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
-Select an operation (number or name, q to quit): 5
+Select an operation (number or name, q to quit): 8
 
-[1m=== SAP Stop / Start ===[0m
+[1m=== Send to Other Servers ===[0m
   System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
   Kernel directories:
-    /tmp/TestFlowStop2746215659/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
-    /tmp/TestFlowStop2746215659/001/usr/sap/ABC/D00/exe
-    /tmp/TestFlowStop2746215659/001/usr/sap/ABC/ASCS01/exe
+    /tmp/TestFlowShip3357450126/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /tmp/TestFlowShip3357450126/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowShip3357450126/001/usr/sap/ABC/ASCS01/exe
 
-  [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
+  [90mscanning /tmp/TestFlowShip3357450126/001 for .SAR files placed here today (2026-09-27); system directories, kernel directories and backups are skipped[0m
+  [90m12 directories scanned[0m
 
-  [1m[S][0m Start SAP  [1m[K][0m Stop SAP (Kapat)  [1m[M][0m Main menu  [90m›[0m k
+  [36mArchives dated today, in apply order (lowest patch first)[0m
+    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mMODIFIED[0m[0m          [36m[1mFOUND IN[0m[0m
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
+    → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
-  [1mSAP Stop ABC[0m
-  [1/5] StopSystem ALL ... [32mok[0m  [90minstance 00[0m
-  [2/5] WaitforStopped D00 (00) ... [32mok[0m  [90mall processes GRAY[0m
-  [3/5] WaitforStopped ASCS01 (01) ... [32mok[0m  [90mall processes GRAY[0m
-  [4/5] StopService D00 (00) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [5/5] StopService ASCS01 (01) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [32m✔[0m system ABC stopped
-  [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
 
---- SAP Stop / Start: [32m✔[0m [32mdone[0m
+  Include these 4 archive(s) in the shipment?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
+Target servers (comma or space separated): app2, app3
+Remote login [abcadm]: 
+Remote directory [/usr/sap/download]: 
+
+  [36m[1mShipment[0m[0m
+    archives   4 file(s)
+    program    /tmp/TestFlowShip3357450126/002/kernelman (2 files)
+    to         abcadm@{app2,app3}:/usr/sap/download
+    [90mssh keys are used when set up; otherwise ssh asks for the password of each host[0m
+
+
+  Send to 2 server(s)?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
+  [90m── abcadm@app2 ──[0m
+  [1/5] Connect to app2 ... [32mok[0m  [90mLinux app2[0m
+  [2/5] Create /usr/sap/download on app2 ... [32mok[0m  [90mmkdir -p[0m
+  [3/5] Copy 4 archive(s) to app2:/usr/sap/download ... [32mok[0m  [90mscp -p[0m
+  [4/5] Copy KernelMan to app2:/usr/sap/download/kernelman ... [32mok[0m  [90mscp -pr[0m
+  [5/5] Verify checksums on app2 ... [32mok[0m  [90m6 files match[0m
+  [90m── abcadm@app3 ──[0m
+  [1/5] Connect to app3 ... [32mok[0m  [90mLinux app3[0m
+  [2/5] Create /usr/sap/download on app3 ... [32mok[0m  [90mmkdir -p[0m
+  [3/5] Copy 4 archive(s) to app3:/usr/sap/download ... [32mok[0m  [90mscp -p[0m
+  [4/5] Copy KernelMan to app3:/usr/sap/download/kernelman ... [32mok[0m  [90mscp -pr[0m
+  [5/5] Verify checksums on app3 ... [32mok[0m  [90m6 files match[0m
+
+  [36mapp2:/usr/sap/download[0m
+    total 8
+    drwxr-xr-x 3 abcadm sapsys 4096 Sep 27 22:40 kernelman
+    -rw-r--r-- 1 abcadm sapsys 4096 Sep 27 22:40 SAPEXE_403-80007807.SAR
+
+
+  [36mapp3:/usr/sap/download[0m
+    total 8
+    drwxr-xr-x 3 abcadm sapsys 4096 Sep 27 22:40 kernelman
+    -rw-r--r-- 1 abcadm sapsys 4096 Sep 27 22:40 SAPEXE_403-80007807.SAR
+
+    [36m[1mHOST[0m[0m  [36m[1mRESULT[0m[0m  [36m[1mVERIFIED[0m[0m  [36m[1mTIME[0m[0m
+    app2  [32m✔[0m sent  6 files   0s
+    app3  [32m✔[0m sent  6 files   0s
+
+  On each server: cd /usr/sap/download/kernelman && ./kernelman.sh
+  [32m✔[0m 2 server(s) ready: archives dated today under /usr/sap/download, KernelMan under /usr/sap/download/kernelman
+
+--- Send to Other Servers: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
@@ -76,10 +119,10 @@ Select an operation (number or name, q to quit): 5
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5) [32m✔[0m SAP Stop / Start      [90mS = start the system, K = stop it[0m
+   5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
-   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
+   8) [32m✔[0m Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): q

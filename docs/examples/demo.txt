@@ -1,6 +1,6 @@
 $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K → M · q
-[1mKernelMan — SAP Kernel Manager[0m   [90m0b9410b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 22:38
+[1mKernelMan — SAP Kernel Manager[0m   [90ma65461b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
@@ -19,6 +19,7 @@ $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K �
    5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
+   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): 2
@@ -46,56 +47,56 @@ Select an operation (number or name, q to quit): 2
   [8/11] Check ~/.kernelman/demo/ABC/ASCS01/exe ... [32mok[0m  [90m5 files, 195 B[0m
   [9/11] Copy to ~/.kernelman/demo/ABC/ASCS01/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
   [10/11] Verify exe_20260927 ... [32mok[0m  [90m5 files match[0m
-  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260927_223834.log ... [32mok[0m  [90m3 directories[0m
+  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260927_231031.log ... [32mok[0m  [90m3 directories[0m
 
   [36mBackup ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260927[0m
     total 76
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rw-r--r-- 1 root root    3 Sep 27 22:38 .demo_patch
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 R3trans
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 SAPCAR
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 dbhdbslib.so
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 enq_replicator
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 enq_server
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 gwrd
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 icman
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rw-r--r-- 1 root root    3 Sep 27 23:10 .demo_patch
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 R3trans
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 SAPCAR
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 dbhdbslib.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 enq_replicator
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 enq_server
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 gwrd
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 icman
     ... 8 more entries
 
 
   [36mBackup ~/.kernelman/demo/ABC/D00/exe_20260927[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapstartsrv
 
 
   [36mBackup ~/.kernelman/demo/ABC/ASCS01/exe_20260927[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 27 22:38 .
-    drwxr-xr-x 4 root root 4096 Sep 27 22:38 ..
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 27 22:38 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 23:10 .
+    drwxr-xr-x 4 root root 4096 Sep 27 23:10 ..
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 27 23:10 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 27 files, 1017 B
     [1m~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260927
     ~/.kernelman/demo/ABC/D00/exe_20260927
     ~/.kernelman/demo/ABC/ASCS01/exe_20260927[0m
-    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260927_223834.log
+    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260927_231031.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90m0b9410b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 22:38
+[1mKernelMan — SAP Kernel Manager[0m   [90ma65461b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
@@ -114,6 +115,7 @@ Select an operation (number or name, q to quit): 2
    5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
+   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): 5
@@ -141,8 +143,8 @@ Select an operation (number or name, q to quit): 5
 --- SAP Stop / Start: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90m0b9410b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 22:38
+[1mKernelMan — SAP Kernel Manager[0m   [90ma65461b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 23:10
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [31m●[0m  ASCS01 [31m●[0m
@@ -161,6 +163,7 @@ Select an operation (number or name, q to quit): 5
    5) [32m✔[0m SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
+   8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): q

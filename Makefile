@@ -38,7 +38,7 @@ cross:
 	  out=dist/bin/$(BIN)-$$os-$$arch$$ext; echo "  $$out"; \
 	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/kernelman || exit 1; \
 	done
-	@cp scripts/kernelman.sh dist/ && chmod +x dist/kernelman.sh dist/bin/*
+	@cp internal/ship/kernelman.sh dist/ && chmod +x dist/kernelman.sh dist/bin/*
 	@cd dist && sha256sum bin/* kernelman.sh > SHA256SUMS
 
 # Regenerate docs/examples/*.txt transcripts and *.png screenshots.
@@ -57,14 +57,14 @@ examples: build
 # Server package for Linux/AIX: launcher + binaries + checksums, as tar.gz (AIX has tar/gzip, not always unzip)
 package: cross
 	@rm -rf dist/kernelman && mkdir -p dist/kernelman/bin
-	@cp dist/bin/$(BIN)-linux-* dist/bin/$(BIN)-aix-* dist/kernelman/bin/ && cp scripts/kernelman.sh dist/kernelman/ && cp README.md dist/kernelman/
+	@cp dist/bin/$(BIN)-linux-* dist/bin/$(BIN)-aix-* dist/kernelman/bin/ && cp internal/ship/kernelman.sh dist/kernelman/ && cp README.md dist/kernelman/
 	@cd dist/kernelman && sha256sum bin/* kernelman.sh > SHA256SUMS
 	@cd dist && rm -f kernelman-$(VERSION).tar.gz && tar czf kernelman-$(VERSION).tar.gz kernelman && ls -la kernelman-$(VERSION).tar.gz
 
 # macOS demo package: launcher + darwin binaries + Turkish quick start
 macos: cross
 	@rm -rf dist/macos && mkdir -p dist/macos/bin
-	@cp dist/bin/$(BIN)-darwin-* dist/macos/bin/ && cp scripts/kernelman.sh dist/macos/ && cp docs/MACOS-DEMO.md dist/macos/README.md
+	@cp dist/bin/$(BIN)-darwin-* dist/macos/bin/ && cp internal/ship/kernelman.sh dist/macos/ && cp docs/MACOS-DEMO.md dist/macos/README.md
 	@cd dist && rm -f kernelman-macos-demo.zip && zip -qr kernelman-macos-demo.zip macos && ls -la kernelman-macos-demo.zip
 
 clean:

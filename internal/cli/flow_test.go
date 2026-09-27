@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ship"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/swdc"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
@@ -29,7 +31,7 @@ type router struct {
 	real exec.Runner
 }
 
-var fakeBins = map[string]bool{"sapcontrol": true, "SAPCAR": true, "disp+work": true, "saphostctrl": true, "saphostexec": true}
+var fakeBins = map[string]bool{"sapcontrol": true, "SAPCAR": true, "disp+work": true, "saphostctrl": true, "saphostexec": true, "ssh": true, "scp": true}
 
 func (r router) Run(ctx context.Context, c exec.Cmd) (exec.Result, error) {
 	if fakeBins[filepath.Base(c.Path)] {
@@ -402,4 +404,56 @@ func TestDownloadOffline(t *testing.T) {
 	if strings.Contains(out, "S-user:") {
 		t.Error("credentials must not be asked when offline")
 	}
+}
+
+// TestFlowShip sends today's archives and a KernelMan distribution to two
+// hosts; ssh/scp are faked, cksum runs for real on the local files.
+func TestFlowShip(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	// a dist layout to ship: <dir>/kernelman.sh + <dir>/bin/kernelman-linux-amd64
+	dist := filepath.Join(t.TempDir(), "kernelman")
+	os.MkdirAll(filepath.Join(dist, "bin"), 0o755)
+	os.WriteFile(filepath.Join(dist, "kernelman.sh"), []byte(ship.Launcher()), 0o755)
+	os.WriteFile(filepath.Join(dist, "bin", "kernelman-linux-amd64"), []byte("ELF fake"), 0o755)
+	prevLocate := locateProgram
+	locateProgram = func(string) (ship.Program, error) {
+		return ship.Program{Dir: dist, Files: []string{"kernelman.sh", "bin/kernelman-linux-amd64"}}, nil
+	}
+	t.Cleanup(func() { locateProgram = prevLocate })
+
+	today, _, _ := ops.ScanSARs(fe.download, time.Now())
+	var localPaths, remotePaths []string
+	for _, a := range today {
+		localPaths = append(localPaths, a.Path)
+		remotePaths = append(remotePaths, "/usr/sap/download/"+a.Name)
+	}
+	for _, f := range []string{"kernelman.sh", "bin/kernelman-linux-amd64"} {
+		localPaths = append(localPaths, filepath.Join(dist, f))
+		remotePaths = append(remotePaths, "/usr/sap/download/kernelman/"+f)
+	}
+	res, _ := exec.NewReal().Run(context.Background(), exec.Cmd{Path: "cksum", Args: localPaths})
+	remoteOut := res.Stdout
+	for i, lp := range localPaths {
+		remoteOut = strings.ReplaceAll(remoteOut, lp, remotePaths[i])
+	}
+	sorted := append([]string{}, remotePaths...)
+	sort.Strings(sorted)
+	opts := "-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "
+	for _, host := range []string{"app2", "app3"} {
+		ssh := "ssh " + opts + "abcadm@" + host + " "
+		fe.fake.On(ssh+"uname -sn", "Linux "+host+"\n", 0).
+			On(ssh+"mkdir -p /usr/sap/download/kernelman", "", 0).
+			On("scp -p -r "+opts+strings.Join(localPaths[:len(today)], " ")+" abcadm@"+host+":/usr/sap/download/", "", 0).
+			On("scp -p -r "+opts+dist+"/. abcadm@"+host+":/usr/sap/download/kernelman/", "", 0).
+			On(ssh+"chmod -R u+x /usr/sap/download/kernelman/kernelman.sh /usr/sap/download/kernelman/bin", "", 0).
+			On(ssh+"cksum "+strings.Join(sorted, " "), remoteOut, 0).
+			On(ssh+"ls -la /usr/sap/download", "total 8\ndrwxr-xr-x 3 abcadm sapsys 4096 Sep 27 22:40 kernelman\n-rw-r--r-- 1 abcadm sapsys 4096 Sep 27 22:40 SAPEXE_403-80007807.SAR\n", 0)
+	}
+	// 8, include archives Y, hosts, login (Enter = abcadm), remote dir (Enter), send Y, M, q
+	out := runMenu(t, "ship", "8\ny\napp2, app3\n\n\ny\nm\nq\n")
+	mustContain(t, out, "=== Send to Other Servers ===", "Include these 4 archive(s) in the shipment?", "Target servers", "Remote login [abcadm]",
+		"archives   4 file(s)", "to         abcadm@{app2,app3}:/usr/sap/download", "── abcadm@app2 ──", "[1/5] Connect to app2 ... ok  Linux app2",
+		"[3/5] Copy 4 archive(s) to app2:/usr/sap/download", "[4/5] Copy KernelMan to app2:/usr/sap/download/kernelman", "[5/5] Verify checksums on app2 ... ok  6 files match",
+		"── abcadm@app3 ──", "app2  ✔ sent", "app3  ✔ sent", "On each server: cd /usr/sap/download/kernelman && ./kernelman.sh", "8) ✔ Send to Other Servers")
 }
