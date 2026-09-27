@@ -1,5 +1,5 @@
-$ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
-[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
+$ ./kernelman.sh              # menü · 3 ⏎ S0001234567 ⏎ secret ⏎ n ⏎  ⏎ y ⏎ m ⏎ q
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload2586346686/002[0m
   Hostname [1mvm[0m · User root · 2026-09-27 22:26
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
@@ -20,32 +20,52 @@ $ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit
 
-Select an operation (number or name, q to quit): 5
+Select an operation (number or name, q to quit): 3
 
-[1m=== SAP Stop / Start ===[0m
-  System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
+[1m=== Kernel Download ===[0m
+  [90mchecking access to SAP ...[0m [32mok[0m
+S-user: S0001234567
+Password for S0001234567: ******
+
+  Remember the password too? (stored in /tmp/TestFlowDownload2586346686/002/.kernelman/suser.json, mode 0600)  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m n
+  System [1mABC[0m · running as root · demo: acting as abcadm
   Kernel directories:
-    /tmp/TestFlowStop108721428/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
-    /tmp/TestFlowStop108721428/001/usr/sap/ABC/D00/exe
-    /tmp/TestFlowStop108721428/001/usr/sap/ABC/ASCS01/exe
+    /tmp/TestFlowDownload2586346686/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /tmp/TestFlowDownload2586346686/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowDownload2586346686/001/usr/sap/ABC/ASCS01/exe
 
-  [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
+  [90mlooking for: kernel 793 · linuxx86_64 · HDB · current patch 200[0m
+  [90msigning in to SAP for Me as S0001234567 ...[0m [32mok[0m
+  [90m7 catalogue entries examined[0m
+  [90m·[0m [90mskipped SAPEXEDB_403-80007809.SAR (other database)[0m
+  [90m·[0m [90m1 archive(s) for other platforms ignored[0m
 
-  [1m[S][0m Start SAP  [1m[K][0m Stop SAP (Kapat)  [1m[M][0m Main menu  [90m›[0m k
+  [36m[1mProposed download for kernel 793 (stack 403 → target patch 423)[0m[0m
+    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m      [36m[1mDATE[0m[0m      [36m[1mDESCRIPTION[0m[0m
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    1.2 GB    20260915  SAP KERNEL 7.93 64-BIT UNICODE
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    229.1 MB  20260915  SAP KERNEL 7.93 64-BIT UNICODE
+    3  dw_421-80007541.sar        DW                      421    44.6 MB   20260915  SAP KERNEL 7.93 64-BIT UNICODE
+    4  dw_423-80007541.sar        DW                      423    44.6 MB   20260915  SAP KERNEL 7.93 64-BIT UNICODE
 
-  [1mSAP Stop ABC[0m
-  [1/5] StopSystem ALL ... [32mok[0m  [90minstance 00[0m
-  [2/5] WaitforStopped D00 (00) ... [32mok[0m  [90mall processes GRAY[0m
-  [3/5] WaitforStopped ASCS01 (01) ... [32mok[0m  [90mall processes GRAY[0m
-  [4/5] StopService D00 (00) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [5/5] StopService ASCS01 (01) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [32m✔[0m system ABC stopped
-  [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
+Download into [/tmp/TestFlowDownload2586346686/002/download]: 
+  target directory: /tmp/TestFlowDownload2586346686/002/download
 
---- SAP Stop / Start: [32m✔[0m [32mdone[0m
+  Download these 4 file(s) as S0001234567?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
+  [1/4] SAPEXE_403-80007807.SAR ... 100% [32mok[0m SAPEXE_403-80007807.SAR (102 B, 0s)
+      sha256 [90m3524c91c4000e5a7ed90ce6b1a4d84d8a6ae70fb299bd6dc3148f6d5050217dc[0m
+  [2/4] SAPEXEDB_403-80007808.SAR ... 100% [32mok[0m SAPEXEDB_403-80007808.SAR (102 B, 0s)
+      sha256 [90m3524c91c4000e5a7ed90ce6b1a4d84d8a6ae70fb299bd6dc3148f6d5050217dc[0m
+  [3/4] dw_421-80007541.sar ... 100% [32mok[0m dw_421-80007541.sar (102 B, 0s)
+      sha256 [90m3524c91c4000e5a7ed90ce6b1a4d84d8a6ae70fb299bd6dc3148f6d5050217dc[0m
+  [4/4] dw_423-80007541.sar ... 100% [32mok[0m dw_423-80007541.sar (102 B, 0s)
+      sha256 [90m3524c91c4000e5a7ed90ce6b1a4d84d8a6ae70fb299bd6dc3148f6d5050217dc[0m
+
+  [32m✔[0m 4 file(s), 408 B in /tmp/TestFlowDownload2586346686/002/download · dated today, so Kernel File Transfer will find them
+
+--- Kernel Download: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload2586346686/002[0m
   Hostname [1mvm[0m · User root · 2026-09-27 22:26
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
@@ -59,9 +79,9 @@ Select an operation (number or name, q to quit): 5
 
    1)   SAP Status            [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
-   3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
+   3) [32m✔[0m Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5) [32m✔[0m SAP Stop / Start      [90mS = start the system, K = stop it[0m
+   5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit

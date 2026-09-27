@@ -64,10 +64,17 @@ func Detect(f *os.File) Palette {
 	return p
 }
 
-// IsTerminal reports whether f is an interactive terminal.
+// IsTerminal reports whether f is an interactive terminal (a character
+// device other than /dev/null, which is also a character device).
 func IsTerminal(f *os.File) bool {
 	fi, err := f.Stat()
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	if err != nil || fi.Mode()&os.ModeCharDevice == 0 {
+		return false
+	}
+	if null, err := os.Stat(os.DevNull); err == nil && os.SameFile(fi, null) {
+		return false
+	}
+	return true
 }
 
 func localeIsUTF8() bool {

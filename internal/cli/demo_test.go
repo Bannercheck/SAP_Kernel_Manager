@@ -20,17 +20,17 @@ func TestDemoFlow(t *testing.T) {
 	input := strings.Join([]string{
 		"1", "m", // SAP Status, main menu
 		"2", "y", "m", // Kernel Backup: yes, main menu
-		"3", "y", "m", // Kernel File Transfer: yes (server scan, no directory question), main menu
-		"4", "k", "m", // SAP Stop / Start: K = stop, main menu
-		"5", "y", "y", "m", // Kernel Update: confirm order, Y = start afterwards, main menu
-		"6", "", "y", "y", "n", "m", // Rollback: default backup (Enter keeps it), Y = stop the running system, Y = confirm, N = no start, main menu
+		"4", "y", "m", // Kernel File Transfer: yes (server scan, no directory question), main menu
+		"5", "k", "m", // SAP Stop / Start: K = stop, main menu
+		"6", "y", "y", "m", // Kernel Update: confirm order, Y = start afterwards, main menu
+		"7", "", "y", "y", "n", "m", // Rollback: default backup (Enter keeps it), Y = stop the running system, Y = confirm, N = no start, main menu
 		"q",
 	}, "\n") + "\n"
 	out := runMenu(t, "", input)
 	for _, want := range []string{
 		"DEMO · simulated SAP host",
 		"SYSTEM ABC · AS ABAP",
-		"1) ✔ SAP Status", "2) ✔ Kernel Backup", "3) ✔ Kernel File Transfer", "4) ✔ SAP Stop / Start", "5) ✔ Kernel Update", "6) ✔ Kernel Rollback",
+		"1) ✔ SAP Status", "2) ✔ Kernel Backup", "4) ✔ Kernel File Transfer", "5) ✔ SAP Stop / Start", "6) ✔ Kernel Update", "7) ✔ Kernel Rollback",
 		"[1/11] Check free space", "[4/11] Verify linuxx86_64_", "target level after apply: patch 423",
 		"[1/5] StopSystem ALL ... ok", "D00 (sapstartsrv down)",
 		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "system ABC started",

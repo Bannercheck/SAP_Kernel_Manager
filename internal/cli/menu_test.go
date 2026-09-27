@@ -50,13 +50,13 @@ func TestMenuMarksResults(t *testing.T) {
 		"--- SAP Status: OK done",
 		"[M] Main menu  [Q] Quit",
 		`!! unknown choice "zzz"`,
-		"6)   Kernel Rollback",
+		"7)   Kernel Rollback",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("menu output lacks %q\n%s", want, s)
 		}
 	}
-	if strings.Contains(s, "7)") || strings.Contains(s, ") SAP Stop\n") {
+	if strings.Contains(s, "8)") || strings.Contains(s, ") SAP Stop\n") {
 		t.Errorf("command-line-only operations must not be listed:\n%s", s)
 	}
 }
@@ -67,8 +67,11 @@ func TestMenuChoice(t *testing.T) {
 			t.Errorf("menuChoice(%q) = %v %v", in, op.ID, ok)
 		}
 	}
-	if op, ok := menuChoice("4"); !ok || op.ID != "control" {
-		t.Errorf("menuChoice(4) = %v %v", op.ID, ok)
+	if op, ok := menuChoice("5"); !ok || op.ID != "control" {
+		t.Errorf("menuChoice(5) = %v %v", op.ID, ok)
+	}
+	if op, ok := menuChoice("3"); !ok || op.ID != "download" {
+		t.Errorf("menuChoice(3) = %v %v", op.ID, ok)
 	}
 	if _, ok := menuChoice("99"); ok {
 		t.Error("99 should be rejected")

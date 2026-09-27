@@ -21,6 +21,7 @@ type Op struct {
 var Ops = []Op{
 	{ID: "status", Name: "SAP Status", Summary: "kernel version, sapstartsrv/sapcontrol, SID, hostname, instances", Menu: true, Run: Status},
 	{ID: "backup", Name: "Kernel Backup", Summary: "copy every kernel directory next to itself as <name>_<date>, list them", Menu: true, Run: BackupOp},
+	{ID: "download", Name: "Kernel Download", Summary: "optional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download", Menu: true, Run: DownloadOp},
 	{ID: "files", Name: "Kernel File Transfer", Summary: "find today's *.SAR anywhere on this server, copy into every kernel directory, chown", Menu: true, Run: FilesOp},
 	{ID: "control", Name: "SAP Stop / Start", Summary: "S = start the system, K = stop it", Menu: true, Run: ControlOp},
 	{ID: "update", Name: "Kernel Update", Summary: "extract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start", Menu: true, Run: UpdateOp},
@@ -56,6 +57,8 @@ Demo:  kernelman demo            simulated SAP host under ~/.kernelman/demo (no 
 
 Common flags: --sid SID   (needed only when the host runs several systems)
   status   --output table|json
+  download [--to DIR] [--user S00...] [--yes]                automatic search; --basket FILE | --url LINK as fallback
+           (password: KERNELMAN_SUSER_PASSWORD; MFA code is asked on the terminal)
   files    --from DIR [--yes]
   update   [--from DIR] [--yes] [--start]
   rollback [--backup DIR] [--yes]

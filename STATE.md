@@ -4,6 +4,7 @@ Son güncelleme: 2026-09-27 · Branch: `claude/great-turing-8e8v0c` · Faz: kons
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
+- [ ] **Kernel Download'ı gerçek SAP'ye karşı doğrula:** kullanıcı 3'ü çalıştırır; takılırsa `~/.kernelman/swdc.log` gönderir (parola içermez).
 - [ ] **Gerçek hostta doğrulama.** Kullanıcı Linux/AIX SAP hostunda `./kernelman.sh` çalıştırıp (root veya `<sid>adm`) menüden 1 → 2 → 3 → 4(K) → 5 → 4(S)
       akışını dener; çıktıları ve hataları gönderir. Golden test verisi olarak gerçek `sapcontrol`, `saphostctrl`, `disp+work -V`, `SAPCAR -xvf` çıktıları eklenir.
 - [ ] Sonrası (kullanıcı geri bildirimine göre): AIX `slibclean` (root, dağıtımdan önce), `sapcpe` çalıştırma, journal/resume, Windows (kapsam dışı, istenirse).
@@ -28,6 +29,21 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
+  SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
+  indirmeye bağımlı değil.
+- 2026-09-27 · Kullanıcı: indirme **otomatik** olmalı (fark yaratan özellik). `internal/swdc`: SAP ID Service girişini sabit adımlar yerine
+  **genel form takipçisi** olarak yapar (kullanıcı adı / parola / tek kullanımlık kod formları doldurulur, SAML auto-post gönderilir, katalog JSON
+  verince biter); her adım `~/.kernelman/swdc.log`'a (parolasız) yazılır. `SearchResultSet` OData sorgusu alan adlarından bağımsız ayrıştırılır;
+  `Choose`: release + platform + DB'ye göre en yüksek SAPEXE/SAPEXEDB + üstündeki bileşen yamaları, artan sırada. Akış: S-user → giriş (MFA kodu
+  terminalden) → arama → tablo → **Y** → indir. **Henüz gerçek SAP'ye karşı doğrulanmadı** (buradan erişim yok); ilk gerçek denemede
+  `swdc.log` ile düzeltilecek. Başarısız olursa Basket/URL yolu teklif edilir.
+- 2026-09-27 · **Kernel Download** (menü 3): S-user + parola (`~/.kernelman/suser.json`, 0600; parola isteğe bağlı), linkler SAP for Me
+  Download Basket metin dışa aktarımından veya yapıştırılan URL'lerden; `softwaredownloads.sap.com/file/<id>` HTTP Basic Auth (SAP'nin wget için
+  desteklediği yol), `.part` ile kaldığı yerden devam, yeniden deneme, SHA-256, "CAR 2." imza kontrolü, HTML dönerse (MFA/yetki) açık hata.
+  Hedef `/usr/sap/download` → dosyalar bugün tarihli olur, Kernel File Transfer bulur. **Software Center araması yok**: SAML + MFA tarayıcı
+  oturumu gerektirir, buradan doğrulanamaz; ileride `community.sap_launchpad` akışı örnek alınabilir.
+- 2026-09-27 · Menü numaraları: 1 Status · 2 Backup · 3 Download · 4 File Transfer · 5 Stop/Start · 6 Update · 7 Rollback.
 - 2026-09-27 · Kullanıcı (4. tur): **disk bölümü** — ana menüde `/usr/sap` ve `/sapmnt` için kullanılan alan (en büyük 3 alt dizinle) + boş alan ışığı
   (yeşil >%20, sarı >%10, kırmızı); SAP Status'ta `df -Pk` tablosu + `du -sk` dizin boyutları (en büyük 20 + toplam). Kernel Backup öncesi
   "Check free space" adımı (mount başına gereken + %10 pay). `internal/disk` paketi (Linux/AIX uyumlu `df -Pk`, `du -sk`).

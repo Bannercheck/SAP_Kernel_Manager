@@ -1,4 +1,4 @@
-$ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
+$ ./kernelman.sh              # menü · 3 ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
   Hostname [1mvm[0m · User root · 2026-09-27 22:26
 
@@ -20,29 +20,14 @@ $ ./kernelman.sh              # menü · 5 ⏎ k ⏎ m ⏎ q
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit
 
-Select an operation (number or name, q to quit): 5
+Select an operation (number or name, q to quit): 3
 
-[1m=== SAP Stop / Start ===[0m
-  System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
-  Kernel directories:
-    /tmp/TestFlowStop108721428/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
-    /tmp/TestFlowStop108721428/001/usr/sap/ABC/D00/exe
-    /tmp/TestFlowStop108721428/001/usr/sap/ABC/ASCS01/exe
+[1m=== Kernel Download ===[0m
+  [90mchecking access to SAP ...[0m [31m✘[0m
+  [33m![0m this host cannot reach SAP (Head "http://127.0.0.1:1/": dial tcp 127.0.0.1:1: connect: connection refused)
+  Kernel Download is optional: copy the .SAR files to this server (scp/sftp) and use Kernel File Transfer.
 
-  [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
-
-  [1m[S][0m Start SAP  [1m[K][0m Stop SAP (Kapat)  [1m[M][0m Main menu  [90m›[0m k
-
-  [1mSAP Stop ABC[0m
-  [1/5] StopSystem ALL ... [32mok[0m  [90minstance 00[0m
-  [2/5] WaitforStopped D00 (00) ... [32mok[0m  [90mall processes GRAY[0m
-  [3/5] WaitforStopped ASCS01 (01) ... [32mok[0m  [90mall processes GRAY[0m
-  [4/5] StopService D00 (00) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [5/5] StopService ASCS01 (01) ... [32mok[0m  [90msapstartsrv stopped[0m
-  [32m✔[0m system ABC stopped
-  [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
-
---- SAP Stop / Start: [32m✔[0m [32mdone[0m
+--- Kernel Download: [31m✘[0m [31mfailed (exit code 1)[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
@@ -59,9 +44,9 @@ Select an operation (number or name, q to quit): 5
 
    1)   SAP Status            [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
-   3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
+   3) [31m✘[0m Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5) [32m✔[0m SAP Stop / Start      [90mS = start the system, K = stop it[0m
+   5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit

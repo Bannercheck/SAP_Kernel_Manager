@@ -3,18 +3,23 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/download"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/swdc"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
 
@@ -109,7 +114,8 @@ func newFlow(t *testing.T) *flowEnv {
 		On(sc+"00 -function StopService", okBody("StopService"), 0).On(sc+"01 -function StopService", okBody("StopService"), 0).
 		On(sc+"00 -function StartService ABC", okBody("StartService"), 0).On(sc+"01 -function StartService ABC", okBody("StartService"), 0).
 		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0).
-		On(sc+"00 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).On(sc+"01 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0)
+		On(sc+"00 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).On(sc+"01 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).
+		On(sc+"00 -function ParameterValue dbms/type", "\n27.09.2026 10:00:00\nParameterValue\nOK\nhdb\n", 0)
 	sapcar := filepath.Join(kdir, "SAPCAR")
 	for _, dir := range []string{kdir, d00, ascs} {
 		for _, n := range []string{"SAPEXE_403-80007807.SAR", "SAPEXEDB_403-80007808.SAR", "dw_421-80007541.sar", "dw_423-80007541.sar"} {
@@ -192,10 +198,10 @@ func TestFlowBackup(t *testing.T) {
 func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "files", "3\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
+	out := runMenu(t, "files", "4\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
 	mustContain(t, out, "=== Kernel File Transfer ===", "scanning "+filepath.Dir(fe.download)+" for .SAR files dated today", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
 		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
-		"4 archive(s) copied into 3 kernel directories", "3) ✔ Kernel File Transfer")
+		"4 archive(s) copied into 3 kernel directories", "4) ✔ Kernel File Transfer")
 	for _, dir := range fe.target.KernelDirs {
 		for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {
 			if _, err := os.Stat(filepath.Join(dir, n)); err != nil {
@@ -214,9 +220,9 @@ func TestFlowStop(t *testing.T) {
 	// lights before, Stop's own probe, lights after → GREEN, GREEN, then down
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
-	out := runMenu(t, "stop", "4\nk\nm\nq\n") // 4, K = stop, M = main menu, quit
+	out := runMenu(t, "stop", "5\nk\nm\nq\n") // 5, K = stop, M = main menu, quit
 	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [M] Main menu", "⬤ RUNNING", "[1/5] StopSystem ALL ... ok",
-		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "4) ✔ SAP Stop / Start")
+		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "5) ✔ SAP Stop / Start")
 }
 
 func TestFlowUpdateAndStart(t *testing.T) {
@@ -237,11 +243,11 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down, procs("GREEN", 3))
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
-	out := runMenu(t, "update", "5\ny\ny\nm\nq\n") // 5, Y = confirm order, Y = start afterwards, M = main menu, quit
+	out := runMenu(t, "update", "6\ny\ny\nm\nq\n") // 6, Y = confirm order, Y = start afterwards, M = main menu, quit
 	mustContain(t, out, "backup from today", "scanning "+filepath.Dir(fe.download), "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
 		"[4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
 		"[17/17] Read kernel version (disp+work -V) ... ok  793 Patch 423",
-		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "5) ✔ Kernel Update")
+		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "6) ✔ Kernel Update")
 }
 
 func TestFlowRollback(t *testing.T) {
@@ -256,11 +262,143 @@ func TestFlowRollback(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(423), dispworkV(200))
-	out := runMenu(t, "rollback", "6\n\ny\nn\nm\nq\n") // 6, backup default (Enter keeps it), Y = confirm, N = no start, M = main menu, quit
+	out := runMenu(t, "rollback", "7\n\ny\nn\nm\nq\n") // 7, backup default (Enter keeps it), Y = confirm, N = no start, M = main menu, quit
 	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/8] Copy "+bk.Dirs[0].Dest, "[2/8] Copy "+bk.Dirs[1].Dest,
-		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "6) ✔ Kernel Rollback")
+		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "7) ✔ Kernel Rollback")
 	b, _ := os.ReadFile(filepath.Join(fe.kernelDir, "gwrd"))
 	if string(b) == "broken" {
 		t.Error("gwrd not restored")
+	}
+}
+
+// fakeSoftwareCenter serves a catalogue (already signed in: the probe gets
+// JSON at once) and the files behind the links, like SAP for Me plus
+// softwaredownloads.sap.com on one host.
+func fakeSoftwareCenter(t *testing.T) *httptest.Server {
+	t.Helper()
+	const body = "CAR 2.01\x00fake kernel archive for the transcript ......................................................"
+	mux := http.NewServeMux()
+	mux.HandleFunc("/services/odata/svt/swdcuisrv/SearchResultSet", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json;charset=utf-8")
+		q := strings.ToUpper(strings.Fields(r.URL.Query().Get("SEARCH_STRING"))[0])
+		type row = map[string]any
+		var rows []row
+		add := func(title, desc, info, key, size string) {
+			if strings.Contains(strings.ToUpper(title), q) {
+				rows = append(rows, row{"Title": title, "Description": desc, "Infotype": info, "Fastkey": key,
+					"DownloadDirectLink": "http://" + r.Host + "/file/" + key, "Filesize": size, "ChangeDate": "20260915"})
+			}
+		}
+		add("SAPEXE_400-80007807.SAR", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | #DATABASE INDEPENDENT", "0020000000000400", "1234567")
+		add("SAPEXE_403-80007807.SAR", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | #DATABASE INDEPENDENT", "0020000000000403", "1234567")
+		add("SAPEXE_403-80007900.SAR", "SAP KERNEL 7.93 64-BIT UNICODE", "AIX 64bit | #DATABASE INDEPENDENT", "0020000000000499", "1234567")
+		add("SAPEXEDB_403-80007808.SAR", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | SAP HANA DATABASE", "0020000000000413", "234567")
+		add("SAPEXEDB_403-80007809.SAR", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | ORACLE", "0020000000000414", "234567")
+		add("dw_421-80007541.sar", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | #DATABASE INDEPENDENT", "0020000000000421", "45678")
+		add("dw_423-80007541.sar", "SAP KERNEL 7.93 64-BIT UNICODE", "Linux on x86_64 64bit | #DATABASE INDEPENDENT", "0020000000000423", "45678")
+		json.NewEncoder(w).Encode(map[string]any{"d": map[string]any{"results": rows}})
+	})
+	names := map[string]string{"0020000000000403": "SAPEXE_403-80007807.SAR", "0020000000000413": "SAPEXEDB_403-80007808.SAR",
+		"0020000000000421": "dw_421-80007541.sar", "0020000000000423": "dw_423-80007541.sar"}
+	mux.HandleFunc("/file/", func(w http.ResponseWriter, r *http.Request) {
+		if u, p, ok := r.BasicAuth(); !ok || u != "S0001234567" || p != "secret" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Disposition", `attachment; filename="`+names[filepath.Base(r.URL.Path)]+`"`)
+		w.Header().Set("Content-Length", fmt.Sprint(len(body)))
+		w.Write([]byte(body))
+	})
+	return httptest.NewServer(mux)
+}
+
+// installDownload points the download and Software Center clients at srv.
+func installDownload(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	prevClient, prevSession, prevDemo, prevReach := newDownloadClient, newSWDCSession, demoRoot, reachabilityURL
+	reachabilityURL = srv.URL + "/"
+	newDownloadClient = func(c download.Credentials) *download.Client {
+		cl := download.NewClient(c)
+		cl.TrustedHosts, cl.Retries = []string{"127.0.0.1"}, 0
+		return cl
+	}
+	newSWDCSession = func(c download.Credentials) *swdc.Session {
+		s := swdc.New(c.User, c.Password)
+		s.Launchpad, s.AllowedHosts = srv.URL, []string{"127.0.0.1"}
+		return s
+	}
+	demoRoot = t.TempDir() // credentials, log and default target live under a scratch root
+	t.Cleanup(func() {
+		newDownloadClient, newSWDCSession, demoRoot, reachabilityURL = prevClient, prevSession, prevDemo, prevReach
+	})
+	return demoRoot
+}
+
+// TestFlowDownload drives the automatic Kernel Download: sign in, find the
+// archives for kernel 793 / linuxx86_64 / HANA, confirm, download.
+func TestFlowDownload(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	srv := fakeSoftwareCenter(t)
+	defer srv.Close()
+	root := installDownload(t, srv)
+	target := filepath.Join(root, "download")
+	// 3, S-user, password, remember password? N, target dir (Enter = default), Y = download, M, q
+	out := runMenu(t, "download", "3\nS0001234567\nsecret\nn\n\ny\nm\nq\n")
+	mustContain(t, out, "=== Kernel Download ===", "checking access to SAP ... ok", "S-user: S0001234567", "Password for S0001234567: ******",
+		"looking for: kernel 793 · linuxx86_64 · HDB · current patch 200", "signing in to SAP for Me as S0001234567 ... ok",
+		"Proposed download for kernel 793 (stack 403 → target patch 423)",
+		"1  SAPEXE_403-80007807.SAR", "2  SAPEXEDB_403-80007808.SAR", "3  dw_421-80007541.sar", "4  dw_423-80007541.sar",
+		"other platforms ignored", "other database", "Download these 4 file(s) as S0001234567?",
+		"[1/4] SAPEXE_403-80007807.SAR ... ", "ok SAPEXE_403-80007807.SAR", "sha256", "[4/4] dw_423-80007541.sar",
+		"4 file(s), ", "dated today, so Kernel File Transfer will find them", "3) ✔ Kernel Download")
+	for _, n := range []string{"SAPEXE_403-80007807.SAR", "SAPEXEDB_403-80007808.SAR", "dw_421-80007541.sar", "dw_423-80007541.sar"} {
+		if !download.IsSAR(filepath.Join(target, n)) {
+			t.Errorf("%s missing or not a SAR", n)
+		}
+	}
+	if b, err := os.ReadFile(filepath.Join(root, ".kernelman", "swdc.log")); err != nil || !strings.Contains(string(b), "search") || strings.Contains(string(b), "secret") {
+		t.Errorf("swdc.log: %v %q", err, string(b))
+	}
+	if c, ok, _ := download.LoadCredentials(filepath.Join(root, ".kernelman")); !ok || c.User != "S0001234567" || c.Password != "" {
+		t.Errorf("credentials: %+v %v", c, ok)
+	}
+}
+
+// TestDownloadBasketCommandLine covers the fallback: links from a basket
+// export, no questions, password from the environment.
+func TestDownloadBasketCommandLine(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	srv := fakeSoftwareCenter(t)
+	defer srv.Close()
+	root := installDownload(t, srv)
+	basket := filepath.Join(t.TempDir(), "DownloadBasket.txt")
+	os.WriteFile(basket, []byte(srv.URL+"/file/0020000000000423\tdw_423-80007541.sar\tdisp+work\t45 MB\n"), 0o644)
+	t.Setenv("KERNELMAN_SUSER_PASSWORD", "secret")
+	var out bytes.Buffer
+	prev := stdout
+	stdout = &out
+	defer func() { stdout = prev }()
+	if code := DownloadOp([]string{"--basket", basket, "--to", filepath.Join(root, "dl"), "--user", "S0001234567", "--yes"}); code != ExitOK {
+		t.Fatalf("exit %d\n%s", code, out.String())
+	}
+	if !download.IsSAR(filepath.Join(root, "dl", "dw_423-80007541.sar")) {
+		t.Errorf("file not downloaded:\n%s", out.String())
+	}
+}
+
+// TestDownloadOffline: without access to SAP the operation explains itself
+// and stops before asking for credentials.
+func TestDownloadOffline(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	prev := reachabilityURL
+	reachabilityURL = "http://127.0.0.1:1/" // nothing listens here
+	defer func() { reachabilityURL = prev }()
+	out := runMenu(t, "download-offline", "3\nm\nq\n")
+	mustContain(t, out, "this host cannot reach SAP", "Kernel Download is optional", "3) ✘ Kernel Download")
+	if strings.Contains(out, "S-user:") {
+		t.Error("credentials must not be asked when offline")
 	}
 }
