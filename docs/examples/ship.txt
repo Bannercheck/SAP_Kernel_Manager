@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 8 ⏎ y ⏎ app2, app3 ⏎  ⏎  ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 23:10
+  Hostname [1mvm[0m · User root · 2026-09-27 23:32
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -33,19 +33,19 @@ Select an operation (number or name, q to quit): 8
 [1m=== Send to Other Servers ===[0m
   System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
   Kernel directories:
-    /tmp/TestFlowShip3357450126/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
-    /tmp/TestFlowShip3357450126/001/usr/sap/ABC/D00/exe
-    /tmp/TestFlowShip3357450126/001/usr/sap/ABC/ASCS01/exe
+    /tmp/TestFlowShip1234942428/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /tmp/TestFlowShip1234942428/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowShip1234942428/001/usr/sap/ABC/ASCS01/exe
 
-  [90mscanning /tmp/TestFlowShip3357450126/001 for .SAR files placed here today (2026-09-27); system directories, kernel directories and backups are skipped[0m
+  [90mscanning /tmp/TestFlowShip1234942428/001 for .SAR files dated today (2026-09-27); system directories, kernel directories and backups are skipped[0m
   [90m12 directories scanned[0m
 
   [36mArchives dated today, in apply order (lowest patch first)[0m
     [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mMODIFIED[0m[0m          [36m[1mFOUND IN[0m[0m
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
-    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
-    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-27 23:10  /tmp/TestFlowShip3357450126/001/download
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-27 23:32  /tmp/TestFlowShip1234942428/001/download
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-27 23:32  /tmp/TestFlowShip1234942428/001/download
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-27 23:32  /tmp/TestFlowShip1234942428/001/download
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-27 23:32  /tmp/TestFlowShip1234942428/001/download
     → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
 
@@ -56,7 +56,7 @@ Remote directory [/usr/sap/download]:
 
   [36m[1mShipment[0m[0m
     archives   4 file(s)
-    program    /tmp/TestFlowShip3357450126/002/kernelman (2 files)
+    program    /tmp/TestFlowShip1234942428/002/kernelman (2 files)
     to         abcadm@{app2,app3}:/usr/sap/download
     [90mssh keys are used when set up; otherwise ssh asks for the password of each host[0m
 
@@ -97,7 +97,7 @@ Remote directory [/usr/sap/download]:
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-27 23:10
+  Hostname [1mvm[0m · User root · 2026-09-27 23:32
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m

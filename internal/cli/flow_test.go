@@ -140,18 +140,17 @@ func newFlow(t *testing.T) *flowEnv {
 // install wires the flow environment into the CLI for one test.
 func (fe *flowEnv) install(t *testing.T) {
 	t.Helper()
-	prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevCT := runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.ChangeTime
+	prevRunner, prevResolve, prevCollect, prevRoot, prevScan := runner, resolveTarget, collectStatus, isRoot, scanRoots
 	runner = router{fake: fe.fake, real: exec.NewReal()}
 	isRoot = false
 	scanRoots = []string{filepath.Dir(fe.download)}
-	ops.ChangeTime = func(os.FileInfo) time.Time { return time.Time{} } // test files are all created now
 	resolveTarget = func(context.Context, string) (*system.Target, []string, error) {
 		fe.target.Snapshot, _ = system.LoadSnapshot(fe.target.StateDir)
 		return fe.target, nil, nil
 	}
 	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
 	t.Cleanup(func() {
-		runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.ChangeTime = prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevCT
+		runner, resolveTarget, collectStatus, isRoot, scanRoots = prevRunner, prevResolve, prevCollect, prevRoot, prevScan
 	})
 }
 
@@ -202,8 +201,8 @@ func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
 	out := runMenu(t, "files", "4\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
-	mustContain(t, out, "=== Kernel File Transfer ===", "scanning "+filepath.Dir(fe.download)+" for .SAR files placed here today", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
-		"target level after apply: patch 423", "older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
+	mustContain(t, out, "=== Kernel File Transfer ===", "scanning "+filepath.Dir(fe.download)+" for .SAR files dated today", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
+		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
 		"4 archive(s) copied into 3 kernel directories", "4) ✔ Kernel File Transfer")
 	for _, dir := range fe.target.KernelDirs {
 		for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {

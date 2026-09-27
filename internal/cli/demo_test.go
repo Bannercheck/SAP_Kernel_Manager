@@ -1,12 +1,9 @@
 package cli
 
 import (
-	"os"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 )
 
@@ -20,9 +17,6 @@ func TestDemoFlow(t *testing.T) {
 	if err := EnableDemo(t.TempDir()); err != nil {
 		t.Fatal(err)
 	}
-	prevCT := ops.ChangeTime
-	ops.ChangeTime = func(os.FileInfo) time.Time { return time.Time{} }
-	t.Cleanup(func() { ops.ChangeTime = prevCT })
 	scanRoots = []string{demoRoot} // not the home directory of the build machine
 	input := strings.Join([]string{
 		"1", "m", // SAP Status, main menu

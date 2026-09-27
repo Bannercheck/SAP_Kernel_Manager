@@ -124,7 +124,7 @@ func pickArchivesForShip(ctx context.Context, t *system.Target, from string, yes
 	}
 	res := scanFor(ctx, t, roots)
 	if len(res.Today) == 0 {
-		fmt.Fprintf(stdout, "  %s no .SAR files placed here today; KernelMan alone will be sent\n", pal.Paint(ui.Yellow, "!"))
+		fmt.Fprintf(stdout, "  %s no .SAR files dated today; KernelMan alone will be sent\n", pal.Paint(ui.Yellow, "!"))
 		return nil, false
 	}
 	showArchives(res)

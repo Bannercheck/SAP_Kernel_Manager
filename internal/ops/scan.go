@@ -24,10 +24,6 @@ var pruneNames = map[string]bool{"proc": true, "sys": true, "dev": true, "lost+f
 	"node_modules": true, ".git": true, ".Trash": true, "Library": true, "sapdata1": true, "sapdata2": true, "sapdata3": true,
 	"sapdata4": true, "origlogA": true, "origlogB": true, "mirrlogA": true, "mirrlogB": true, "oraarch": true, "saparch": true}
 
-// ChangeTime returns a file's inode change time; tests replace it because
-// every file they create has today's change time.
-var ChangeTime = changeTime
-
 // ScanOptions controls FindTodaySARs.
 type ScanOptions struct {
 	Roots    []string // directories to search (DefaultScanRoots when empty)
@@ -39,8 +35,8 @@ type ScanOptions struct {
 
 // ScanResult is what the search found.
 type ScanResult struct {
-	Today      []SARFile // archives placed or modified on Day, apply order, one per file name
-	Older      []SARFile // archives with another date, newest first
+	Today      []SARFile // archives whose modification date is Day, apply order, one per file name
+	Older      int       // archives with another date (ignored, reported as a count)
 	Duplicates []string  // names found in more than one place (the newest copy is kept)
 	Dirs       int       // directories visited
 	Roots      []string  // roots that existed and were searched
@@ -48,12 +44,11 @@ type ScanResult struct {
 	UnreadEx   []string  // a few examples of unreadable directories
 }
 
-// FindTodaySARs walks the roots and returns *.SAR/*.sar files placed on the
-// server on opts.Day: a file counts when its modification time OR its
-// change time (set when a file is copied here even if scp -p kept the old
-// modification time) falls on that day. Directory symlinks are followed
-// once, pseudo file systems and excluded subtrees are skipped, unreadable
-// directories are counted instead of aborting the scan.
+// FindTodaySARs walks the roots and returns the *.SAR/*.sar files whose
+// modification date is opts.Day — exactly "today's files", nothing older.
+// Directory symlinks are followed once, pseudo file systems and excluded
+// subtrees are skipped, unreadable directories are counted instead of
+// aborting the scan.
 func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	roots := opts.Roots
 	if len(roots) == 0 {
@@ -70,7 +65,6 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	}
 	res := &ScanResult{}
 	byName := map[string]SARFile{}
-	var older []SARFile
 	visited := map[string]bool{} // real paths of directories already walked (symlink loops)
 	seenRoot := map[string]bool{}
 
@@ -130,17 +124,13 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 				f = SARFile{Name: de.Name(), Component: "?", Label: "?"}
 			}
 			f.Path, f.Size, f.ModTime = path, info.Size(), info.ModTime()
-			placed := f.ModTime
-			if ct := ChangeTime(info); ct.After(placed) {
-				placed = ct
-			}
-			if !sameDay(f.ModTime) && !sameDay(placed) {
-				older = append(older, f)
+			if !sameDay(f.ModTime) {
+				res.Older++
 				continue
 			}
 			if prev, dup := byName[f.Name]; dup {
 				res.Duplicates = append(res.Duplicates, f.Name)
-				if !placed.After(prev.ModTime) {
+				if !f.ModTime.After(prev.ModTime) {
 					continue
 				}
 			}
@@ -168,8 +158,6 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		res.Today = append(res.Today, f)
 	}
 	SortForApply(res.Today)
-	sort.Slice(older, func(i, j int) bool { return older[i].ModTime.After(older[j].ModTime) })
-	res.Older = older
 	sort.Strings(res.Duplicates)
 	return res, nil
 }

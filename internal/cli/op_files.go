@@ -82,22 +82,14 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 			}
 			return res.Today, true
 		}
-		fmt.Fprintf(stdout, "  %s no .SAR files placed here today (%s) under %s\n", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
+		fmt.Fprintf(stdout, "  %s no .SAR files dated today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
+		if res.Older > 0 {
+			fmt.Fprintf(stdout, " · %d archive(s) with another date ignored", res.Older)
+		}
+		fmt.Fprintln(stdout)
+		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, "only archives whose modification date is today are used; an old file can be re-dated with: touch <file>"))
 		if yes {
 			return nil, false
-		}
-		if len(res.Older) > 0 {
-			showOlder(res)
-			if confirm(fmt.Sprintf("Use these %d older archive(s) instead?", len(res.Older))) {
-				files := append([]ops.SARFile(nil), res.Older...)
-				ops.SortForApply(files)
-				showArchives(&ops.ScanResult{Today: files})
-				if confirm(fmt.Sprintf("Copy these %d archive(s) into %d kernel directories?", len(files), len(kernelDirs(t)))) {
-					return files, true
-				}
-				fmt.Fprintln(stdout, "  cancelled")
-				return nil, false
-			}
 		}
 		dir := ask("Directory to search instead (Enter = cancel)", "")
 		if dir == "" {
@@ -105,26 +97,6 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 		}
 		roots = []string{dir}
 	}
-}
-
-// showOlder lists archives with another date, newest first, so the user
-// can pick them up when the copy kept the original time stamps.
-func showOlder(res *ops.ScanResult) {
-	pal := currentPalette()
-	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "MODIFIED", "FOUND IN")}
-	for i, f := range res.Older {
-		if i == 15 {
-			rows = append(rows, []string{"", pal.Paint(ui.Dim, fmt.Sprintf("… %d more", len(res.Older)-15)), "", "", "", "", ""})
-			break
-		}
-		rows = append(rows, []string{fmt.Sprint(i + 1), f.Name, f.Label, fmt.Sprint(f.Patch), ops.HumanSize(f.Size),
-			f.ModTime.Format("2006-01-02 15:04"), filepath.Dir(f.Path)})
-	}
-	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Cyan, "Archives with an older date (newest first)"))
-	for _, l := range ui.Table("    ", rows) {
-		fmt.Fprintln(stdout, l)
-	}
-	fmt.Fprintln(stdout)
 }
 
 // scanFor runs the scanner with the kernel directories and their backups excluded.
@@ -139,7 +111,7 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 	if len(roots) == 1 && roots[0] == "/" {
 		where = "the whole server (/)"
 	}
-	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, fmt.Sprintf("scanning %s for .SAR files placed here today (%s); system directories, kernel directories and backups are skipped",
+	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, fmt.Sprintf("scanning %s for .SAR files dated today (%s); system directories, kernel directories and backups are skipped",
 		where, time.Now().Format("2006-01-02"))))
 	var progress func(int, string)
 	if f, ok := stdout.(*os.File); ok && ui.IsTerminal(f) {
@@ -182,8 +154,8 @@ func showArchives(res *ops.ScanResult) {
 		fmt.Fprintln(stdout, l)
 	}
 	fmt.Fprintf(stdout, "    → target level after apply: %s", pal.Paint(ui.Bold, fmt.Sprintf("patch %d", ops.TargetPatch(res.Today))))
-	if len(res.Older) > 0 {
-		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Dim, fmt.Sprintf("%d older archive(s) ignored", len(res.Older))))
+	if res.Older > 0 {
+		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Dim, fmt.Sprintf("%d older archive(s) ignored", res.Older)))
 	}
 	if len(res.Duplicates) > 0 {
 		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Yellow, fmt.Sprintf("duplicates (newest kept): %s", strings.Join(res.Duplicates, ", "))))
