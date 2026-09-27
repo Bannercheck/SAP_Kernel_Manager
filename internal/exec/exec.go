@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	osexec "os/exec"
+	"os/user"
 	"strings"
 	"time"
 )
@@ -54,12 +55,71 @@ type Runner interface {
 // Real runs commands on the local host.
 type Real struct {
 	DefaultTimeout time.Duration
-	SudoCmd        []string // prefix used when Cmd.RunAs is set, e.g. ["sudo", "-n"]
+	SudoCmd        []string // used for RunAs when not root, e.g. ["sudo", "-n"]
+	CurrentUser    string   // login name of the current process user
+	IsRoot         bool
 }
 
 // NewReal returns a Real runner with sane defaults.
 func NewReal() *Real {
-	return &Real{DefaultTimeout: 2 * time.Minute, SudoCmd: []string{"sudo", "-n"}}
+	r := &Real{DefaultTimeout: 2 * time.Minute, SudoCmd: []string{"sudo", "-n"}, IsRoot: os.Geteuid() == 0}
+	if u, err := user.Current(); err == nil {
+		r.CurrentUser = u.Username
+	}
+	return r
+}
+
+// ShellQuote quotes s for POSIX sh.
+func ShellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	safe := true
+	for _, c := range s {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.ContainsRune("-_./=:+,@", c)) {
+			safe = false
+			break
+		}
+	}
+	if safe {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// ShellLine renders env assignments + path + args as one sh command line.
+func ShellLine(c Cmd) string {
+	parts := make([]string, 0, len(c.Env)+1+len(c.Args))
+	for _, e := range c.Env {
+		if k, v, ok := strings.Cut(e, "="); ok {
+			parts = append(parts, k+"="+ShellQuote(v))
+		}
+	}
+	parts = append(parts, ShellQuote(c.Path))
+	for _, a := range c.Args {
+		parts = append(parts, ShellQuote(a))
+	}
+	line := strings.Join(parts, " ")
+	if c.Dir != "" {
+		line = "cd " + ShellQuote(c.Dir) + " && " + line
+	}
+	return line
+}
+
+// asUser rewrites c so that it runs as c.RunAs: root uses `su - user -c`,
+// the same user runs directly, anyone else goes through sudo.
+func (r *Real) asUser(c Cmd) (Cmd, error) {
+	switch {
+	case c.RunAs == "" || c.RunAs == r.CurrentUser:
+		c.RunAs = ""
+		return c, nil
+	case r.IsRoot:
+		return Cmd{Path: "su", Args: []string{"-", c.RunAs, "-c", ShellLine(c)}, Timeout: c.Timeout}, nil
+	case len(r.SudoCmd) > 0:
+		args := append(append(append([]string{}, r.SudoCmd[1:]...), "-u", c.RunAs, "--"), "sh", "-c", ShellLine(c))
+		return Cmd{Path: r.SudoCmd[0], Args: args, Timeout: c.Timeout}, nil
+	}
+	return Cmd{}, fmt.Errorf("cannot run as %s: not root and no sudo configured", c.RunAs)
 }
 
 // LookPath resolves file in PATH.
@@ -80,14 +140,11 @@ func (r *Real) Run(ctx context.Context, c Cmd) (Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	path, args := c.Path, c.Args
-	if c.RunAs != "" {
-		if len(r.SudoCmd) == 0 {
-			return Result{}, errors.New("RunAs requested but no sudo command configured")
-		}
-		args = append(append(append([]string{}, r.SudoCmd[1:]...), "-u", c.RunAs, path), c.Args...)
-		path = r.SudoCmd[0]
+	c, err := r.asUser(c)
+	if err != nil {
+		return Result{}, err
 	}
+	path, args := c.Path, c.Args
 
 	cmd := osexec.CommandContext(ctx, path, args...)
 	cmd.Dir = c.Dir
@@ -98,7 +155,7 @@ func (r *Real) Run(ctx context.Context, c Cmd) (Result, error) {
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
 	start := time.Now()
-	err := cmd.Run()
+	err = cmd.Run()
 	res := Result{Stdout: stdout.String(), Stderr: stderr.String(), Duration: time.Since(start)}
 
 	var exitErr *osexec.ExitError

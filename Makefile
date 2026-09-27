@@ -9,7 +9,7 @@ export CGO_ENABLED := 0
 EXENV := KERNELMAN_COLOR=always KERNELMAN_UNICODE=1
 
 # os/arch pairs that SAP kernels ship for and Go can target
-TARGETS := linux/amd64 linux/ppc64le aix/ppc64 windows/amd64
+TARGETS := linux/amd64 linux/ppc64le aix/ppc64
 
 .PHONY: build check test vet fmt cross clean examples
 
@@ -27,17 +27,17 @@ vet:
 test:
 	go test ./...
 
-# dist/ layout: kernelman.sh + kernelman.bat launchers, bin/kernelman-<os>-<arch> binaries.
+# dist/ layout: kernelman.sh launcher, bin/kernelman-<os>-<arch> binaries.
 # Nothing has to be installed on the SAP host: copy dist/ and run kernelman.sh / kernelman.bat.
 cross:
 	@mkdir -p dist/bin
 	@for t in $(TARGETS); do \
-	  os=$${t%/*}; arch=$${t#*/}; ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
+	  os=$${t%/*}; arch=$${t#*/}; ext=""; \
 	  out=dist/bin/$(BIN)-$$os-$$arch$$ext; echo "  $$out"; \
 	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/kernelman || exit 1; \
 	done
-	@cp scripts/kernelman.sh scripts/kernelman.bat dist/ && chmod +x dist/kernelman.sh dist/bin/*
-	@cd dist && sha256sum bin/* kernelman.sh kernelman.bat > SHA256SUMS
+	@cp scripts/kernelman.sh dist/ && chmod +x dist/kernelman.sh dist/bin/*
+	@cd dist && sha256sum bin/* kernelman.sh > SHA256SUMS
 
 # Regenerate docs/examples/*.txt transcripts and *.png screenshots.
 # Transcripts come from fake-runner test scenarios (KERNELMAN_WRITE_EXAMPLE=1) and from

@@ -1,6 +1,8 @@
 # KernelMan — SAP Kernel Manager · Mimari (v0.1 taslak)
 
-Durum: **taslak, onay bekliyor**. Kararlar §2'de; itiraz gelmezse varsayılan olarak uygulanır.
+Durum: **v0.2 — 2026-09-27 revizyonu.** Kullanıcı kararıyla kapsam **yalnızca Unix (Linux, AIX)** ve akış klasik yerinde güncelleme:
+menüden 1 SAP Status → 2 Kernel Backup → 3 Kernel Files → 4 SAP Stop/Start → 5 Kernel Update → 6 Kernel Rollback (bkz. §5.10).
+§5.6–5.7'deki staging/journal tasarımı ileriye dönük referanstır; v1 kodu `internal/ops` içindedir.
 İlerleme ve adım listesi `STATE.md`'de tutulur; bu dosya sadece tasarımı anlatır.
 
 ## 1. Amaç ve kapsam
@@ -264,13 +266,27 @@ tüm loglar ayrıca `runs_dir/<run-id>/logs/` altına yazılır.
 Çıkış kodları: `0` başarılı · `1` genel hata · `2` kullanım · `3` preflight engeli · `4` kilitli · `5` apply başarısız,
 rollback tamam · `6` rollback başarısız (manuel) · `7` verify başarısız.
 
+### 5.10 Konsol akışı v1 (`internal/ops`, `internal/cli`)
+
+| # | Menü | Ne yapar | Kanıt ekranda |
+|---|------|----------|---------------|
+| 1 | SAP Status | kernel, sapstartsrv/sapcontrol, SID, hostname, instance'lar (otomatik) | ışıklar |
+| 2 | Kernel Backup | `cp -pR DIR_CT_RUN <üst>/exe_<YYYYMMDD>` (root ise `su - <sid>adm`), dosya sayısı karşılaştırılır | `ls -la` listesi |
+| 3 | Kernel Files | indirme dizini sorulur; **bugün tarihli** `*.SAR` → kernel dizini; `chown -R <sid>adm:sapsys` | sıra tablosu + `ls -la` |
+| 4 | SAP Stop / Start | `K`: StopSystem ALL → WaitforStopped → StopService · `S`: StartService (sidadm) → StartSystem ALL → WaitforStarted | `[i/n]` adımlar + ışıklar |
+| 5 | Kernel Update | durmuş sistem + bugünkü yedek şart → `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) kernel dizininde → chown → `saproot.sh` → `disp+work -V` → `S` başlat | önce/sonra sürüm |
+| 6 | Kernel Rollback | en son `exe_<date>` → kernel dizini üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |
+
+Sıralama kuralı: patch numarası artan; aynı seviyede SAPEXE → SAPEXEDB → tek bileşen yamaları. Böylece son hotfix (örn. `dw_423`)
+en son açılır ve kernel `793 patch 423` olur. Kernel dizini sapstartsrv kapalıyken de bulunur: snapshot (`/usr/sap/<SID>/.kernelman`)
+→ `/usr/sap/<SID>/SYS/exe/run` symlink. Her işlem `✔/✘` ile biter ve Enter ile ana sayfaya döner.
+
 ## 6. Platform notları
 
 - **Linux:** standart; `saproot.sh` için `sudo -n` gerekir (`kernelman doctor` kontrol eder).
 - **AIX:** kütüphaneler bellekte kalır → dağıtımdan önce root ile `slibclean`, ardından `genkld` ile hâlâ yüklü lib kontrolü.
   `LIBPATH` kullanılır. Go `aix/ppc64` portu CGO'suz derlenir.
-- **Windows:** dosyalar servisler çalışırken kilitlidir → `StopService` şart; `RunAs` yok, aracın kendisi `<SID>adm`
-  (yerel admin) ile çalıştırılır. Yollar UNC olabilir; kopyada ACL mirası yeterlidir. Windows'a özel: `saposcol` servisi.
+- **Windows:** 2026-09-27 kararıyla kapsam dışı (kod kaldırıldı). Gerekirse `platform` katmanına yeniden eklenir.
 - **Çoklu host (v2):** kernel dizini paylaşımlı olduğu için tek kopya yeter, ama tüm hostlardaki instance'lar
   durdurulup başlatılmalı. Tasarım: her host'ta `kernelman agent` veya SSH ile `kernelman step …` çağrıları; `Runner` arayüzü bunu
   uzak Runner ile karşılar. v1 uzak instance görürse durur.

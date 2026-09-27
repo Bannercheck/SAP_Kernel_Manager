@@ -19,6 +19,7 @@ type Client struct {
 	Path    string // sapcontrol executable
 	Nr      string // instance number, two digits
 	Host    string // optional remote host (-host)
+	RunAs   string // run sapcontrol as this user (StartService must run as <sid>adm)
 	Timeout time.Duration
 }
 
@@ -50,7 +51,7 @@ func (c *Client) call(ctx context.Context, fn string, args ...string) (string, i
 	}
 	a = append(a, "-function", fn)
 	a = append(a, args...)
-	res, err := c.Runner.Run(ctx, exec.Cmd{Path: c.Path, Args: a, Timeout: c.Timeout})
+	res, err := c.Runner.Run(ctx, exec.Cmd{Path: c.Path, Args: a, RunAs: c.RunAs, Timeout: c.Timeout})
 	if err != nil {
 		return "", 0, fmt.Errorf("sapcontrol %s: %w", fn, err)
 	}
@@ -137,4 +138,56 @@ func (c *Client) GetInstanceProperties(ctx context.Context) (map[string]string, 
 		return nil, err
 	}
 	return ParseInstanceProperties(body), nil
+}
+
+// StopSystem stops every instance of the system (StopSystem ALL) through this instance's sapstartsrv.
+func (c *Client) StopSystem(ctx context.Context) error {
+	_, _, err := c.call(ctx, "StopSystem", "ALL")
+	return err
+}
+
+// StartSystem starts every instance of the system (StartSystem ALL).
+func (c *Client) StartSystem(ctx context.Context) error {
+	_, _, err := c.call(ctx, "StartSystem", "ALL")
+	return err
+}
+
+// WaitforStopped blocks until every process of this instance is stopped or timeout elapses.
+func (c *Client) WaitforStopped(ctx context.Context, timeout, delay time.Duration) error {
+	return c.wait(ctx, "WaitforStopped", timeout, delay)
+}
+
+// WaitforStarted blocks until every process of this instance is running or timeout elapses.
+func (c *Client) WaitforStarted(ctx context.Context, timeout, delay time.Duration) error {
+	return c.wait(ctx, "WaitforStarted", timeout, delay)
+}
+
+func (c *Client) wait(ctx context.Context, fn string, timeout, delay time.Duration) error {
+	saved := c.Timeout
+	c.Timeout = timeout + time.Minute
+	defer func() { c.Timeout = saved }()
+	_, code, err := c.call(ctx, fn, fmt.Sprint(int(timeout.Seconds())), fmt.Sprint(int(delay.Seconds())))
+	if err != nil {
+		var e *Error
+		if errors.As(err, &e) && (e.ExitCode == 2 || strings.Contains(strings.ToLower(e.Message), "timeout")) {
+			return fmt.Errorf("sapcontrol %s: timed out after %s", fn, timeout)
+		}
+		return err
+	}
+	if code == 2 {
+		return fmt.Errorf("sapcontrol %s: timed out after %s", fn, timeout)
+	}
+	return nil
+}
+
+// StopService stops this instance's sapstartsrv.
+func (c *Client) StopService(ctx context.Context) error {
+	_, _, err := c.call(ctx, "StopService")
+	return err
+}
+
+// StartService starts this instance's sapstartsrv. It must run as <sid>adm.
+func (c *Client) StartService(ctx context.Context, sid string) error {
+	_, _, err := c.call(ctx, "StartService", sid)
+	return err
 }

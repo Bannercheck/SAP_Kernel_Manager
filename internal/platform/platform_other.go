@@ -1,4 +1,4 @@
-//go:build !linux && !aix && !windows
+//go:build !linux && !aix
 
 package platform
 

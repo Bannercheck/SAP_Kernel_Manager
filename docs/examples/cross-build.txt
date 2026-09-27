@@ -2,29 +2,25 @@ $ make cross
     dist/bin/kernelman-linux-amd64
     dist/bin/kernelman-linux-ppc64le
     dist/bin/kernelman-aix-ppc64
-    dist/bin/kernelman-windows-amd64.exe
 
 $ ls -la dist dist/bin
   dist:
-  total 24
-  drwxr-xr-x 3 root root 4096 Sep 20 20:40 .
-  drwxr-xr-x 9 root root 4096 Sep 20 20:40 ..
-  -rw-r--r-- 1 root root  533 Sep 20 20:40 SHA256SUMS
-  drwxr-xr-x 2 root root 4096 Sep 20 20:40 bin
-  -rw-r--r-- 1 root root  317 Sep 20 20:40 kernelman.bat
-  -rwxr-xr-x 1 root root  859 Sep 20 20:40 kernelman.sh
+  total 20
+  drwxr-xr-x 3 root root 4096 Sep 27 18:56 .
+  drwxr-xr-x 9 root root 4096 Sep 27 18:56 ..
+  -rw-r--r-- 1 root root  355 Sep 27 18:56 SHA256SUMS
+  drwxr-xr-x 2 root root 4096 Sep 27 18:56 bin
+  -rwxr-xr-x 1 root root  859 Sep 27 18:56 kernelman.sh
   
   dist/bin:
-  total 10780
-  drwxr-xr-x 2 root root    4096 Sep 20 20:40 .
-  drwxr-xr-x 3 root root    4096 Sep 20 20:40 ..
-  -rwxr-xr-x 1 root root 3034968 Sep 20 20:40 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 2588856 Sep 20 20:40 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 2687160 Sep 20 20:40 kernelman-linux-ppc64le
-  -rwxr-xr-x 1 root root 2708480 Sep 20 20:40 kernelman-windows-amd64.exe
+  total 9000
+  drwxr-xr-x 2 root root    4096 Sep 27 18:56 .
+  drwxr-xr-x 3 root root    4096 Sep 27 18:56 ..
+  -rwxr-xr-x 1 root root 3369077 Sep 27 18:56 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 2879672 Sep 27 18:56 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 2949304 Sep 27 18:56 kernelman-linux-ppc64le
 
 $ file dist/bin/*
-  dist/bin/kernelman-aix-ppc64:         64-bit XCOFF executable or object module not stripped
-  dist/bin/kernelman-linux-amd64:       ELF 64-bit LSB executable
-  dist/bin/kernelman-linux-ppc64le:     ELF 64-bit LSB executable
-  dist/bin/kernelman-windows-amd64.exe: PE32+ executable (console) x86-64
+  dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped
+  dist/bin/kernelman-linux-amd64:   ELF 64-bit LSB executable
+  dist/bin/kernelman-linux-ppc64le: ELF 64-bit LSB executable

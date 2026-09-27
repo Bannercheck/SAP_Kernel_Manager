@@ -1,7 +1,8 @@
 # KernelMan — SAP Kernel Manager
 
-SAP NetWeaver / S/4HANA kernel güncellemelerini Linux, AIX ve Windows üzerinde güvenli, geri alınabilir ve
-tekrarlanabilir şekilde yapan tek binary CLI aracı.
+SAP NetWeaver / S/4HANA kernel güncellemesini Linux ve AIX üzerinde menüden adım adım yapan tek binary konsol aracı:
+**1** SAP Status · **2** Kernel Backup (`exe_<tarih>`) · **3** Kernel Files (bugünkü SAR'lar) · **4** SAP Stop/Start (K/S) ·
+**5** Kernel Update (patch sırasına göre `SAPCAR -xvf`, chown, saproot.sh, doğrulama) · **6** Kernel Rollback.
 
 - Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - İlerleme / yol haritası: [`STATE.md`](STATE.md)
@@ -13,17 +14,19 @@ tekrarlanabilir şekilde yapan tek binary CLI aracı.
 
 ```
 dist/kernelman.sh                  Linux / AIX başlatıcı (doğru binary'yi seçer)
-dist/kernelman.bat                 Windows başlatıcı
 dist/bin/kernelman-linux-amd64     tek başına çalışan yerel binary'ler
 dist/bin/kernelman-linux-ppc64le
 dist/bin/kernelman-aix-ppc64
-dist/bin/kernelman-windows-amd64.exe
 ```
 
 ```sh
-./kernelman.sh status              # <sid>adm olarak çalıştırın
-./kernelman.sh status --sid ABC --output json
+cd /usr/sap && ./kernelman.sh      # root veya <sid>adm; argümansız = menü
+./kernelman.sh status --output json
+./kernelman.sh files --from /download --yes && ./kernelman.sh update --yes --start
 ```
+
+Root olarak çalıştırıldığında dosya işlemleri ve sapcontrol `su - <sid>adm` ile yapılır; `chown -R <sid>adm:sapsys` ve
+`saproot.sh` yalnızca root'ta çalışır.
 
 Örnek ekran: [`docs/examples/status-linux.txt`](docs/examples/status-linux.txt)
 
@@ -34,4 +37,4 @@ make check    # gofmt + vet + test + build
 make cross    # 4 platform için dist/ üret
 ```
 
-Durum: Adım 1 (durum ekranı) tamam; sıradaki adım `STATE.md`'de.
+Durum: 6 işlemlik konsol akışı yazıldı, gerçek SAP hostunda doğrulama bekliyor; ayrıntı `STATE.md`'de.

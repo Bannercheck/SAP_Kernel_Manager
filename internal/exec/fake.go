@@ -10,6 +10,7 @@ import (
 type Fake struct {
 	mu        sync.Mutex
 	Responses map[string]Result
+	Seq       map[string][]Result // consumed in order; the last one sticks
 	Errors    map[string]error
 	Paths     map[string]string // LookPath answers
 	Calls     []Cmd
@@ -17,12 +18,19 @@ type Fake struct {
 
 // NewFake returns an empty Fake.
 func NewFake() *Fake {
-	return &Fake{Responses: map[string]Result{}, Errors: map[string]error{}, Paths: map[string]string{}}
+	return &Fake{Responses: map[string]Result{}, Seq: map[string][]Result{}, Errors: map[string]error{}, Paths: map[string]string{}}
 }
 
 // On registers stdout and exit code for an exact command line.
 func (f *Fake) On(cmdline, stdout string, exitCode int) *Fake {
 	f.Responses[cmdline] = Result{Stdout: stdout, ExitCode: exitCode}
+	return f
+}
+
+// OnSeq registers successive answers for one command line: each call
+// consumes the next one, the last answer repeats forever.
+func (f *Fake) OnSeq(cmdline string, results ...Result) *Fake {
+	f.Seq[cmdline] = results
 	return f
 }
 
@@ -40,6 +48,13 @@ func (f *Fake) Run(_ context.Context, c Cmd) (Result, error) {
 	key := c.String()
 	if err, ok := f.Errors[key]; ok {
 		return Result{}, err
+	}
+	if seq, ok := f.Seq[key]; ok && len(seq) > 0 {
+		r := seq[0]
+		if len(seq) > 1 {
+			f.Seq[key] = seq[1:]
+		}
+		return r, nil
 	}
 	if r, ok := f.Responses[key]; ok {
 		return r, nil

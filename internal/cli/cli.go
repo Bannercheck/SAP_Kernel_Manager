@@ -7,27 +7,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
-
-// stdout is where operations write; the menu redirects it to its own writer.
-var stdout io.Writer = os.Stdout
-
-// palette overrides auto-detection when set (the menu passes its own).
-var palette *ui.Palette
-
-func currentPalette() ui.Palette {
-	if palette != nil {
-		return *palette
-	}
-	return ui.Detect(os.Stdout)
-}
 
 // Exit codes (see docs/ARCHITECTURE.md §5.9).
 const (

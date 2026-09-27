@@ -1,39 +1,24 @@
 # STATE — kernelman ilerleme durumu
 
-Son güncelleme: 2026-09-20 · Branch: `claude/great-turing-8e8v0c` · Faz: 1 tamam (+isim, menü, ışıklar) → Adım 2
+Son güncelleme: 2026-09-27 · Branch: `claude/great-turing-8e8v0c` · Faz: konsol akışı v1 (1–6) yazıldı → gerçek hostta doğrulama
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
-- [ ] **Adım 2 — Durdur** (`kernelman stop`) · bkz. `docs/ARCHITECTURE.md` §5.7 adım 4, §5.2 (RunAs)
-  - 2a `internal/lock`: `DIR_CT_RUN/../.kernelman.lock` (SID, host, pid, zaman; stale tespiti)
-  - 2b `sap/sapcontrol`: `StopSystem [ALL]`, `WaitforStopped <timeout> <delay>`, `StopService`, `StartService <SID>`, `StartSystem`, `WaitforStarted`
-  - 2c `internal/workflow` çekirdeği: `Step{Check,Do,Undo}`, `Run`, JSONL journal (`~/.kernelman/runs/<id>/`), `resume`
-  - 2d **SAP Stop** adımı: snapshot yaz (`~/.kernelman/systems/<SID>.json`: DIR_CT_RUN, DIR_EXE_ROOT, instance'lar, profiller) →
-    `StopSystem ALL` → `WaitforStopped` (tüm instance'lar GRAY olana dek) → her local instance `StopService`; Undo = **SAP Start**
-  - 2f çevrimdışı parametre çözümü: `sappfpar pf=<profil> <param>` (sapstartsrv kapalıyken); Windows keşif: `sc qc SAP<SID>_<NR>` parser
-  - Adım/işlem adları `internal/cli/ops.go` kaydından gelir (SAP Status, SAP Stop, SAP Start, Kernel Backup …); menü bu kaydı kullanır
-  - 2e CLI: `kernelman stop --sid ABC [--yes] [--dry-run] [--timeout]`, `kernelman start --sid ABC`; ekranda adım ilerlemesi (`[1/3] StopSystem ... ok (42s)`)
-  - Test: FakeRunner ile stop→wait senaryosu; `make examples` ile `docs/examples/stop-linux.png`
+- [ ] **Gerçek hostta doğrulama.** Kullanıcı Linux/AIX SAP hostunda `./kernelman.sh` çalıştırıp (root veya `<sid>adm`) menüden 1 → 2 → 3 → 4(K) → 5 → 4(S)
+      akışını dener; çıktıları ve hataları gönderir. Golden test verisi olarak gerçek `sapcontrol`, `saphostctrl`, `disp+work -V`, `SAPCAR -xvf` çıktıları eklenir.
+- [ ] Sonrası (kullanıcı geri bildirimine göre): AIX `slibclean` (root, dağıtımdan önce), `sapcpe` çalıştırma, journal/resume, Windows (kapsam dışı, istenirse).
 
-## Yol haritası
-- [x] Adım 0 — Mimari, kurallar, bu dosya (`docs/ARCHITECTURE.md`, `CLAUDE.md`, `STATE.md`)
-- [x] Adım 1 — Temel + durum ekranı: `go.mod`, `Makefile` (build/check/cross/examples), `internal/{exec,platform,version,cli}`,
-      `internal/sap/{kernel,sapcontrol,discovery,status}`, `kernelman status/version`, golden testler, `dist/` + `kernelman.sh`/`kernelman.bat`.
-      Ekranlar: `docs/examples/*.png` (menü dahil)
-- [ ] Adım 2 — Durdur (NEXT, yukarıda)
-- [ ] Adım 3 — Yedekle (`kernelman backup --sid ABC`): sistem durmuş olmalı (Check) → `DIR_CT_RUN` → `<üst dizin>/exe_<YYYYMMDD_HHMMSS>`
-      kopyası; izin/sahiplik korunur (`<sid>adm:sapsys`; root ise `RunAs=<sid>adm`); manifest sha256; `backup.keep` · §5.7 adım 5
-- [ ] Adım 4 — **Kernel Files** (`kernelman files --from <dizin>`): kaynak dizini sor/tara; arşiv sınıflandırma (tam arşiv / tek bileşen yaması),
-      **uygulama sırası** (en yüksek SAPEXE/SAPEXEDB → yamalar artan patch sırasıyla 400→411→…→420), hedef seviye, SAPCAR sarmalayıcı,
-      staging'e sıralı açma + `disp+work -V` doğrulama, uyumluluk kuralları · §5.5–5.6
-- [ ] Adım 5 — **Kernel Update** planı + ön kontroller (`kernelman update --dry-run`): disk, yetki, kilit, uyumluluk; **Health Check** (`doctor`) · §5.7 adım 1–2
-- [ ] Adım 6 — Workflow motoru tamamı: deploy (sıralı), postfix (saproot.sh, sapcpe), start, verify, cleanup, `update/resume/rollback/history` · §5.7
-- [ ] Adım 7 — Windows sertleştirme (servisler, UNC yollar, kilitli dosyalar) · §6
-- [ ] Adım 8 — AIX sertleştirme (`slibclean`, `genkld`, `LIBPATH`) · §6
-- [ ] Adım 9 — İndirme: SAP Support Portal / S-user, SHA-256, `kernelman fetch` · §7
-- [ ] Adım 10 — Ek bileşenler: IGS, SAP Host Agent (`saphostexec -upgrade`)
-- [ ] Adım 11 — Çoklu host orkestrasyonu · §6
-- [ ] Adım 12 — Release pipeline (GitHub Actions cross-build, SHA256SUMS) · §9
+## Yol haritası (2026-09-27 · kullanıcının 5 adımlık konsol akışı)
+- [x] Adım 0 — Mimari, kurallar, bu dosya
+- [x] Adım 1 — **SAP Status**: kernel sürümü, sapstartsrv/sapcontrol ışıkları, SID/hostname/instance otomatik; menü başlığında sistem + instance ışıkları
+- [x] Adım 2 — **Kernel Backup**: `DIR_CT_RUN` → yanına `exe_<YYYYMMDD>` (`cp -pR`, root ise `su - <sid>adm`), dosya sayısı doğrulanır, `ls -la` listesi ekranda
+- [x] Adım 3 — **Kernel Files**: indirme dizini sorulur; **yalnızca bugün tarihli** `*.SAR/*.sar` dosyaları kernel dizinine kopyalanır; `chown -R <sid>adm:sapsys`; liste
+- [x] Adım 4 — **SAP Stop / Start**: `K` = StopSystem ALL → WaitforStopped → StopService; `S` = StartService (sidadm) → StartSystem ALL → WaitforStarted; ışıklar
+- [x] Adım 5 — **Kernel Update**: sistem durmuş + bugünkü yedek şart (yoksa teklif eder); arşivler **patch numarasına göre küçükten büyüğe** `SAPCAR -xvf`
+      (SAPEXE → SAPEXEDB → tek bileşen yamaları); `chown -R`; `saproot.sh` (root); `disp+work -V` ile yeni seviye; `S` ile başlat
+- [x] Adım 6 — **Kernel Rollback**: en son `exe_<date>` yedeğini kernel dizininin üstüne kopyalar, chown, doğrula, başlat teklifi
+- [x] Her işlem sonunda ✔/✘ + "Press Enter to return to the main menu" → ana sayfa ışıklarla yenilenir
+- [ ] Sonraki: gerçek host doğrulaması (NEXT), AIX `slibclean`, journal/resume, çoklu host
 
 ## Açık kararlar (kullanıcı onayı bekliyor — itiraz yoksa varsayılan uygulanır)
 - Dil **Go** (D1). Alternatifler: Python (AIX riski), Java (SAP JVM bağımlılığı).
@@ -43,6 +28,15 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı: **yalnızca Unix** (Linux, AIX); Windows kodu ve hedefi kaldırıldı (`platform_windows.go`, `vt_windows.go`, `.bat`). `make cross` → linux/amd64, linux/ppc64le, aix/ppc64.
+- 2026-09-27 · Kullanıcı prosedürü: klasik yerinde güncelleme. SAR'lar kernel dizinine kopyalanır ve orada `SAPCAR -xvf` ile sırayla açılır (staging yok).
+  Güvenlik: Kernel Update, sistem durmadan ve **bugünkü** yedek olmadan çalışmaz (yoksa önce alır). Rollback = yedeği geri kopyala.
+- 2026-09-27 · Root'tan çalıştırma: dosya işlemleri ve sapcontrol Start/Stop `su - <sid>adm -c` ile; root olmayan aynı kullanıcı doğrudan; başka kullanıcı `sudo -n -u`.
+  `chown -R` ve `saproot.sh` yalnızca root'ta çalışır, aksi halde ekranda "skipped" notu.
+- 2026-09-27 · Bugün tarihli SAR filtresi: dosya mtime'ının günü = çalıştırma günü; eski arşivler sayı olarak gösterilir, kopyalanmaz.
+- 2026-09-27 · Durum dizini `/usr/sap/<SID>/.kernelman/snapshot.json` (yazılamazsa `~/.kernelman/<SID>`): kernel dizini, son yedek, indirme dizini, kopyalanan SAR'lar.
+  sapstartsrv kapalıyken kernel dizini: snapshot → `/usr/sap/<SID>/SYS/exe/run` symlink.
+- 2026-09-27 · Menü: 6 madde (Status, Backup, Files, Stop/Start, Update, Rollback); `stop/start/version` yalnızca komut satırında. Update Plan/History/Doctor kaldırıldı.
 - 2026-09-20 · Kullanıcı: menü kalabalık, kapalı sistem için yalnızca kırmızı ışık → açıklamalar menüden kaldırıldı (`help`'te), durum kelimeleri (running/stopped/n/m) kaldırıldı, ışık tek gösterge.
 - 2026-09-20 · İsim **KernelMan** (kullanıcı seçimi): komut/binary `kernelman`, görünen ad `KernelMan`, env `KERNELMAN_*`.
 - 2026-09-20 · Menü başlığı: sistem başına açık/kapalı ışığı + kernel + sapstartsrv n/m + her instance'ın ışığı + Host Agent (kullanıcı: "sistem açık mı kapalı mı görünsün").
@@ -65,7 +59,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - 2026-09-20 · Windows'ta `IsPrivileged` `\\.\PHYSICALDRIVE0` açma denemesiyle (x/sys bağımlılığı ertelendi).
 - 2026-09-20 · Go seçildi; CGO kapalı; bağımlılık: yaml.v3, x/sys, x/term (gerekçe §2 D1–D3).
 - 2026-09-20 · Kullanıcı prosedürü gereği yedek **durdurmadan sonra** alınır; ad `exe_<tarih>`, sahip `<sid>adm:sapsys` (D9).
-- 2026-09-20 · Repo boştu; "design system çıkar" isteği uygulanamaz. CLI çıktı standardı §5.9'da tanımlandı; web UI gelirse gerçek design system yapılır.
+- 2026-09-20 · (geçmiş) Repo boştu; "design system çıkar" isteği uygulanamaz. CLI çıktı standardı §5.9'da tanımlandı; web UI gelirse gerçek design system yapılır.
 
 ## Notlar / engeller
 - Uzak repoda henüz `main` yok; ilk push bu branch'ten. Kullanıcı isterse `main` bu branch'ten açılır.

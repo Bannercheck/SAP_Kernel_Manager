@@ -20,11 +20,11 @@
 ## Code rules
 - Go, stdlib-first. Allowed deps: `gopkg.in/yaml.v3`, `golang.org/x/sys`, `golang.org/x/term`.
   Any new dependency needs a line in `STATE.md` → "Karar günlüğü" with the reason.
-- `CGO_ENABLED=0`. Must cross-compile for linux/amd64, linux/ppc64le, aix/ppc64, windows/amd64 (`make cross`).
+- `CGO_ENABLED=0`. Unix only: must cross-compile for linux/amd64, linux/ppc64le, aix/ppc64 (`make cross`). Windows is out of scope.
 - OS-specific code lives only in `internal/platform` behind build tags. Everything else is OS-agnostic.
 - Never call SAP binaries (sapcontrol, SAPCAR, disp+work, …) directly from business logic;
   go through `internal/exec.Runner` so it is testable with a fake.
-- Every `internal/workflow` step is idempotent, journaled, and has `Check/Do/Undo`.
+- `internal/ops` operations report through `ops.Progress`, never print; every step is numbered `[i/n]` and shows ok/fail.
 - Never delete or overwrite the running kernel without a verified backup.
 - Errors: wrap with context (`fmt.Errorf("stop system %s: %w", sid, err)`). No panics in library code.
 - Tests: table-driven; parsers use golden files in `testdata/`. Keep files under ~300 lines.

@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"os"
 	"strings"
 	"testing"
 
@@ -30,33 +29,12 @@ func TestSummaryLines(t *testing.T) {
 	}
 }
 
-// TestMenuExample drives the menu against the example report and, when
-// KERNELMAN_WRITE_EXAMPLE=1, records docs/examples/menu.txt for the screenshot.
-func TestMenuExample(t *testing.T) {
-	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
-	defer func() { collectStatus = liveCollect }()
-
-	pal := ui.Palette{Colour: true, Unicode: true}
-	var out bytes.Buffer
-	Menu(strings.NewReader("1\n\nq\n"), &out, pal)
-	for _, want := range []string{"1) " + pal.Check() + " SAP Status", "SYSTEM ABC", "SYSTEM QAS", "DIR_CT_RUN"} {
-		if !strings.Contains(out.String(), want) {
-			t.Errorf("menu transcript lacks %q:\n%s", want, out.String())
-		}
-	}
-	if os.Getenv("KERNELMAN_WRITE_EXAMPLE") == "1" {
-		content := "$ ./kernelman.sh              # argümansız: menü · 1 = SAP Status, q = çıkış\n" + out.String()
-		if err := os.WriteFile("../../docs/examples/menu.txt", []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func TestMenuMarksResults(t *testing.T) {
 	summaryFunc = func(ui.Palette) []string { return []string{"(+) ABC  ABAP  running"} }
+	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
 	defer func() { summaryFunc = liveSummary }()
 
-	in := strings.NewReader("10\n\nstop\n\nzzz\nq\n") // Version ok, SAP Stop planned (fails), bad choice, quit
+	in := strings.NewReader("1\n\nzzz\nq\n") // SAP Status ok, bad choice, quit
 	var out bytes.Buffer
 	if code := Menu(in, &out, ui.Palette{}); code != ExitOK {
 		t.Fatalf("exit code %d", code)
@@ -64,15 +42,17 @@ func TestMenuMarksResults(t *testing.T) {
 	s := out.String()
 	for _, want := range []string{
 		"(+) ABC  ABAP  running",
-		"10) OK Version",
-		"2) !! SAP Stop",
-		"--- Version: OK done.",
-		"--- SAP Stop: !! failed (exit code 1).",
+		"1) OK SAP Status",
+		"--- SAP Status: OK done. Press Enter to return to the main menu.",
 		`!! unknown choice "zzz"`,
+		"6)   Kernel Rollback",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("menu output lacks %q\n%s", want, s)
 		}
+	}
+	if strings.Contains(s, "7)") || strings.Contains(s, "Version") {
+		t.Errorf("command-line-only operations must not be listed:\n%s", s)
 	}
 }
 
@@ -81,6 +61,9 @@ func TestMenuChoice(t *testing.T) {
 		if op, ok := menuChoice(in); !ok || op.ID != "status" {
 			t.Errorf("menuChoice(%q) = %v %v", in, op.ID, ok)
 		}
+	}
+	if op, ok := menuChoice("4"); !ok || op.ID != "control" {
+		t.Errorf("menuChoice(4) = %v %v", op.ID, ok)
 	}
 	if _, ok := menuChoice("99"); ok {
 		t.Error("99 should be rejected")

@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
@@ -25,6 +23,9 @@ var summaryFunc = liveSummary
 // are read from in so the menu can be driven by tests and transcripts.
 func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 	rd := bufio.NewReader(in)
+	prevIn, prevOut, prevPal := input, stdout, palette
+	input, stdout, palette = rd, out, &pal
+	defer func() { input, stdout, palette = prevIn, prevOut, prevPal }()
 	results := map[string]int{} // op ID → last exit code in this session
 	summary := summaryFunc(pal)
 	for {
@@ -49,16 +50,13 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 			continue
 		}
 		fmt.Fprintf(out, "\n%s\n", pal.Paint(ui.Bold, "=== "+op.Name+" ==="))
-		prevOut, prevPal := stdout, palette
-		stdout, palette = out, &pal
 		code := Dispatch(op, nil)
-		stdout, palette = prevOut, prevPal
 		results[op.ID] = code
 		mark := pal.Check() + " " + pal.Paint(ui.Green, "done")
 		if code != 0 {
 			mark = pal.Cross() + " " + pal.Paint(ui.Red, fmt.Sprintf("failed (exit code %d)", code))
 		}
-		fmt.Fprintf(out, "\n--- %s: %s. Press Enter to continue.\n", op.Name, mark)
+		fmt.Fprintf(out, "\n--- %s: %s. Press Enter to return to the main menu.\n", op.Name, mark)
 		if _, err := rd.ReadString('\n'); err != nil {
 			return code
 		}
@@ -68,12 +66,13 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 
 func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []string) {
 	host, _ := os.Hostname()
-	fmt.Fprintf(w, "%s   %s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName), pal.Paint(ui.Dim, "host "+host))
+	fmt.Fprintf(w, "%s   %s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName),
+		pal.Paint(ui.Dim, fmt.Sprintf("host %s · %s", host, version.Version)))
 	for _, l := range summary {
 		fmt.Fprintln(w, "  "+l)
 	}
 	fmt.Fprintln(w)
-	for i, op := range Ops {
+	for i, op := range menuOps() {
 		mark := " "
 		if code, ran := results[op.ID]; ran {
 			mark = pal.Check()
@@ -81,22 +80,10 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 				mark = pal.Cross()
 			}
 		}
-		name := op.Name
-		if op.Run == nil {
-			name = pal.Paint(ui.Dim, name)
-		}
-		fmt.Fprintf(w, "  %2d) %s %s\n", i+1, mark, name)
+		fmt.Fprintf(w, "  %2d) %s %-18s %s\n", i+1, mark, op.Name, pal.Paint(ui.Dim, op.Summary))
 	}
 	fmt.Fprintln(w, "   q)   Quit")
-	fmt.Fprintln(w, pal.Paint(ui.Dim, "\n  dim = not available yet · details: "+version.AppName+" help"))
 	fmt.Fprintln(w)
-}
-
-// collectStatus gathers the live report; tests and transcripts replace it.
-var collectStatus = liveCollect
-
-func liveCollect(ctx context.Context, opts status.Options) *status.Report {
-	return status.Collect(ctx, exec.NewReal(), platform.Current(), opts)
 }
 
 // liveSummary probes the host and renders the system overview above the menu.
@@ -138,10 +125,22 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 	return ui.Table("", rows)
 }
 
+// menuOps are the operations listed in the interactive menu.
+func menuOps() []Op {
+	var out []Op
+	for _, op := range Ops {
+		if op.Menu {
+			out = append(out, op)
+		}
+	}
+	return out
+}
+
 func menuChoice(s string) (Op, bool) {
 	if n, err := strconv.Atoi(s); err == nil {
-		if n >= 1 && n <= len(Ops) {
-			return Ops[n-1], true
+		m := menuOps()
+		if n >= 1 && n <= len(m) {
+			return m[n-1], true
 		}
 		return Op{}, false
 	}
