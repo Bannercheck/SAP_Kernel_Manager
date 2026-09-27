@@ -25,10 +25,11 @@ func ControlOp(args []string) int {
 	}
 	e := newEnv(t)
 	lights(ctx, e)
-	switch key("S = Start · K = Stop (Kapat) · Enter = back") {
-	case "S":
+	switch pick(option{"1", "SAP Start", []string{"s", "start"}}, option{"2", "SAP Stop (Kapat)", []string{"k", "stop", "kapat"}},
+		option{"0", "Back to main menu", []string{"b", "back"}}) {
+	case "1":
 		return runStart(ctx, e)
-	case "K":
+	case "2":
 		return runStop(ctx, e)
 	}
 	return ExitOK

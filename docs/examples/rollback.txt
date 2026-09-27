@@ -1,48 +1,68 @@
-$ ./kernelman.sh              # menü · 6 ⏎  ⏎ y ⏎  ⏎  ⏎ q
-[1mKernelMan — SAP Kernel Manager[0m   [90mhost vm · dev[0m
+$ ./kernelman.sh              # menü · 6 ⏎  ⏎ 1 ⏎ 0 ⏎ 0 ⏎ q
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 21:16
 
-  [33m●[0m  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
-  [31m●[0m  QAS             ABAP  kernel 793 patch 150                       ASCS10 [31m●[0m  D11 [31m●[0m
-  [32m●[0m  SAP Host Agent        722 patch 65
+             SYSTEM          TYPE     HOSTNAME  KERNEL                INSTANCES
+  [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
+  [31m⬤[0m [31m[1mSTOPPED[0m[0m  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 [31m●[0m  D11 [31m●[0m
+  [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           sapci     Kernel 722 Patch 65
 
    1)   SAP Status         [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
-   2)   Kernel Backup      [90mcopy the kernel directory to exe_<date> and list it[0m
-   3)   Kernel Files       [90mcopy today's *.SAR from the download directory into the kernel directory, chown[0m
-   4)   SAP Stop / Start   [90mK = stop the system, S = start it[0m
-   5)   Kernel Update      [90mextract the archives in ascending patch order, chown, saproot.sh, verify, start[0m
-   6)   Kernel Rollback    [90mcopy the latest exe_<date> backup back over the kernel directory[0m
+   2)   Kernel Backup      [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
+   3)   Kernel Files       [90mfind today's *.SAR on this server, copy into every kernel directory, chown[0m
+   4)   SAP Stop / Start   [90m1 = start the system, 2 = stop it[0m
+   5)   Kernel Update      [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
+   6)   Kernel Rollback    [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): 6
 
 [1m=== Kernel Rollback ===[0m
-  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64
-  [90m(sapcontrol ParameterValue DIR_CT_RUN (instance 00))[0m
+  System [1mABC[0m · user abcadm · kernel directories:
+    /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe
 
-Backup to restore [/tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927]: 
-  [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
-Copy /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64? [y/N]: y
-  [1/4] Copy /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -pR[0m
-  [2/4] chown -R abcadm:sapsys /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
-  [3/4] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
-  [4/4] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 patch 200[0m
+  [36mBackups → kernel directories[0m
+    /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927  →  /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64
+    /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe_20260927  →  /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe
+    /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe_20260927  →  /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe
+Backup for /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64 [/tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927]: 
+  [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
 
-  [32m✔[0m Kernel ABC restored: 793 patch 423 → [1m793 patch 200[0m
-S = start the system now · Enter = back to menu: 
+  Copy the backups over 3 kernel directories?
+  [1m1)[0m Yes   [1m0)[0m No
+  Select: 1
+  [1/8] Copy /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64_20260927 over /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -pR[0m
+  [2/8] Copy /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe_20260927 over /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe ... [32mok[0m  [90mcp -pR[0m
+  [3/8] Copy /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe_20260927 over /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mcp -pR[0m
+  [4/8] chown -R abcadm:sapsys /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
+  [5/8] chown -R abcadm:sapsys /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/D00/exe ... [32mok[0m  [90mskipped: not root[0m
+  [6/8] chown -R abcadm:sapsys /tmp/TestFlowRollback2032220201/001/usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mskipped: not root[0m
+  [7/8] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /tmp/TestFlowRollback2032220201/001/sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
+  [8/8] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 Patch 200[0m
 
---- Kernel Rollback: [32m✔[0m [32mdone[0m. Press Enter to return to the main menu.
-[1mKernelMan — SAP Kernel Manager[0m   [90mhost vm · dev[0m
+  [32m✔[0m Kernel ABC restored: 793 Patch 423 → [1m793 Patch 200[0m
+  [1m1)[0m Start the system now   [1m0)[0m Back to main menu
+  Select: 0
 
-  [33m●[0m  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
-  [31m●[0m  QAS             ABAP  kernel 793 patch 150                       ASCS10 [31m●[0m  D11 [31m●[0m
-  [32m●[0m  SAP Host Agent        722 patch 65
+--- Kernel Rollback: [32m✔[0m [32mdone[0m
+  [1m0)[0m Back to main menu   [1mq)[0m Quit
+  Select: 0
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
+  Hostname [1mvm[0m · User root · 2026-09-27 21:16
+
+             SYSTEM          TYPE     HOSTNAME  KERNEL                INSTANCES
+  [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
+  [31m⬤[0m [31m[1mSTOPPED[0m[0m  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 [31m●[0m  D11 [31m●[0m
+  [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           sapci     Kernel 722 Patch 65
 
    1)   SAP Status         [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
-   2)   Kernel Backup      [90mcopy the kernel directory to exe_<date> and list it[0m
-   3)   Kernel Files       [90mcopy today's *.SAR from the download directory into the kernel directory, chown[0m
-   4)   SAP Stop / Start   [90mK = stop the system, S = start it[0m
-   5)   Kernel Update      [90mextract the archives in ascending patch order, chown, saproot.sh, verify, start[0m
-   6) [32m✔[0m Kernel Rollback    [90mcopy the latest exe_<date> backup back over the kernel directory[0m
+   2)   Kernel Backup      [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
+   3)   Kernel Files       [90mfind today's *.SAR on this server, copy into every kernel directory, chown[0m
+   4)   SAP Stop / Start   [90m1 = start the system, 2 = stop it[0m
+   5)   Kernel Update      [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
+   6) [32m✔[0m Kernel Rollback    [90mcopy each directory's latest <name>_<date> backup back[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): q

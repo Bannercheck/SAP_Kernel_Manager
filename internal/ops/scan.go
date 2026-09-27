@@ -1,0 +1,172 @@
+package ops
+
+import (
+	"context"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+)
+
+// DefaultScanRoots are searched, in order, for archives placed on the server
+// today. They cover where people usually put downloads on SAP hosts.
+var DefaultScanRoots = []string{"/usr/sap", "/sapmnt", "/tmp", "/var/tmp", "/home", "/root", "/export", "/mnt", "/media",
+	"/opt", "/download", "/downloads", "/software", "/install", "/stage", "/sap", "/data"}
+
+// pruneNames are directory names never descended into.
+var pruneNames = map[string]bool{"proc": true, "sys": true, "dev": true, "run": true, "lost+found": true, ".snapshot": true,
+	"node_modules": true, ".git": true}
+
+// ScanOptions controls FindTodaySARs.
+type ScanOptions struct {
+	Roots    []string // directories to search (DefaultScanRoots when empty)
+	Day      time.Time
+	Exclude  []string // subtrees to skip, e.g. the kernel directories and their backups
+	MaxDepth int      // 0 = 12
+	Progress func(dirs int, current string)
+}
+
+// ScanResult is what the search found.
+type ScanResult struct {
+	Today      []SARFile // archives dated Day, apply order, one per file name
+	Older      int       // archives seen with another date
+	Duplicates []string  // names found in more than one place (the newest copy is kept)
+	Dirs       int       // directories visited
+	Roots      []string  // roots that existed and were searched
+}
+
+// FindTodaySARs walks the roots and returns *.SAR/*.sar files modified on
+// opts.Day. It never follows symlinks, skips system pseudo file systems and
+// the excluded subtrees, and stops descending at MaxDepth.
+func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
+	roots := opts.Roots
+	if len(roots) == 0 {
+		roots = DefaultScanRoots
+	}
+	depth := opts.MaxDepth
+	if depth == 0 {
+		depth = 12
+	}
+	y, m, d := opts.Day.Date()
+	res := &ScanResult{}
+	byName := map[string]SARFile{}
+	seenRoot := map[string]bool{}
+	for _, root := range roots {
+		root = filepath.Clean(root)
+		if seenRoot[root] {
+			continue
+		}
+		seenRoot[root] = true
+		st, err := os.Stat(root)
+		if err != nil || !st.IsDir() {
+			continue
+		}
+		res.Roots = append(res.Roots, root)
+		rootDepth := strings.Count(root, string(filepath.Separator))
+		err = filepath.WalkDir(root, func(path string, de fs.DirEntry, werr error) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			if werr != nil {
+				return nil // unreadable entry: skip
+			}
+			if de.IsDir() {
+				if path != root && (pruneNames[de.Name()] || excluded(path, opts.Exclude) ||
+					strings.Count(path, string(filepath.Separator))-rootDepth > depth) {
+					return fs.SkipDir
+				}
+				res.Dirs++
+				if opts.Progress != nil && res.Dirs%500 == 0 {
+					opts.Progress(res.Dirs, path)
+				}
+				return nil
+			}
+			if !de.Type().IsRegular() || !strings.EqualFold(filepath.Ext(de.Name()), ".sar") {
+				return nil
+			}
+			info, err := de.Info()
+			if err != nil {
+				return nil
+			}
+			fy, fm, fd := info.ModTime().Date()
+			if fy != y || fm != m || fd != d {
+				res.Older++
+				return nil
+			}
+			f, ok := ParseSARName(de.Name())
+			if !ok {
+				f = SARFile{Name: de.Name(), Component: "?"}
+			}
+			f.Path, f.Size, f.ModTime = path, info.Size(), info.ModTime()
+			if prev, dup := byName[f.Name]; dup {
+				res.Duplicates = append(res.Duplicates, f.Name)
+				if !f.ModTime.After(prev.ModTime) {
+					return nil
+				}
+			}
+			byName[f.Name] = f
+			return nil
+		})
+		if err != nil && err != ctx.Err() {
+			return res, err
+		}
+		if ctx.Err() != nil {
+			return res, ctx.Err()
+		}
+	}
+	for _, f := range byName {
+		res.Today = append(res.Today, f)
+	}
+	SortForApply(res.Today)
+	sort.Strings(res.Duplicates)
+	return res, nil
+}
+
+func excluded(path string, subtrees []string) bool {
+	for _, ex := range subtrees {
+		if ex == "" {
+			continue
+		}
+		if path == ex || strings.HasPrefix(path, strings.TrimSuffix(ex, "/")+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// BackupSiblings returns the backup directories that sit next to dir
+// (<base>_<YYYYMMDD>[_HHMMSS]); they are excluded from scans.
+func BackupSiblings(dir string) []string {
+	entries, err := os.ReadDir(filepath.Dir(dir))
+	if err != nil {
+		return nil
+	}
+	var out []string
+	prefix := filepath.Base(dir) + "_"
+	for _, en := range entries {
+		if en.IsDir() && strings.HasPrefix(en.Name(), prefix) && isBackupSuffix(strings.TrimPrefix(en.Name(), prefix)) {
+			out = append(out, filepath.Join(filepath.Dir(dir), en.Name()))
+		}
+	}
+	return out
+}
+
+func isBackupSuffix(s string) bool {
+	if len(s) != 8 && len(s) != 15 {
+		return false
+	}
+	for i, c := range s {
+		if i == 8 {
+			if c != '_' {
+				return false
+			}
+			continue
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}

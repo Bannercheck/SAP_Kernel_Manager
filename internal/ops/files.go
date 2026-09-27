@@ -21,7 +21,8 @@ type SARFile struct {
 	Name      string
 	Size      int64
 	ModTime   time.Time
-	Component string // SAPEXE, SAPEXEDB, DW, IGSEXE, LIB_DBSL ...
+	Component string // upper-cased for logic: SAPEXE, SAPEXEDB, DW, IGSEXE, LIB_DBSL ...
+	Label     string // component as written in the file name: SAPEXE, dw, igsexe ...
 	Patch     int    // 402, 403, 421 ...
 	Number    string // SAP's archive number, informational
 	Full      bool   // complete kernel archive (SAPEXE / SAPEXEDB)
@@ -39,7 +40,7 @@ func ParseSARName(name string) (SARFile, bool) {
 	}
 	patch, _ := strconv.Atoi(m[2])
 	comp := strings.ToUpper(m[1])
-	return SARFile{Name: name, Component: comp, Patch: patch, Number: m[3], Full: comp == "SAPEXE" || comp == "SAPEXEDB"}, true
+	return SARFile{Name: name, Component: comp, Label: m[1], Patch: patch, Number: m[3], Full: comp == "SAPEXE" || comp == "SAPEXEDB"}, true
 }
 
 // ScanSARs lists *.SAR/*.sar files in dir. Files modified on `day` are the
@@ -115,43 +116,53 @@ func TargetPatch(files []SARFile) int {
 
 // CopyResult describes a finished Kernel Files operation.
 type CopyResult struct {
-	Dest      string
+	Dests     []string // kernel directories that received the archives
 	Copied    []SARFile
-	Listing   string
+	Listing   string // ls -la of the archives in the central kernel directory
 	ChownNote string
 }
 
-// CopySARs copies the archives into the kernel directory and hands them to
-// <sid>adm:sapsys, then lists them as proof.
+// CopySARs copies the archives into every kernel directory, hands them to
+// <sid>adm:sapsys, then lists them in the central directory as proof.
 func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error) {
-	res := &CopyResult{Dest: e.T.KernelDir}
+	res := &CopyResult{}
 	if len(files) == 0 {
 		return res, fmt.Errorf("no archives to copy")
 	}
-	const n = 3
-	if err := e.step(1, n, fmt.Sprintf("Copy %d archive(s) to %s", len(files), res.Dest), func() (string, error) {
-		args := []string{"-p"}
-		for _, f := range files {
-			args = append(args, f.Path)
-		}
-		args = append(args, res.Dest+"/")
-		_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: args, RunAs: e.asAdm(), Timeout: time.Hour})
-		if err == nil {
-			res.Copied = files
-		}
-		return "cp -p", err
-	}); err != nil {
-		return res, err
+	dirs := e.T.KernelDirs
+	if len(dirs) == 0 {
+		dirs = []string{e.T.KernelDir}
 	}
-	if err := e.step(2, n, fmt.Sprintf("chown -R %s:%s %s", e.T.SIDAdm, e.T.Group, res.Dest), func() (string, error) {
-		return chownTree(ctx, e, res.Dest, &res.ChownNote)
-	}); err != nil {
-		return res, err
+	n := 2*len(dirs) + 1
+	step := 0
+	for _, dir := range dirs {
+		step++
+		if err := e.step(step, n, fmt.Sprintf("Copy %d archive(s) to %s", len(files), dir), func() (string, error) {
+			args := []string{"-p"}
+			for _, f := range files {
+				args = append(args, f.Path)
+			}
+			args = append(args, dir+"/")
+			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: args, RunAs: e.asAdm(), Timeout: time.Hour})
+			if err == nil {
+				res.Dests = append(res.Dests, dir)
+			}
+			return "cp -p", err
+		}); err != nil {
+			return res, err
+		}
+		step++
+		if err := e.step(step, n, fmt.Sprintf("chown -R %s:%s %s", e.T.SIDAdm, e.T.Group, dir), func() (string, error) {
+			return chownTree(ctx, e, dir, &res.ChownNote)
+		}); err != nil {
+			return res, err
+		}
 	}
-	if err := e.step(3, n, "List archives in kernel directory", func() (string, error) {
+	res.Copied = files
+	if err := e.step(n, n, "List archives in "+e.T.KernelDir, func() (string, error) {
 		args := []string{"-la"}
 		for _, f := range files {
-			args = append(args, filepath.Join(res.Dest, f.Name))
+			args = append(args, filepath.Join(e.T.KernelDir, f.Name))
 		}
 		out, err := e.run(ctx, exec.Cmd{Path: "ls", Args: args})
 		res.Listing = out.Stdout

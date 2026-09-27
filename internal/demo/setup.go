@@ -61,6 +61,13 @@ func Setup(root string, p platform.Platform) (Layout, error) {
 			return l, err
 		}
 	}
+	for _, in := range instances { // instance-local exe directories (sapcpe copies) hold a subset
+		for _, f := range []string{"sapstartsrv", "sapcontrol", "sapcpe", "disp+work", "libsapu16.so"} {
+			if err := stub(filepath.Join(root, SID, in.Name, "exe", f)); err != nil {
+				return l, err
+			}
+		}
+	}
 	if _, err := os.Stat(filepath.Join(l.KernelDir, patchFile)); err != nil {
 		if err := os.WriteFile(filepath.Join(l.KernelDir, patchFile), []byte(fmt.Sprint(basePatch)), 0o644); err != nil {
 			return l, err

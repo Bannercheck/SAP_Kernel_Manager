@@ -20,11 +20,11 @@ type Op struct {
 // Ops is the single registry of operations, in menu order.
 var Ops = []Op{
 	{ID: "status", Name: "SAP Status", Summary: "kernel version, sapstartsrv/sapcontrol, SID, hostname, instances", Menu: true, Run: Status},
-	{ID: "backup", Name: "Kernel Backup", Summary: "copy the kernel directory to exe_<date> and list it", Menu: true, Run: BackupOp},
-	{ID: "files", Name: "Kernel Files", Summary: "copy today's *.SAR from the download directory into the kernel directory, chown", Menu: true, Run: FilesOp},
-	{ID: "control", Name: "SAP Stop / Start", Summary: "K = stop the system, S = start it", Menu: true, Run: ControlOp},
-	{ID: "update", Name: "Kernel Update", Summary: "extract the archives in ascending patch order, chown, saproot.sh, verify, start", Menu: true, Run: UpdateOp},
-	{ID: "rollback", Name: "Kernel Rollback", Summary: "copy the latest exe_<date> backup back over the kernel directory", Menu: true, Run: RollbackOp},
+	{ID: "backup", Name: "Kernel Backup", Summary: "copy every kernel directory next to itself as <name>_<date>, list them", Menu: true, Run: BackupOp},
+	{ID: "files", Name: "Kernel Files", Summary: "find today's *.SAR on this server, copy into every kernel directory, chown", Menu: true, Run: FilesOp},
+	{ID: "control", Name: "SAP Stop / Start", Summary: "1 = start the system, 2 = stop it", Menu: true, Run: ControlOp},
+	{ID: "update", Name: "Kernel Update", Summary: "extract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start", Menu: true, Run: UpdateOp},
+	{ID: "rollback", Name: "Kernel Rollback", Summary: "copy each directory's latest <name>_<date> backup back", Menu: true, Run: RollbackOp},
 	{ID: "stop", Name: "SAP Stop", Summary: "stop the system (command line)", Run: StopOp},
 	{ID: "start", Name: "SAP Start", Summary: "start the system (command line)", Run: StartOp},
 	{ID: "version", Name: "Version", Summary: "build information", Run: Version},

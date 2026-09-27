@@ -25,7 +25,7 @@ func exampleReport() *status.Report {
 		HostAgent: discovery.HostAgent{Installed: true, Running: true, Path: "/usr/sap/hostctrl/exe/saphostexec",
 			Version: kernel.Version{Release: 722, Patch: 65}},
 		Systems: []status.System{{
-			SID: "ABC", Type: "ABAP", Status: "YELLOW",
+			SID: "ABC", Type: "AS ABAP", Status: "YELLOW",
 			Database:     status.DB{Type: "hdb", Name: "HDB", Host: "saphdb"},
 			Kernel:       k,
 			KernelSource: "disp+work -V (/usr/sap/ABC/SYS/exe/uc/linuxx86_64)",
@@ -41,7 +41,7 @@ func exampleReport() *status.Report {
 				{Nr: "02", Type: "D", TypeDesc: "Application Server (ABAP)", Host: "sapapp2", Sapstartsrv: "remote", Status: "GRAY"},
 			},
 		}, {
-			SID: "QAS", Type: "ABAP", Status: "GRAY",
+			SID: "QAS", Type: "AS ABAP", Status: "GRAY",
 			Database:     status.DB{Type: "hdb", Name: "HDQ", Host: "saphdq"},
 			Kernel:       kernel.Version{Release: 793, Patch: 150, Platform: "linuxx86_64"},
 			KernelSource: "saphostctrl ListInstances",
@@ -62,10 +62,10 @@ func TestRenderStatus(t *testing.T) {
 	var buf bytes.Buffer
 	RenderStatus(&buf, exampleReport(), ui.Palette{})
 	out := buf.String()
-	for _, want := range []string{"SYSTEM ABC · ABAP · (~) YELLOW", "Kernel version               793 (7.93)",
-		"Kernel patch level           200 (changelist 2123456)", "DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64",
-		"Global kernel directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "remote", "SAP HANA (hdb)",
-		"755–758", "SAP Host Agent               (+) 722 patch 65", "WARNINGS"} {
+	for _, want := range []string{"SYSTEM ABC · AS ABAP · Hostname sapci · (~) PARTIAL (YELLOW)", "Kernel Version               793 (7.93)",
+		"Kernel Patch Level           200 (Changelist 2123456)", "DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64",
+		"Global Kernel Directory      /sapmnt/ABC/exe/uc/linuxx86_64", "ASCS01", "sapapp2", "Remote/Unknown", "SAP HANA (hdb)",
+		"755–758", "SAP Host Agent               (+) RUNNING · 722 Patch 65", "SYSTEM QAS · AS ABAP · Hostname sapci · (x) STOPPED (GRAY)", "WARNINGS"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q\n%s", want, out)
 		}

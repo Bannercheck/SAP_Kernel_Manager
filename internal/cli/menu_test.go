@@ -15,16 +15,17 @@ func TestSummaryLines(t *testing.T) {
 	lines := SummaryLines(exampleReport(), pal)
 	joined := strings.Join(lines, "\n")
 	for _, want := range []string{
-		"(~)  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 (+)  ASCS01 (+)  sapapp2/02 (x)",
-		"(x)  QAS             ABAP  kernel 793 patch 150                       ASCS10 (x)  D11 (x)",
-		"(+)  SAP Host Agent        722 patch 65",
+		"SYSTEM          TYPE     HOSTNAME  KERNEL                INSTANCES",
+		"(~) PARTIAL  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 (+)  ASCS01 (+)  sapapp2/02 (x)",
+		"(x) STOPPED  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 (x)  D11 (x)",
+		"(+) RUNNING  SAP Host Agent           sapci     Kernel 722 Patch 65",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("summary lacks %q\n%s", want, joined)
 		}
 	}
 	empty := SummaryLines(&status.Report{}, pal)
-	if len(empty) != 2 || !strings.Contains(empty[0], "no SAP instances") || !strings.Contains(empty[1], "not installed") {
+	if len(empty) != 3 || !strings.Contains(empty[1], "no SAP instances") || !strings.Contains(empty[2], "MISSING") {
 		t.Errorf("empty summary = %q", empty)
 	}
 }
@@ -34,7 +35,7 @@ func TestMenuMarksResults(t *testing.T) {
 	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
 	defer func() { summaryFunc = liveSummary }()
 
-	in := strings.NewReader("1\n\nzzz\nq\n") // SAP Status ok, bad choice, quit
+	in := strings.NewReader("1\n\n0\nzzz\nq\n") // SAP Status ok, Enter is ignored, 0 = back, bad choice, quit
 	var out bytes.Buffer
 	if code := Menu(in, &out, ui.Palette{}); code != ExitOK {
 		t.Fatalf("exit code %d", code)
@@ -43,7 +44,8 @@ func TestMenuMarksResults(t *testing.T) {
 	for _, want := range []string{
 		"(+) ABC  ABAP  running",
 		"1) OK SAP Status",
-		"--- SAP Status: OK done. Press Enter to return to the main menu.",
+		"--- SAP Status: OK done",
+		"0) Back to main menu   q) Quit",
 		`!! unknown choice "zzz"`,
 		"6)   Kernel Rollback",
 	} {
@@ -51,7 +53,7 @@ func TestMenuMarksResults(t *testing.T) {
 			t.Errorf("menu output lacks %q\n%s", want, s)
 		}
 	}
-	if strings.Contains(s, "7)") || strings.Contains(s, "Version") {
+	if strings.Contains(s, "7)") || strings.Contains(s, ") SAP Stop\n") {
 		t.Errorf("command-line-only operations must not be listed:\n%s", s)
 	}
 }

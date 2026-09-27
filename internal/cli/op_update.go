@@ -43,14 +43,15 @@ func UpdateOp(args []string) int {
 	files, dir := archivesForUpdate(t, *from)
 	if len(files) == 0 {
 		var ok bool
-		files, dir, ok = pickArchives(t, *from, true)
+		files, ok = pickArchives(ctx, t, *from, true)
 		if !ok {
 			return ExitError
 		}
+		dir = filepath.Dir(files[0].Path)
 	} else {
-		showArchives(files, nil)
+		showArchives(&ops.ScanResult{Today: files})
 	}
-	if !*yes && !confirm(fmt.Sprintf("Extract %d archive(s) into %s in this order?", len(files), t.KernelDir), true) {
+	if !*yes && !confirm(fmt.Sprintf("Extract %d archive(s) into %d kernel directories in this order?", len(files), len(kernelDirs(t)))) {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
@@ -63,7 +64,7 @@ func UpdateOp(args []string) int {
 	if err != nil {
 		return fail(err)
 	}
-	fmt.Fprintf(stdout, "\n  %s Kernel %s: %s → %s\n", pal.Check(), t.SID, res.Before, pal.Paint(ui.Bold, res.After.String()))
+	fmt.Fprintf(stdout, "\n  %s Kernel %s: %s → %s\n", pal.Check(), t.SID, res.Before, pal.Paint(ui.Bold, res.After.Long()))
 	if res.SaprootNote != "done" || res.ChownNote != "done" {
 		fmt.Fprintf(stdout, "  %s not root: run chown -R %s:%s and saproot.sh %s as root before starting\n", pal.Paint(ui.Yellow, "!"), t.SIDAdm, t.Group, t.SID)
 	}
@@ -87,25 +88,42 @@ func RollbackOp(args []string) int {
 	}
 	e := newEnv(t)
 	pal := currentPalette()
-	dir := *backup
-	if dir == "" {
-		latest, ok := ops.LatestBackup(t.KernelDir)
-		if !ok {
-			return fail(fmt.Errorf("no exe_<date> backup found next to %s", t.KernelDir))
+	backups := map[string]string{}
+	for _, d := range kernelDirs(t) {
+		if t.Snapshot != nil && t.Snapshot.LastBackups[d] != "" {
+			if _, err := os.Stat(t.Snapshot.LastBackups[d]); err == nil {
+				backups[d] = t.Snapshot.LastBackups[d]
+				continue
+			}
 		}
-		dir = latest
+		if latest, ok := ops.LatestBackup(d); ok {
+			backups[d] = latest
+		}
+	}
+	if *backup != "" {
+		backups[t.KernelDir] = *backup
+	}
+	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Cyan, "Backups → kernel directories"))
+	for _, d := range kernelDirs(t) {
+		b := backups[d]
+		if b == "" {
+			b = pal.Paint(ui.Red, "none found")
+		}
+		fmt.Fprintf(stdout, "    %s  →  %s\n", b, d)
 	}
 	if !*yes {
-		dir = ask("Backup to restore", dir)
+		if b := ask("Backup for "+t.KernelDir, backups[t.KernelDir]); b != "" {
+			backups[t.KernelDir] = b
+		}
 	}
 	if !ensureStopped(ctx, e, *yes) {
 		return ExitError
 	}
-	if !*yes && !confirm(fmt.Sprintf("Copy %s over %s?", dir, t.KernelDir), false) {
+	if !*yes && !confirm(fmt.Sprintf("Copy the backups over %d kernel directories?", len(kernelDirs(t)))) {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
-	res, err := ops.Restore(ctx, e, dir)
+	res, err := ops.Restore(ctx, e, backups)
 	if err != nil {
 		return fail(err)
 	}
@@ -120,7 +138,7 @@ func ensureStopped(ctx context.Context, e *ops.Env, yes bool) bool {
 	}
 	pal := currentPalette()
 	fmt.Fprintf(stdout, "  %s system %s is running; the kernel can only be replaced while it is stopped.\n", pal.Paint(ui.Yellow, "!"), e.T.SID)
-	if !yes && key("K = stop it now · Enter = cancel") != "K" {
+	if !yes && pick(option{"1", "Stop it now", []string{"k", "s", "stop", "kapat"}}, option{"0", "Cancel", []string{"c", "cancel"}}) != "1" {
 		fmt.Fprintln(stdout, "  cancelled")
 		return false
 	}
@@ -138,7 +156,7 @@ func ensureBackup(ctx context.Context, e *ops.Env, yes bool) bool {
 		}
 	}
 	fmt.Fprintf(stdout, "  %s no kernel backup from today.\n", pal.Paint(ui.Yellow, "!"))
-	if !yes && !confirm("Take a Kernel Backup now?", true) {
+	if !yes && !confirm("Take a Kernel Backup now?") {
 		fmt.Fprintln(stdout, "  cancelled: an update without a fresh backup is not allowed")
 		return false
 	}
@@ -147,7 +165,7 @@ func ensureBackup(ctx context.Context, e *ops.Env, yes bool) bool {
 		fail(err)
 		return false
 	}
-	fmt.Fprintf(stdout, "  %s backup ready: %s (%d files)\n", pal.Check(), res.Dest, res.Files)
+	fmt.Fprintf(stdout, "  %s backup ready: %d directories, %d files\n", pal.Check(), len(res.Dirs), res.Files())
 	return true
 }
 
@@ -175,7 +193,7 @@ func archivesForUpdate(t *system.Target, from string) ([]ops.SARFile, string) {
 }
 
 func offerStart(ctx context.Context, e *ops.Env, start bool) int {
-	if start || key("S = start the system now · Enter = back to menu") == "S" {
+	if start || pick(option{"1", "Start the system now", []string{"s", "start"}}, option{"0", "Back to main menu", []string{"b", "back"}}) == "1" {
 		return runStart(ctx, e)
 	}
 	return ExitOK

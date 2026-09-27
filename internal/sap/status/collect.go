@@ -271,13 +271,13 @@ func systemType(insts []Instance) string {
 	}
 	switch {
 	case abap && java:
-		return "Dual-stack (ABAP+Java)"
+		return "Dual-stack (AS ABAP + AS Java)"
 	case abap:
-		return "ABAP"
+		return "AS ABAP"
 	case java:
-		return "Java"
+		return "AS Java"
 	case hana:
-		return "HANA database"
+		return "HANA Database"
 	}
 	return "unknown"
 }

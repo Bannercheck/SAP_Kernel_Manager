@@ -88,11 +88,24 @@ func newEnv(t *testing.T) (*Env, *exec.Fake, *recorder) {
 			t.Fatal(err)
 		}
 	}
+	d00 := filepath.Join(root, "ABC", "D00", "exe")
+	ascs := filepath.Join(root, "ABC", "ASCS01", "exe")
+	for _, d := range []string{d00, ascs} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range []string{"sapstartsrv", "disp+work"} {
+			if err := os.WriteFile(filepath.Join(d, f), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	fake := exec.NewFake()
 	fake.Paths["sapcontrol"] = "/hc/sapcontrol"
 	fake.On(filepath.Join(kdir, "disp+work")+" -V", dispworkV(200), 0)
-	tgt := &system.Target{SID: "ABC", SIDAdm: "abcadm", Group: "sapsys", KernelDir: kdir, StateDir: t.TempDir(), Sapcontrol: "/hc/sapcontrol",
-		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00"}, {SID: "ABC", Nr: "01", Name: "ASCS01"}}}
+	tgt := &system.Target{SID: "ABC", SIDAdm: "abcadm", Group: "sapsys", KernelDir: kdir, KernelDirs: []string{kdir, d00, ascs},
+		StateDir: t.TempDir(), Sapcontrol: "/hc/sapcontrol",
+		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", ExeDir: d00}, {SID: "ABC", Nr: "01", Name: "ASCS01", ExeDir: ascs}}}
 	rec := &recorder{}
 	fixed := time.Date(2026, 9, 27, 10, 0, 0, 0, time.Local)
 	e := &Env{R: router{fake: fake, real: exec.NewReal()}, P: fakePlatform{}, T: tgt, Pr: rec, Now: func() time.Time { return fixed }}
@@ -105,20 +118,72 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v\n%s", err, rec)
 	}
-	want := filepath.Join(filepath.Dir(e.T.KernelDir), "exe_20260927")
-	if res.Dest != want || res.Files != 4 || !strings.Contains(res.Listing, "disp+work") {
-		t.Errorf("res=%+v\n%s", res, rec)
+	if len(res.Dirs) != 3 {
+		t.Fatalf("expected 3 directory backups, got %+v", res.Dirs)
 	}
-	if e.T.Snapshot == nil || e.T.Snapshot.LastBackup != want {
+	central := res.Dirs[0]
+	want := filepath.Join(filepath.Dir(e.T.KernelDir), "linuxx86_64_20260927")
+	if central.Dest != want || central.Files != 4 || !strings.Contains(central.Listing, "disp+work") {
+		t.Errorf("central=%+v\n%s", central, rec)
+	}
+	if d00 := res.Dirs[1]; filepath.Base(d00.Dest) != "exe_20260927" || d00.Files != 2 {
+		t.Errorf("instance backup = %+v", d00)
+	}
+	if res.Files() != 8 {
+		t.Errorf("total files = %d", res.Files())
+	}
+	if _, err := os.Stat(res.LogFile); err != nil {
+		t.Errorf("log file: %v", err)
+	}
+	if e.T.Snapshot == nil || e.T.Snapshot.LastBackup != want || e.T.Snapshot.LastBackups[e.T.KernelDirs[1]] == "" {
 		t.Errorf("snapshot not updated: %+v", e.T.Snapshot)
 	}
 	// second backup on the same day gets a time suffix
 	res2, err := Backup(context.Background(), e)
-	if err != nil || res2.Dest != want+"_100000" {
-		t.Errorf("second backup: %v %+v", err, res2)
+	if err != nil || res2.Dirs[0].Dest != want+"_100000" {
+		t.Errorf("second backup: %v %+v", err, res2.Dirs)
 	}
 	if latest, ok := LatestBackup(e.T.KernelDir); !ok || !strings.HasPrefix(latest, want) {
 		t.Errorf("LatestBackup = %q %v", latest, ok)
+	}
+	if sib := BackupSiblings(e.T.KernelDir); len(sib) != 2 {
+		t.Errorf("BackupSiblings = %v", sib)
+	}
+}
+
+func TestFindTodaySARs(t *testing.T) {
+	root := t.TempDir()
+	now := time.Now()
+	old := now.Add(-72 * time.Hour)
+	mk := func(rel string, mt time.Time) {
+		p := filepath.Join(root, rel)
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte("data"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		os.Chtimes(p, mt, mt)
+	}
+	mk("home/basis/downloads/SAPEXE_403-80007807.SAR", now)
+	mk("home/basis/downloads/dw_421-80007541.sar", now)
+	mk("tmp/kernel/dw_423-80007541.sar", now)
+	mk("tmp/kernel/SAPEXE_390-80007000.SAR", old)
+	mk("tmp/kernel/notes.txt", now)
+	mk("usr/sap/ABC/SYS/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR", now) // copy inside the kernel dir: excluded
+	mk("proc/1/SAPEXE_999-1.SAR", now)                                    // pruned
+	res, err := FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
+		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, f := range res.Today {
+		names = append(names, f.Name)
+	}
+	if strings.Join(names, " ") != "SAPEXE_403-80007807.SAR dw_421-80007541.sar dw_423-80007541.sar" {
+		t.Errorf("today = %v", names)
+	}
+	if res.Older != 1 || len(res.Duplicates) != 0 || res.Dirs == 0 || res.Today[0].Label != "SAPEXE" || res.Today[1].Label != "dw" {
+		t.Errorf("res = %+v", res)
 	}
 }
 
@@ -180,9 +245,14 @@ func TestScanAndCopySARs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v\n%s", err, rec)
 	}
-	for _, f := range today {
-		if _, err := os.Stat(filepath.Join(e.T.KernelDir, f.Name)); err != nil {
-			t.Errorf("%s not copied: %v", f.Name, err)
+	if len(res.Dests) != 3 {
+		t.Errorf("copied into %d dirs, want 3", len(res.Dests))
+	}
+	for _, dir := range e.T.KernelDirs {
+		for _, f := range today {
+			if _, err := os.Stat(filepath.Join(dir, f.Name)); err != nil {
+				t.Errorf("%s not copied to %s: %v", f.Name, dir, err)
+			}
 		}
 	}
 	if !strings.Contains(res.Listing, "dw_421") || !strings.Contains(res.ChownNote, "skipped") {
@@ -207,23 +277,21 @@ func TestExtractInOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v\n%s", err, rec)
 	}
-	if len(res.Steps) != 2 || res.Steps[0].File != "SAPEXE_403-1.SAR" || res.Steps[0].Files != 3 || res.Steps[1].File != "dw_421-1.sar" {
+	if len(res.Steps) != 6 || res.Steps[0].File != "SAPEXE_403-1.SAR" || res.Steps[0].Files != 3 || res.Steps[1].File != "dw_421-1.sar" ||
+		res.Steps[2].Dir != e.T.KernelDirs[1] {
 		t.Errorf("steps = %+v", res.Steps)
 	}
 	if !strings.Contains(res.ChownNote, "skipped") || !strings.Contains(res.SaprootNote, "needs root") {
 		t.Errorf("notes: %q %q", res.ChownNote, res.SaprootNote)
 	}
-	// the extraction order must be SAPEXE_403 before dw_421
+	// the extraction order must be SAPEXE_403 before dw_421, in every kernel directory
 	var order []string
 	for _, c := range fake.Calls {
 		if filepath.Base(c.Path) == "SAPCAR" {
-			order = append(order, filepath.Base(c.Args[1]))
-			if c.Dir != e.T.KernelDir {
-				t.Errorf("SAPCAR must run inside the kernel dir, got %q", c.Dir)
-			}
+			order = append(order, filepath.Base(c.Dir)+"/"+filepath.Base(c.Args[1]))
 		}
 	}
-	if strings.Join(order, " ") != "SAPEXE_403-1.SAR dw_421-1.sar" {
+	if strings.Join(order, " ") != "linuxx86_64/SAPEXE_403-1.SAR linuxx86_64/dw_421-1.sar exe/SAPEXE_403-1.SAR exe/dw_421-1.sar exe/SAPEXE_403-1.SAR exe/dw_421-1.sar" {
 		t.Errorf("order = %v", order)
 	}
 }
@@ -237,7 +305,11 @@ func TestRestore(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(e.T.KernelDir, "gwrd"), []byte("broken"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Restore(context.Background(), e, bk.Dest); err != nil {
+	backups := map[string]string{}
+	for _, d := range bk.Dirs {
+		backups[d.Source] = d.Dest
+	}
+	if _, err := Restore(context.Background(), e, backups); err != nil {
 		t.Fatalf("%v\n%s", err, rec)
 	}
 	b, _ := os.ReadFile(filepath.Join(e.T.KernelDir, "gwrd"))

@@ -12,6 +12,7 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
@@ -69,26 +70,49 @@ func ask(question, def string) string {
 	return line
 }
 
-// confirm asks a yes/no question; Enter means no unless defYes.
-func confirm(question string, defYes bool) bool {
-	def := "y/N"
-	if defYes {
-		def = "Y/n"
-	}
-	a := strings.ToLower(ask(question, def))
-	if a == strings.ToLower(def) {
-		return defYes
-	}
-	return a == "y" || a == "yes" || a == "e" || a == "evet"
+// option is one numbered choice of pick.
+type option struct {
+	Key     string // what the user types: "1", "2", "0", "q"
+	Label   string
+	Aliases []string // also accepted (letters)
 }
 
-// key reads a single-letter choice (first character, upper-cased).
-func key(question string) string {
-	a := strings.TrimSpace(ask(question, ""))
-	if a == "" {
-		return ""
+// pick shows numbered choices like the main menu and reads until one is
+// chosen. Enter alone never selects anything: it re-asks.
+func pick(opts ...option) string {
+	pal := currentPalette()
+	for {
+		var parts []string
+		for _, o := range opts {
+			parts = append(parts, pal.Paint(ui.Bold, o.Key+")")+" "+o.Label)
+		}
+		fmt.Fprintf(stdout, "  %s\n  Select: ", strings.Join(parts, "   "))
+		line, err := input.ReadString('\n')
+		in := strings.ToLower(strings.TrimSpace(line))
+		fmt.Fprintln(stdout, in)
+		for _, o := range opts {
+			if in == strings.ToLower(o.Key) {
+				return o.Key
+			}
+			for _, a := range o.Aliases {
+				if in == a {
+					return o.Key
+				}
+			}
+		}
+		if err != nil { // end of input: take the last (back/cancel) option
+			return opts[len(opts)-1].Key
+		}
+		if in != "" {
+			fmt.Fprintf(stdout, "  %s not a choice: %q\n", pal.Cross(), in)
+		}
 	}
-	return strings.ToUpper(a[:1])
+}
+
+// confirm asks a yes/no question with numbered answers.
+func confirm(question string) bool {
+	fmt.Fprintf(stdout, "\n  %s\n", question)
+	return pick(option{"1", "Yes", []string{"y", "yes", "e", "evet"}}, option{"0", "No", []string{"n", "no", "h", "hayır", "hayir"}}) == "1"
 }
 
 // progress renders ops.Progress with colours.
@@ -146,8 +170,15 @@ func target(ctx context.Context, sid string) (*system.Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(stdout, "  System %s · user %s · kernel dir %s\n  %s\n\n", pal.Paint(ui.Bold, t.SID), t.SIDAdm, t.KernelDir,
-		pal.Paint(ui.Dim, "("+t.Source+")"))
+	fmt.Fprintf(stdout, "  System %s · user %s · kernel directories:\n", pal.Paint(ui.Bold, t.SID), t.SIDAdm)
+	for i, d := range kernelDirs(t) {
+		note := ""
+		if i == 0 {
+			note = pal.Paint(ui.Dim, "  central · "+t.Source)
+		}
+		fmt.Fprintf(stdout, "    %s%s\n", d, note)
+	}
+	fmt.Fprintln(stdout)
 	return t, nil
 }
 
@@ -157,19 +188,23 @@ func fail(err error) int {
 	return ExitError
 }
 
-// lights prints one line per local instance with its traffic light.
+// lights prints the system state as a big badge plus one light per instance.
 func lights(ctx context.Context, e *ops.Env) bool {
 	pal := currentPalette()
 	states := ops.Probe(ctx, e)
 	var parts []string
+	var agg []string
 	for _, st := range states {
 		switch {
 		case !st.Sapstartsrv:
 			parts = append(parts, fmt.Sprintf("%s %s (sapstartsrv down)", pal.Light(ui.Red), st.Name))
+			agg = append(agg, "GRAY")
 		default:
 			parts = append(parts, fmt.Sprintf("%s %s %s", statusLight(pal, st.Status), st.Name, st.Status))
+			agg = append(agg, st.Status)
 		}
 	}
-	fmt.Fprintf(stdout, "  %s\n", strings.Join(parts, "   "))
+	sys := sapcontrol.Aggregate(agg)
+	fmt.Fprintf(stdout, "  %s   %s\n", pal.Badge(statusColour(sys), stateWord(sys)), strings.Join(parts, "   "))
 	return ops.IsStopped(states)
 }

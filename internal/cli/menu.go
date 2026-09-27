@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	osuser "os/user"
 	"strconv"
 	"strings"
 	"time"
@@ -56,8 +57,8 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 		if code != 0 {
 			mark = pal.Cross() + " " + pal.Paint(ui.Red, fmt.Sprintf("failed (exit code %d)", code))
 		}
-		fmt.Fprintf(out, "\n--- %s: %s. Press Enter to return to the main menu.\n", op.Name, mark)
-		if _, err := rd.ReadString('\n'); err != nil {
+		fmt.Fprintf(out, "\n--- %s: %s\n", op.Name, mark)
+		if pick(option{"0", "Back to main menu", []string{"b", "back", "m", "menu"}}, option{"q", "Quit", []string{"quit", "exit"}}) == "q" {
 			return code
 		}
 		summary = summaryFunc(pal) // SAP Stop/Start change the lights
@@ -70,8 +71,15 @@ func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []st
 	if demoRoot != "" {
 		badge = "  " + pal.Paint(ui.Yellow, "DEMO · simulated SAP host in "+demoRoot)
 	}
-	fmt.Fprintf(w, "%s   %s%s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName),
-		pal.Paint(ui.Dim, fmt.Sprintf("host %s · %s", host, version.Version)), badge)
+	user := os.Getenv("USER")
+	if user == "" {
+		if u, err := osuser.Current(); err == nil {
+			user = u.Username
+		}
+	}
+	fmt.Fprintf(w, "%s   %s%s\n%s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName),
+		pal.Paint(ui.Dim, version.Version), badge,
+		fmt.Sprintf("  Hostname %s · User %s · %s", pal.Paint(ui.Bold, host), user, time.Now().Format("2006-01-02 15:04")))
 	for _, l := range summary {
 		fmt.Fprintln(w, "  "+l)
 	}
@@ -97,11 +105,11 @@ func liveSummary(pal ui.Palette) []string {
 	return SummaryLines(collectStatus(ctx, status.Options{Timeout: 15 * time.Second}), pal)
 }
 
-// SummaryLines renders the overview above the menu: one light per SAP
-// system and per instance, the kernel level, and the SAP Host Agent.
-// Words are left out on purpose; the light carries the state.
+// SummaryLines renders the overview above the menu: a big badge per SAP
+// system (RUNNING / PARTIAL / STOPPED), its type, hostname, kernel level and
+// one light per instance, plus the SAP Host Agent.
 func SummaryLines(rep *status.Report, pal ui.Palette) []string {
-	var rows [][]string
+	rows := [][]string{{"", "SYSTEM", "TYPE", "HOSTNAME", "KERNEL", "INSTANCES"}}
 	for _, sys := range rep.Systems {
 		var insts []string
 		for _, in := range sys.Instances {
@@ -111,20 +119,20 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 			}
 			insts = append(insts, name+" "+statusLight(pal, in.Status))
 		}
-		rows = append(rows, []string{statusLight(pal, sys.Status), sys.SID, sys.Type,
-			"kernel " + sys.Kernel.String(), strings.Join(insts, "  ")})
+		rows = append(rows, []string{pal.Badge(statusColour(sys.Status), stateWord(sys.Status)), sys.SID, sys.Type, rep.Host.Hostname,
+			"Kernel " + sys.Kernel.String(), strings.Join(insts, "  ")})
 	}
-	if len(rows) == 0 {
-		rows = append(rows, []string{pal.Light(ui.Dim), pal.Paint(ui.Dim, "no SAP instances found on this host"), "", "", ""})
+	if len(rows) == 1 {
+		rows = append(rows, []string{pal.Badge(ui.Dim, "NO SAP"), pal.Paint(ui.Dim, "no SAP instances found on this host"), "", rep.Host.Hostname, "", ""})
 	}
 	ha := rep.HostAgent
 	switch {
 	case !ha.Installed:
-		rows = append(rows, []string{pal.Light(ui.Red), "SAP Host Agent", pal.Paint(ui.Dim, "not installed"), "", ""})
+		rows = append(rows, []string{pal.Badge(ui.Red, "MISSING"), "SAP Host Agent", "", rep.Host.Hostname, "", ""})
 	case ha.Running:
-		rows = append(rows, []string{pal.Light(ui.Green), "SAP Host Agent", "", ha.Version.String(), ""})
+		rows = append(rows, []string{pal.Badge(ui.Green, "RUNNING"), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), ""})
 	default:
-		rows = append(rows, []string{pal.Light(ui.Red), "SAP Host Agent", "", ha.Version.String(), ""})
+		rows = append(rows, []string{pal.Badge(ui.Red, "STOPPED"), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), ""})
 	}
 	return ui.Table("", rows)
 }

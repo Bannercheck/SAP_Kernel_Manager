@@ -28,8 +28,11 @@ func TestResolveFallbacks(t *testing.T) {
 	UsrSap = root
 	defer func() { UsrSap = "/usr/sap" }()
 	kdir := filepath.Join(root, "ABC", "SYS", "exe", "uc", "linuxx86_64")
-	if err := os.MkdirAll(kdir, 0o755); err != nil {
-		t.Fatal(err)
+	d00 := filepath.Join(root, "ABC", "D00", "exe")
+	for _, d := range []string{kdir, d00} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := os.Symlink(kdir, filepath.Join(root, "ABC", "SYS", "exe", "run")); err != nil {
 		t.Fatal(err)
@@ -51,6 +54,11 @@ func TestResolveFallbacks(t *testing.T) {
 	tgt, _, err := Resolve(context.Background(), f, p, "abc")
 	if err != nil || tgt.KernelDir != kdir || !strings.HasPrefix(tgt.Source, "sapcontrol") || tgt.SIDAdm != "abcadm" || len(tgt.Instances) != 1 {
 		t.Fatalf("sapcontrol path: %+v %v", tgt, err)
+	}
+	// sapservices names the instance exe dir /usr/sap/ABC/D00/exe, which does not exist here;
+	// the fallback /<UsrSap>/ABC/D00/exe does, so KernelDirs = central + D00
+	if len(tgt.KernelDirs) != 2 || tgt.KernelDirs[0] != kdir || tgt.KernelDirs[1] != d00 {
+		t.Errorf("KernelDirs = %v", tgt.KernelDirs)
 	}
 	if _, err := os.Stat(filepath.Join(root, "ABC", ".kernelman", "snapshot.json")); err != nil {
 		t.Errorf("snapshot not written: %v", err)

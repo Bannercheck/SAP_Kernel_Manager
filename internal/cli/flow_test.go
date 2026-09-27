@@ -67,10 +67,19 @@ func newFlow(t *testing.T) *flowEnv {
 	t.Helper()
 	root := t.TempDir()
 	kdir := filepath.Join(root, "sapmnt", "ABC", "exe", "uc", "linuxx86_64")
+	d00 := filepath.Join(root, "usr", "sap", "ABC", "D00", "exe")
+	ascs := filepath.Join(root, "usr", "sap", "ABC", "ASCS01", "exe")
 	dl := filepath.Join(root, "download")
-	for _, d := range []string{kdir, dl} {
+	for _, d := range []string{kdir, d00, ascs, dl} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			t.Fatal(err)
+		}
+	}
+	for _, d := range []string{d00, ascs} {
+		for _, f := range []string{"sapstartsrv", "sapcontrol", "disp+work"} {
+			if err := os.WriteFile(filepath.Join(d, f), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 	for _, f := range []string{"disp+work", "gwrd", "icman", "msg_server", "sapstartsrv", "SAPCAR", "saproot.sh", "sapcpe", "libsapu16.so"} {
@@ -102,18 +111,20 @@ func newFlow(t *testing.T) *flowEnv {
 		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0).
 		On(sc+"00 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).On(sc+"01 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0)
 	sapcar := filepath.Join(kdir, "SAPCAR")
-	for _, n := range []string{"SAPEXE_403-80007807.SAR", "SAPEXEDB_403-80007808.SAR", "dw_421-80007541.sar", "dw_423-80007541.sar"} {
-		out := "x disp+work\nx gwrd\nx icman\nx msg_server\nx sapstartsrv\nx libsapu16.so\n"
-		if strings.HasPrefix(n, "dw_") {
-			out = "x disp+work\n"
+	for _, dir := range []string{kdir, d00, ascs} {
+		for _, n := range []string{"SAPEXE_403-80007807.SAR", "SAPEXEDB_403-80007808.SAR", "dw_421-80007541.sar", "dw_423-80007541.sar"} {
+			out := "x disp+work\nx gwrd\nx icman\nx msg_server\nx sapstartsrv\nx libsapu16.so\n"
+			if strings.HasPrefix(n, "dw_") {
+				out = "x disp+work\n"
+			}
+			f.On(sapcar+" -xvf "+filepath.Join(dir, n), out, 0)
 		}
-		f.On(sapcar+" -xvf "+filepath.Join(kdir, n), out, 0)
 	}
 	f.On(filepath.Join(kdir, "disp+work")+" -V", dispworkV(200).Stdout, 0)
 
-	tgt := &system.Target{SID: "ABC", SIDAdm: "abcadm", Group: "sapsys", KernelDir: kdir, DirExeRoot: "/usr/sap/ABC/SYS/exe",
+	tgt := &system.Target{SID: "ABC", SIDAdm: "abcadm", Group: "sapsys", KernelDir: kdir, KernelDirs: []string{kdir, d00, ascs}, DirExeRoot: "/usr/sap/ABC/SYS/exe",
 		StateDir: filepath.Join(root, "state"), Sapcontrol: "/usr/sap/hostctrl/exe/sapcontrol", Source: "sapcontrol ParameterValue DIR_CT_RUN (instance 00)",
-		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", Type: "D", Host: "sapci"}, {SID: "ABC", Nr: "01", Name: "ASCS01", Type: "ASCS", Host: "sapci"}}}
+		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", Type: "D", Host: "sapci", ExeDir: d00}, {SID: "ABC", Nr: "01", Name: "ASCS01", Type: "ASCS", Host: "sapci", ExeDir: ascs}}}
 	os.MkdirAll(tgt.StateDir, 0o755)
 	return &flowEnv{fake: f, target: tgt, kernelDir: kdir, download: dl, sc: sc}
 }
@@ -121,15 +132,18 @@ func newFlow(t *testing.T) *flowEnv {
 // install wires the flow environment into the CLI for one test.
 func (fe *flowEnv) install(t *testing.T) {
 	t.Helper()
-	prevRunner, prevResolve, prevCollect, prevRoot := runner, resolveTarget, collectStatus, isRoot
+	prevRunner, prevResolve, prevCollect, prevRoot, prevScan := runner, resolveTarget, collectStatus, isRoot, scanRoots
 	runner = router{fake: fe.fake, real: exec.NewReal()}
 	isRoot = false
+	scanRoots = []string{filepath.Dir(fe.download)}
 	resolveTarget = func(context.Context, string) (*system.Target, []string, error) {
 		fe.target.Snapshot, _ = system.LoadSnapshot(fe.target.StateDir)
 		return fe.target, nil, nil
 	}
 	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
-	t.Cleanup(func() { runner, resolveTarget, collectStatus, isRoot = prevRunner, prevResolve, prevCollect, prevRoot })
+	t.Cleanup(func() {
+		runner, resolveTarget, collectStatus, isRoot, scanRoots = prevRunner, prevResolve, prevCollect, prevRoot, prevScan
+	})
 }
 
 // runMenu drives one menu session and optionally records the transcript.
@@ -159,16 +173,17 @@ func mustContain(t *testing.T, out string, wants ...string) {
 func TestFlowMenuStatus(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "menu", "1\n\nq\n")
-	mustContain(t, out, "1) ✔ SAP Status", "SYSTEM ABC", "Press Enter to return to the main menu")
+	out := runMenu(t, "menu", "1\n0\nq\n")
+	mustContain(t, out, "1) ✔ SAP Status", "SYSTEM ABC · AS ABAP · Hostname sapci", "0) Back to main menu")
 }
 
 func TestFlowBackup(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "backup", "2\n\n\nq\n") // 2, confirm (Enter = yes), Enter back, quit
-	want := filepath.Join(filepath.Dir(fe.kernelDir), "exe_"+time.Now().Format("20060102"))
-	mustContain(t, out, "[2/4] Copy to "+want, "[3/4] Verify copy ... ok  9 files match", "Backup directory "+want, "disp+work", "Backup ready", "2) ✔ Kernel Backup")
+	out := runMenu(t, "backup", "2\n1\n0\nq\n") // 2, 1 = yes, 0 = back, quit
+	want := filepath.Join(filepath.Dir(fe.kernelDir), "linuxx86_64_"+time.Now().Format("20060102"))
+	mustContain(t, out, "[2/10] Copy to "+want, "[3/10] Verify linuxx86_64_", "9 files match", "Backup "+want, "disp+work",
+		"exe_"+time.Now().Format("20060102"), "Backup ready: 3 directories, 15 files", "2) ✔ Kernel Backup")
 	if _, err := os.Stat(filepath.Join(want, "gwrd")); err != nil {
 		t.Errorf("backup missing: %v", err)
 	}
@@ -177,12 +192,15 @@ func TestFlowBackup(t *testing.T) {
 func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "files", "3\n"+fe.download+"\n\n\nq\n") // 3, directory, confirm, Enter back, quit
-	mustContain(t, out, "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar", "target level after apply: patch 423",
-		"2 older archive(s) ignored", "[1/3] Copy 4 archive(s)", "chown skipped", "3) ✔ Kernel Files")
-	for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {
-		if _, err := os.Stat(filepath.Join(fe.kernelDir, n)); err != nil {
-			t.Errorf("%s not copied", n)
+	out := runMenu(t, "files", "3\n1\n0\nq\n") // 3, 1 = yes, 0 = back, quit (no directory question: the server is scanned)
+	mustContain(t, out, "scanning for today's .SAR files", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
+		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
+		"4 archive(s) copied into 3 kernel directories", "3) ✔ Kernel Files")
+	for _, dir := range fe.target.KernelDirs {
+		for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {
+			if _, err := os.Stat(filepath.Join(dir, n)); err != nil {
+				t.Errorf("%s not copied to %s", n, dir)
+			}
 		}
 	}
 	if _, err := os.Stat(filepath.Join(fe.kernelDir, "SAPEXE_390-80007000.SAR")); err == nil {
@@ -196,9 +214,9 @@ func TestFlowStop(t *testing.T) {
 	// lights before, Stop's own probe, lights after → GREEN, GREEN, then down
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
-	out := runMenu(t, "stop", "4\nK\n\nq\n") // 4, K = stop, Enter back, quit
-	mustContain(t, out, "S = Start · K = Stop (Kapat)", "[1/5] StopSystem ALL ... ok", "[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped",
-		"D00 (sapstartsrv down)", "4) ✔ SAP Stop / Start")
+	out := runMenu(t, "stop", "4\n2\n0\nq\n") // 4, 2 = stop, 0 = back, quit
+	mustContain(t, out, "1) SAP Start   2) SAP Stop (Kapat)   0) Back to main menu", "⬤ RUNNING", "[1/5] StopSystem ALL ... ok",
+		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "4) ✔ SAP Stop / Start")
 }
 
 func TestFlowUpdateAndStart(t *testing.T) {
@@ -219,10 +237,11 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down, procs("GREEN", 3))
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
-	out := runMenu(t, "update", "5\n\nS\n\nq\n") // 5, confirm order (Enter), S = start afterwards, Enter back, quit
-	mustContain(t, out, "backup from today", "1  SAPEXE_403-80007807.SAR", "[1/7] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) ... ok  6 files",
-		"[4/7] SAPCAR -xvf dw_423-80007541.sar  (DW 423) ... ok  1 files", "[7/7] Read kernel version (disp+work -V) ... ok  793 patch 423",
-		"Kernel ABC: 793 patch 200 → 793 patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "5) ✔ Kernel Update")
+	out := runMenu(t, "update", "5\n1\n1\n0\nq\n") // 5, 1 = confirm order, 1 = start afterwards, 0 = back, quit
+	mustContain(t, out, "backup from today", "1  SAPEXE_403-80007807.SAR", "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
+		"[4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
+		"[17/17] Read kernel version (disp+work -V) ... ok  793 Patch 423",
+		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "5) ✔ Kernel Update")
 }
 
 func TestFlowRollback(t *testing.T) {
@@ -237,8 +256,9 @@ func TestFlowRollback(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(423), dispworkV(200))
-	out := runMenu(t, "rollback", "6\n\ny\n\n\nq\n") // 6, backup default, confirm y, no start, Enter back, quit
-	mustContain(t, out, "Backup to restore ["+bk.Dest+"]", "[1/4] Copy "+bk.Dest, "Kernel ABC restored: 793 patch 423 → 793 patch 200", "6) ✔ Kernel Rollback")
+	out := runMenu(t, "rollback", "6\n\n1\n0\n0\nq\n") // 6, backup default (Enter keeps it), 1 = confirm, 0 = no start, 0 = back, quit
+	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/8] Copy "+bk.Dirs[0].Dest, "[2/8] Copy "+bk.Dirs[1].Dest,
+		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "6) ✔ Kernel Rollback")
 	b, _ := os.ReadFile(filepath.Join(fe.kernelDir, "gwrd"))
 	if string(b) == "broken" {
 		t.Error("gwrd not restored")

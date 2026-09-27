@@ -5,101 +5,142 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 )
 
-// BackupResult describes a finished Kernel Backup.
-type BackupResult struct {
+// DirBackup is the backup of one kernel directory.
+type DirBackup struct {
 	Source  string
 	Dest    string
 	Files   int
 	Bytes   int64
-	Listing string // ls -la of the backup directory
+	Listing string // ls -la of the backup directory (shortened for the screen)
 }
 
-// BackupName returns exe_<YYYYMMDD>, with a time suffix when that exists.
-func BackupName(parent string, now time.Time) string {
-	name := "exe_" + now.Format("20060102")
-	if _, err := os.Stat(filepath.Join(parent, name)); err == nil {
+// BackupResult describes a finished Kernel Backup of every kernel directory.
+type BackupResult struct {
+	Dirs    []DirBackup
+	LogFile string // full listings
+}
+
+// Files and Bytes total over all directories.
+func (r *BackupResult) Files() (n int) {
+	for _, d := range r.Dirs {
+		n += d.Files
+	}
+	return n
+}
+
+func (r *BackupResult) Bytes() (n int64) {
+	for _, d := range r.Dirs {
+		n += d.Bytes
+	}
+	return n
+}
+
+// BackupName returns <base>_<YYYYMMDD> next to dir (exe → exe_20260927,
+// linuxx86_64 → linuxx86_64_20260927), with a time suffix when that exists.
+func BackupName(dir string, now time.Time) string {
+	name := filepath.Base(dir) + "_" + now.Format("20060102")
+	if _, err := os.Stat(filepath.Join(filepath.Dir(dir), name)); err == nil {
 		name += "_" + now.Format("150405")
 	}
-	return name
+	return filepath.Join(filepath.Dir(dir), name)
 }
 
-// Backup copies the kernel directory next to itself as exe_<date>, verifies
-// the file count and returns the directory listing as proof.
+// Backup copies every kernel directory next to itself under its own name
+// plus the date, verifies the file counts and keeps the listings as proof.
 func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
-	src := e.T.KernelDir
-	res := &BackupResult{Source: src}
-	parent := filepath.Dir(src)
-	res.Dest = filepath.Join(parent, BackupName(parent, e.now()))
-	const n = 4
-
-	var srcFiles int
-	if err := e.step(1, n, "Check kernel directory "+src, func() (string, error) {
-		if st, err := os.Stat(src); err != nil || !st.IsDir() {
-			return "", fmt.Errorf("kernel directory %s: not a directory", src)
+	dirs := e.T.KernelDirs
+	if len(dirs) == 0 {
+		dirs = []string{e.T.KernelDir}
+	}
+	res := &BackupResult{LogFile: filepath.Join(e.T.StateDir, "backup_"+e.now().Format("20060102_150405")+".log")}
+	var log strings.Builder
+	n := 3*len(dirs) + 1
+	step := 0
+	for _, src := range dirs {
+		db := DirBackup{Source: src, Dest: BackupName(src, e.now())}
+		var srcFiles int
+		step++
+		if err := e.step(step, n, "Check "+src, func() (string, error) {
+			if st, err := os.Stat(src); err != nil || !st.IsDir() {
+				return "", fmt.Errorf("%s: not a directory", src)
+			}
+			var err error
+			srcFiles, db.Bytes, err = treeStats(src)
+			return fmt.Sprintf("%d files, %s", srcFiles, HumanSize(db.Bytes)), err
+		}); err != nil {
+			return res, err
 		}
-		var err error
-		srcFiles, res.Bytes, err = treeStats(src)
-		return fmt.Sprintf("%d files, %s", srcFiles, HumanSize(res.Bytes)), err
-	}); err != nil {
-		return res, err
-	}
-
-	if err := e.step(2, n, "Copy to "+res.Dest, func() (string, error) {
-		_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: []string{"-pR", src, res.Dest}, RunAs: e.asAdm(), Timeout: 2 * time.Hour})
-		return "cp -pR", err
-	}); err != nil {
-		return res, err
-	}
-
-	if err := e.step(3, n, "Verify copy", func() (string, error) {
-		var err error
-		res.Files, _, err = treeStats(res.Dest)
-		if err != nil {
-			return "", err
+		step++
+		if err := e.step(step, n, "Copy to "+db.Dest, func() (string, error) {
+			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: []string{"-pR", src, db.Dest}, RunAs: e.asAdm(), Timeout: 2 * time.Hour})
+			return "cp -pR", err
+		}); err != nil {
+			return res, err
 		}
-		if res.Files != srcFiles {
-			return "", fmt.Errorf("file count differs: source %d, backup %d", srcFiles, res.Files)
+		step++
+		if err := e.step(step, n, "Verify "+filepath.Base(db.Dest), func() (string, error) {
+			var err error
+			db.Files, _, err = treeStats(db.Dest)
+			if err != nil {
+				return "", err
+			}
+			if db.Files != srcFiles {
+				return "", fmt.Errorf("file count differs: source %d, backup %d", srcFiles, db.Files)
+			}
+			out, err := e.run(ctx, exec.Cmd{Path: "ls", Args: []string{"-la", db.Dest}})
+			if err != nil {
+				return "", err
+			}
+			fmt.Fprintf(&log, "== %s\n%s\n", db.Dest, out.Stdout)
+			db.Listing = shorten(out.Stdout, 12)
+			return fmt.Sprintf("%d files match", db.Files), nil
+		}); err != nil {
+			return res, err
 		}
-		return fmt.Sprintf("%d files match", res.Files), nil
+		res.Dirs = append(res.Dirs, db)
+	}
+	if err := e.step(n, n, "Write listing "+res.LogFile, func() (string, error) {
+		return fmt.Sprintf("%d directories", len(res.Dirs)), os.WriteFile(res.LogFile, []byte(log.String()), 0o644)
 	}); err != nil {
 		return res, err
 	}
-
-	if err := e.step(4, n, "List backup directory", func() (string, error) {
-		out, err := e.run(ctx, exec.Cmd{Path: "ls", Args: []string{"-la", res.Dest}})
-		res.Listing = out.Stdout
-		return "ls -la", err
-	}); err != nil {
-		return res, err
-	}
-	_ = e.T.SaveSnapshot(func(s *system.Snapshot) { s.LastBackup, s.LastBackupAt = res.Dest, e.now() })
+	_ = e.T.SaveSnapshot(func(s *system.Snapshot) {
+		s.LastBackup, s.LastBackupAt = res.Dirs[0].Dest, e.now()
+		s.LastBackups = map[string]string{}
+		for _, d := range res.Dirs {
+			s.LastBackups[d.Source] = d.Dest
+		}
+	})
 	return res, nil
 }
 
-// LatestBackup returns the most recent exe_* directory next to the kernel dir.
-func LatestBackup(kernelDir string) (string, bool) {
-	entries, err := os.ReadDir(filepath.Dir(kernelDir))
-	if err != nil {
-		return "", false
+// shorten keeps the first max lines of a listing and says how many follow.
+func shorten(listing string, max int) string {
+	lines := strings.Split(strings.TrimRight(listing, "\n"), "\n")
+	if len(lines) <= max {
+		return strings.Join(lines, "\n")
 	}
+	return strings.Join(lines[:max], "\n") + fmt.Sprintf("\n... %d more entries", len(lines)-max)
+}
+
+// LatestBackup returns the most recent <base>_<date> directory next to dir.
+func LatestBackup(dir string) (string, bool) {
 	var best string
 	var bestTime time.Time
-	for _, en := range entries {
-		if !en.IsDir() || len(en.Name()) < 12 || en.Name()[:4] != "exe_" {
-			continue
-		}
-		info, err := en.Info()
+	for _, b := range BackupSiblings(dir) {
+		info, err := os.Stat(b)
 		if err != nil {
 			continue
 		}
 		if best == "" || info.ModTime().After(bestTime) {
-			best, bestTime = filepath.Join(filepath.Dir(kernelDir), en.Name()), info.ModTime()
+			best, bestTime = b, info.ModTime()
 		}
 	}
 	return best, best != ""

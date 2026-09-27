@@ -108,6 +108,23 @@ func (p Palette) Light(c Colour) string {
 	}
 }
 
+// BigLight is a larger traffic light for system-level state.
+func (p Palette) BigLight(c Colour) string {
+	if p.Unicode {
+		if c == Dim {
+			return p.Paint(Dim, "◯")
+		}
+		return p.Paint(c, "⬤")
+	}
+	return p.Light(c)
+}
+
+// Badge renders a big light followed by the state word in bold colour,
+// e.g. "⬤ RUNNING". It is the most visible state indicator on a screen.
+func (p Palette) Badge(c Colour, word string) string {
+	return p.BigLight(c) + " " + p.Paint(c, p.Paint(Bold, word))
+}
+
 // Check is the "done" marker, Cross the "failed" marker.
 func (p Palette) Check() string {
 	if p.Unicode {

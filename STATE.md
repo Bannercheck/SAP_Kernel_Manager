@@ -28,6 +28,15 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · Kullanıcı düzeltmeleri (2. tur): **bütün kernel dizinleri** (merkezi DIR_CT_RUN + her instance'ın DIR_EXECUTABLE) yedeklenir,
+  SAR'lar hepsine kopyalanır, hepsinde sırayla açılır, hepsi chown edilir. Yedek adı **kendi adı + tarih, kendi yanında**:
+  `.../D00/exe` → `.../D00/exe_20260927`, `.../uc/linuxx86_64` → `.../uc/linuxx86_64_20260927`. Tam `ls -la` listesi `<state>/backup_<ts>.log`.
+- 2026-09-27 · İndirme dizini sorulmaz: **sunucu taranır** (`internal/ops/scan.go`; kökler: cwd, /usr/sap, /sapmnt, /tmp, /home, /root, /mnt, /opt …;
+  `KERNELMAN_SCAN_ROOTS` ile değiştirilebilir, `--from` tek dizin). Bugün tarihli `*.SAR/*.sar`; kernel dizinleri ve yedekleri hariç; aynı ad → en yenisi.
+- 2026-09-27 · Enter ile bitirme/iptal kaldırıldı: her istem menü gibi numaralı (`1) Yes 0) No`, `1) SAP Start 2) SAP Stop 0) Back`,
+  işlem sonunda `0) Back to main menu q) Quit`); Enter tek başına hiçbir şey seçmez. Değer istemlerinde (yedek yolu) Enter = varsayılan.
+- 2026-09-27 · Görünüm: sistem tipi "AS ABAP / AS Java / Dual-stack (AS ABAP + AS Java)"; başlıkta Hostname · User · tarih; etiketler Title Case;
+  "Kernel 793 Patch 200"; bileşen adı dosyadaki haliyle (dw, igsexe); sistem durumu büyük rozet `⬤ RUNNING / PARTIAL / STOPPED` (kalın renkli).
 - 2026-09-27 · **Demo modu** (`kernelman demo`, `--demo`, `KERNELMAN_DEMO=1`): `~/.kernelman/demo` altında simüle SAP hostu (`internal/demo`);
   cp/ls/chown gerçek, sapcontrol/SAPCAR/disp+work durum makinesiyle simüle. Kullanıcı macOS'ta tüm akışı deneyebilsin diye.
   `make cross` darwin/arm64 + darwin/amd64 de üretir (yalnızca demo için); `make macos` → `dist/kernelman-macos-demo.zip`.

@@ -33,14 +33,19 @@ type Version struct {
 	SupportedBasis  []string `json:"supported_basis,omitempty"`
 }
 
-// String renders "793 patch 200" (plus changelist when known).
+// String renders "793 Patch 200".
 func (v Version) String() string {
 	if v.Release == 0 {
 		return "unknown"
 	}
-	s := fmt.Sprintf("%d patch %d", v.Release, v.Patch)
+	return fmt.Sprintf("%d Patch %d", v.Release, v.Patch)
+}
+
+// Long adds the changelist when known: "793 Patch 200 (Changelist 2123456)".
+func (v Version) Long() string {
+	s := v.String()
 	if v.Changelist > 0 {
-		s += fmt.Sprintf(" (changelist %d)", v.Changelist)
+		s += fmt.Sprintf(" (Changelist %d)", v.Changelist)
 	}
 	return s
 }

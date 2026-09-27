@@ -1,27 +1,28 @@
 $ ./kernelman.sh status
-[1mkernelman status · sapci · 2026-09-20 19:40:12[0m
-  [32m●[0m running   [33m●[0m partial   [31m●[0m stopped   [90m○[0m remote/unknown
+[1mSAP Status · Hostname sapci · 2026-09-20 19:40:12[0m
+  [32m●[0m Running   [33m●[0m Partial   [31m●[0m Stopped   [90m○[0m Remote/Unknown
 
 [36mHOST[0m
   Hostname                     sapci
   OS                           SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)
-  OS architecture              linux/amd64 (SAP platform dir: linuxx86_64)
+  OS Architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         abcadm (not privileged)
-  SAP Host Agent               [32m●[0m 722 patch 65 · /usr/sap/hostctrl/exe/saphostexec
+  SAP Host Agent               [32m⬤[0m [32m[1mRUNNING[0m[0m · 722 Patch 65 · /usr/sap/hostctrl/exe/saphostexec
 
-[36mSYSTEM ABC · ABAP ·[0m [33m●[0m [33mYELLOW[0m
+[36mSYSTEM ABC · AS ABAP · Hostname sapci ·[0m [33m⬤[0m [33m[1mPARTIAL[0m[0m [90m(YELLOW)[0m
   SID                          ABC
-  SAP system type              ABAP
+  Hostname                     sapci
+  SAP System Type              AS ABAP
   Database                     SAP HANA (hdb) · name HDB · host saphdb
-  Kernel version               793 (7.93)
-  Kernel patch level           200 (changelist 2123456) · compiled Sep 14 2026 21:33:27
-  Kernel platform              linuxx86_64 · UNICODE · 64 BIT
-  Kernel source                disp+work -V (/usr/sap/ABC/SYS/exe/uc/linuxx86_64)
-  SAP_BASIS (kernel supports)  755–758  [actual SAP_BASIS needs DB/RFC access: planned]
-  Kernel directory             /usr/sap/ABC/SYS/exe  (DIR_EXE_ROOT)
+  Kernel Version               793 (7.93)
+  Kernel Patch Level           200 (Changelist 2123456) · Compiled Sep 14 2026 21:33:27
+  Kernel Platform              linuxx86_64 · UNICODE · 64 BIT
+  Kernel Source                disp+work -V (/usr/sap/ABC/SYS/exe/uc/linuxx86_64)
+  SAP_BASIS (Kernel Supports)  755–758  [actual SAP_BASIS level needs DB/RFC access: planned]
+  Kernel Directory             /usr/sap/ABC/SYS/exe  (DIR_EXE_ROOT)
   DIR_CT_RUN                   /usr/sap/ABC/SYS/exe/uc/linuxx86_64
-  Global kernel directory      /sapmnt/ABC/exe/uc/linuxx86_64
-  Local kernel directories    
+  Global Kernel Directory      /sapmnt/ABC/exe/uc/linuxx86_64
+  Local Kernel Directories    
                                D00      /usr/sap/ABC/D00/exe
                                ASCS01   /usr/sap/ABC/ASCS01/exe
   Instances
@@ -30,19 +31,20 @@ $ ./kernelman.sh status
     01  ASCS01  ABAP Central Services      sapci    [32m●[0m            [32m●[0m GREEN  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
     02  -       Application Server (ABAP)  sapapp2  [90m○[0m            [31m●[0m GRAY   -
 
-[36mSYSTEM QAS · ABAP ·[0m [31m●[0m [31mGRAY[0m
+[36mSYSTEM QAS · AS ABAP · Hostname sapci ·[0m [31m⬤[0m [31m[1mSTOPPED[0m[0m [90m(GRAY)[0m
   SID                          QAS
-  SAP system type              ABAP
+  Hostname                     sapci
+  SAP System Type              AS ABAP
   Database                     SAP HANA (hdb) · name HDQ · host saphdq
-  Kernel version               793 (7.93)
-  Kernel patch level           150
-  Kernel platform              linuxx86_64
-  Kernel source                saphostctrl ListInstances
-  SAP_BASIS (kernel supports)  unknown  [actual SAP_BASIS needs DB/RFC access: planned]
-  Kernel directory             -
+  Kernel Version               793 (7.93)
+  Kernel Patch Level           150
+  Kernel Platform              linuxx86_64
+  Kernel Source                saphostctrl ListInstances
+  SAP_BASIS (Kernel Supports)  unknown  [actual SAP_BASIS level needs DB/RFC access: planned]
+  Kernel Directory             -
   DIR_CT_RUN                   -
-  Global kernel directory      -
-  Local kernel directories    
+  Global Kernel Directory      -
+  Local Kernel Directories    
                                ASCS10   /usr/sap/QAS/ASCS10/exe
                                D11      /usr/sap/QAS/D11/exe
   Instances

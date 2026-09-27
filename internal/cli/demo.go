@@ -38,6 +38,7 @@ func EnableDemo(root string) error {
 	isRoot = false
 	demoRoot = root
 	defaultDownloadDir = layout.Download
+	scanRoots = []string{root}
 	return nil
 }
 

@@ -31,7 +31,7 @@ func TestParseDispWork(t *testing.T) {
 	if got := len(v.SupportedBasis); got != 4 || v.SupportedBasis[0] != "755" || v.SupportedBasis[3] != "758" {
 		t.Errorf("SupportedBasis = %v", v.SupportedBasis)
 	}
-	if v.String() != "793 patch 200" || v.ReleaseDotted() != "7.93" {
+	if v.String() != "793 Patch 200" || v.ReleaseDotted() != "7.93" {
 		t.Errorf("String()=%q ReleaseDotted()=%q", v.String(), v.ReleaseDotted())
 	}
 }

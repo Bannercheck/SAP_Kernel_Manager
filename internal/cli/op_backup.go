@@ -4,13 +4,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
 
-// BackupOp implements Kernel Backup: kernel dir → exe_<date>, then the listing.
+// BackupOp implements Kernel Backup: every kernel directory is copied next
+// to itself as <name>_<date>, then the listings are shown.
 func BackupOp(args []string) int {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	sid := fs.String("sid", "", "SAP system")
@@ -26,17 +28,27 @@ func BackupOp(args []string) int {
 	}
 	e := newEnv(t)
 	pal := currentPalette()
-	if !*yes && !confirm(fmt.Sprintf("Copy %s to %s/%s?", t.KernelDir, parentDir(t.KernelDir), ops.BackupName(parentDir(t.KernelDir), time.Now())), true) {
+	now := time.Now()
+	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Cyan, "Kernel directories → backups"))
+	for _, d := range kernelDirs(t) {
+		fmt.Fprintf(stdout, "    %s  →  %s\n", d, ops.BackupName(d, now))
+	}
+	if !*yes && !confirm(fmt.Sprintf("Back up these %d directories?", len(kernelDirs(t)))) {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
 	res, err := ops.Backup(ctx, e)
-	if res != nil && res.Listing != "" {
-		e.Pr.Block("Backup directory "+res.Dest, res.Listing)
+	for _, d := range res.Dirs {
+		e.Pr.Block("Backup "+d.Dest, d.Listing)
 	}
 	if err != nil {
 		return fail(err)
 	}
-	fmt.Fprintf(stdout, "  %s Backup ready: %s  (%d files, %s)\n", pal.Check(), pal.Paint(ui.Bold, res.Dest), res.Files, ops.HumanSize(res.Bytes))
+	var dests []string
+	for _, d := range res.Dirs {
+		dests = append(dests, d.Dest)
+	}
+	fmt.Fprintf(stdout, "  %s Backup ready: %d directories, %d files, %s\n    %s\n    full listings: %s\n", pal.Check(),
+		len(res.Dirs), res.Files(), ops.HumanSize(res.Bytes()), pal.Paint(ui.Bold, strings.Join(dests, "\n    ")), res.LogFile)
 	return ExitOK
 }

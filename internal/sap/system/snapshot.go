@@ -16,10 +16,12 @@ import (
 type Snapshot struct {
 	SID             string               `json:"sid"`
 	KernelDir       string               `json:"kernel_dir"`
+	KernelDirs      []string             `json:"kernel_dirs,omitempty"`
 	DirExeRoot      string               `json:"dir_exe_root,omitempty"`
 	Instances       []discovery.Instance `json:"instances"`
 	TakenAt         time.Time            `json:"taken_at"`
-	LastBackup      string               `json:"last_backup,omitempty"`
+	LastBackup      string               `json:"last_backup,omitempty"`  // backup of the central kernel directory
+	LastBackups     map[string]string    `json:"last_backups,omitempty"` // kernel dir → its backup
 	LastBackupAt    time.Time            `json:"last_backup_at,omitempty"`
 	LastDownloadDir string               `json:"last_download_dir,omitempty"`
 	CopiedSARs      []string             `json:"copied_sars,omitempty"` // file names placed in KernelDir by Kernel Files

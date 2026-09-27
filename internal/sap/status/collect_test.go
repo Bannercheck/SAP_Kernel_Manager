@@ -95,7 +95,7 @@ func TestCollect(t *testing.T) {
 	}
 
 	abc := rep.Systems[0]
-	if abc.Type != "ABAP" || abc.Status != "YELLOW" || abc.Database.Type != "hdb" || abc.Database.Name != "HDB" ||
+	if abc.Type != "AS ABAP" || abc.Status != "YELLOW" || abc.Database.Type != "hdb" || abc.Database.Name != "HDB" ||
 		abc.Database.Host != "saphdb" || abc.DirCtRun != ctRun || abc.DirExeRoot != "/usr/sap/ABC/SYS/exe" {
 		t.Errorf("ABC = %+v", abc)
 	}

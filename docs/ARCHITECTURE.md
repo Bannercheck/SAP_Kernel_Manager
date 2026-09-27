@@ -271,15 +271,15 @@ rollback tamam · `6` rollback başarısız (manuel) · `7` verify başarısız.
 | # | Menü | Ne yapar | Kanıt ekranda |
 |---|------|----------|---------------|
 | 1 | SAP Status | kernel, sapstartsrv/sapcontrol, SID, hostname, instance'lar (otomatik) | ışıklar |
-| 2 | Kernel Backup | `cp -pR DIR_CT_RUN <üst>/exe_<YYYYMMDD>` (root ise `su - <sid>adm`), dosya sayısı karşılaştırılır | `ls -la` listesi |
-| 3 | Kernel Files | indirme dizini sorulur; **bugün tarihli** `*.SAR` → kernel dizini; `chown -R <sid>adm:sapsys` | sıra tablosu + `ls -la` |
+| 2 | Kernel Backup | **her kernel dizini** (DIR_CT_RUN + instance `exe` dizinleri) kendi yanına `<ad>_<YYYYMMDD>` olarak `cp -pR` (root ise `su - <sid>adm`); dosya sayısı karşılaştırılır | kısaltılmış `ls -la` + tam log |
+| 3 | Kernel Files | **sunucu taranır**, bugün tarihli `*.SAR` bulunur → tüm kernel dizinlerine kopyalanır; `chown -R <sid>adm:sapsys` | sıra tablosu (bulunduğu yer dahil) + `ls -la` |
 | 4 | SAP Stop / Start | `K`: StopSystem ALL → WaitforStopped → StopService · `S`: StartService (sidadm) → StartSystem ALL → WaitforStarted | `[i/n]` adımlar + ışıklar |
-| 5 | Kernel Update | durmuş sistem + bugünkü yedek şart → `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) kernel dizininde → chown → `saproot.sh` → `disp+work -V` → `S` başlat | önce/sonra sürüm |
-| 6 | Kernel Rollback | en son `exe_<date>` → kernel dizini üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |
+| 5 | Kernel Update | durmuş sistem + bugünkü yedek şart → her kernel dizininde `SAPCAR -xvf` patch sırasıyla (küçükten büyüğe) → chown → `saproot.sh` → `disp+work -V` → `1` ile başlat | önce/sonra sürüm |
+| 6 | Kernel Rollback | her dizinin son `<ad>_<date>` yedeği üstüne `cp -pR` → chown → doğrula | önce/sonra sürüm |
 
 Sıralama kuralı: patch numarası artan; aynı seviyede SAPEXE → SAPEXEDB → tek bileşen yamaları. Böylece son hotfix (örn. `dw_423`)
 en son açılır ve kernel `793 patch 423` olur. Kernel dizini sapstartsrv kapalıyken de bulunur: snapshot (`/usr/sap/<SID>/.kernelman`)
-→ `/usr/sap/<SID>/SYS/exe/run` symlink. Her işlem `✔/✘` ile biter ve Enter ile ana sayfaya döner.
+→ `/usr/sap/<SID>/SYS/exe/run` symlink. Her işlem `✔/✘` ile biter; `0) Back to main menu` ile ana sayfaya dönülür (Enter tek başına seçim yapmaz). Tüm istemler numaralıdır.
 
 ## 6. Platform notları
 

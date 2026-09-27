@@ -7,7 +7,6 @@ import (
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
 
 const labelWidth = 28
@@ -35,6 +34,21 @@ func statusColour(s string) ui.Colour {
 
 func statusLight(pal ui.Palette, s string) string { return pal.Light(statusColour(s)) }
 
+// stateWord turns a SAP display status into the word shown on badges.
+func stateWord(s string) string {
+	switch strings.ToUpper(s) {
+	case "GREEN":
+		return "RUNNING"
+	case "YELLOW":
+		return "PARTIAL"
+	case "RED":
+		return "ERROR"
+	case "GRAY":
+		return "STOPPED"
+	}
+	return "UNKNOWN"
+}
+
 func sapstartsrvLight(pal ui.Palette, s string) string {
 	switch s {
 	case "running":
@@ -49,15 +63,15 @@ func sapstartsrvLight(pal ui.Palette, s string) string {
 
 // RenderStatus writes the human readable status screen.
 func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
-	fmt.Fprintf(w, "%s\n", pal.Paint(ui.Bold, fmt.Sprintf("%s status · %s · %s", version.AppName, rep.Host.Hostname,
+	fmt.Fprintf(w, "%s\n", pal.Paint(ui.Bold, fmt.Sprintf("SAP Status · Hostname %s · %s", rep.Host.Hostname,
 		rep.GeneratedAt.Format("2006-01-02 15:04:05"))))
-	fmt.Fprintf(w, "  %s running   %s partial   %s stopped   %s remote/unknown\n\n",
+	fmt.Fprintf(w, "  %s Running   %s Partial   %s Stopped   %s Remote/Unknown\n\n",
 		pal.Light(ui.Green), pal.Light(ui.Yellow), pal.Light(ui.Red), pal.Light(ui.Dim))
 
 	fmt.Fprintln(w, pal.Paint(ui.Cyan, "HOST"))
 	kv(w, "Hostname", rep.Host.Hostname)
 	kv(w, "OS", rep.Host.OSVersion)
-	kv(w, "OS architecture", fmt.Sprintf("%s/%s (SAP platform dir: %s)", rep.Host.OS, rep.Host.Arch, rep.Host.KernelDirName))
+	kv(w, "OS Architecture", fmt.Sprintf("%s/%s (SAP platform dir: %s)", rep.Host.OS, rep.Host.Arch, rep.Host.KernelDirName))
 	priv := "not privileged"
 	if rep.Host.Privileged {
 		priv = "privileged"
@@ -66,34 +80,35 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 	ha := rep.HostAgent
 	switch {
 	case !ha.Installed:
-		kv(w, "SAP Host Agent", pal.Light(ui.Red)+" not installed · "+ha.Error)
+		kv(w, "SAP Host Agent", pal.Badge(ui.Red, "NOT INSTALLED")+" · "+ha.Error)
 	case ha.Running:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s %s · %s", pal.Light(ui.Green), ha.Version, ha.Path))
+		kv(w, "SAP Host Agent", fmt.Sprintf("%s · %s · %s", pal.Badge(ui.Green, "RUNNING"), ha.Version, ha.Path))
 	default:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s %s · %s", pal.Light(ui.Red), ha.Version, ha.Path))
+		kv(w, "SAP Host Agent", fmt.Sprintf("%s · %s · %s", pal.Badge(ui.Red, "STOPPED"), ha.Version, ha.Path))
 	}
 
 	for _, sys := range rep.Systems {
-		fmt.Fprintf(w, "\n%s %s %s\n", pal.Paint(ui.Cyan, fmt.Sprintf("SYSTEM %s · %s ·", sys.SID, sys.Type)),
-			statusLight(pal, sys.Status), pal.Paint(statusColour(sys.Status), sys.Status))
+		fmt.Fprintf(w, "\n%s %s %s\n", pal.Paint(ui.Cyan, fmt.Sprintf("SYSTEM %s · %s · Hostname %s ·", sys.SID, sys.Type, rep.Host.Hostname)),
+			pal.Badge(statusColour(sys.Status), stateWord(sys.Status)), pal.Paint(ui.Dim, "("+sys.Status+")"))
 		kv(w, "SID", sys.SID)
-		kv(w, "SAP system type", sys.Type)
+		kv(w, "Hostname", rep.Host.Hostname)
+		kv(w, "SAP System Type", sys.Type)
 		kv(w, "Database", strings.TrimSpace(sys.Database.DisplayName()+" "+dbDetail(sys.Database)))
 		if sys.Kernel.Release > 0 {
-			kv(w, "Kernel version", fmt.Sprintf("%d (%s)", sys.Kernel.Release, sys.Kernel.ReleaseDotted()))
-			kv(w, "Kernel patch level", patchDetail(sys))
+			kv(w, "Kernel Version", fmt.Sprintf("%d (%s)", sys.Kernel.Release, sys.Kernel.ReleaseDotted()))
+			kv(w, "Kernel Patch Level", patchDetail(sys))
 		} else {
-			kv(w, "Kernel version", "unknown")
-			kv(w, "Kernel patch level", "unknown")
+			kv(w, "Kernel Version", "unknown")
+			kv(w, "Kernel Patch Level", "unknown")
 		}
-		kv(w, "Kernel platform", strings.Join(nonEmpty(sys.Kernel.Platform, sys.Kernel.CompilationMode, sys.Kernel.CompiledFor), " · "))
-		kv(w, "Kernel source", sys.KernelSource)
-		kv(w, "SAP_BASIS (kernel supports)", basisRange(sys.Kernel.SupportedBasis)+"  [actual SAP_BASIS needs DB/RFC access: planned]")
-		kv(w, "Kernel directory", suffixIf(sys.DirExeRoot, "  (DIR_EXE_ROOT)"))
+		kv(w, "Kernel Platform", strings.Join(nonEmpty(sys.Kernel.Platform, sys.Kernel.CompilationMode, sys.Kernel.CompiledFor), " · "))
+		kv(w, "Kernel Source", sys.KernelSource)
+		kv(w, "SAP_BASIS (Kernel Supports)", basisRange(sys.Kernel.SupportedBasis)+"  [actual SAP_BASIS level needs DB/RFC access: planned]")
+		kv(w, "Kernel Directory", suffixIf(sys.DirExeRoot, "  (DIR_EXE_ROOT)"))
 		kv(w, "DIR_CT_RUN", sys.DirCtRun)
-		kv(w, "Global kernel directory", sys.GlobalKernelDir)
+		kv(w, "Global Kernel Directory", sys.GlobalKernelDir)
 
-		fmt.Fprintf(w, "  %-*s\n", labelWidth, "Local kernel directories")
+		fmt.Fprintf(w, "  %-*s\n", labelWidth, "Local Kernel Directories")
 		for _, in := range sys.Instances {
 			if in.Local {
 				fmt.Fprintf(w, "  %-*s %-8s %s\n", labelWidth, "", in.Name, orDash(in.DirExecutable))
@@ -145,10 +160,10 @@ func dbDetail(db status.DB) string {
 func patchDetail(sys status.System) string {
 	s := fmt.Sprintf("%d", sys.Kernel.Patch)
 	if sys.Kernel.Changelist > 0 {
-		s += fmt.Sprintf(" (changelist %d)", sys.Kernel.Changelist)
+		s += fmt.Sprintf(" (Changelist %d)", sys.Kernel.Changelist)
 	}
 	if sys.Kernel.CompileTime != "" {
-		s += " · compiled " + sys.Kernel.CompileTime
+		s += " · Compiled " + sys.Kernel.CompileTime
 	}
 	return s
 }

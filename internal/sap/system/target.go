@@ -36,7 +36,8 @@ type Target struct {
 	SIDAdm     string               `json:"sidadm"` // abcadm
 	Group      string               `json:"group"`  // sapsys
 	Instances  []discovery.Instance `json:"instances"`
-	KernelDir  string               `json:"kernel_dir"` // DIR_CT_RUN
+	KernelDir  string               `json:"kernel_dir"`  // DIR_CT_RUN, the central kernel directory
+	KernelDirs []string             `json:"kernel_dirs"` // KernelDir + every instance's local exe directory (deduplicated, existing)
 	DirExeRoot string               `json:"dir_exe_root,omitempty"`
 	Sapcontrol string               `json:"sapcontrol,omitempty"`
 	StateDir   string               `json:"state_dir"`
@@ -87,10 +88,64 @@ func Resolve(ctx context.Context, r exec.Runner, p platform.Platform, sid string
 	if err := t.resolveKernelDir(ctx, r); err != nil {
 		return t, warnings, err
 	}
+	t.resolveInstanceDirs(ctx, r)
 	t.SaveSnapshot(func(s *Snapshot) {
-		s.KernelDir, s.DirExeRoot, s.Instances, s.TakenAt = t.KernelDir, t.DirExeRoot, t.Instances, time.Now()
+		s.KernelDir, s.KernelDirs, s.DirExeRoot, s.Instances, s.TakenAt = t.KernelDir, t.KernelDirs, t.DirExeRoot, t.Instances, time.Now()
 	})
 	return t, warnings, nil
+}
+
+// resolveInstanceDirs collects every directory that holds kernel files:
+// the central one plus each local instance's DIR_EXECUTABLE (sapcontrol,
+// else sapservices, else /usr/sap/<SID>/<INSTANCE>/exe). Directories that
+// resolve to the same place (symlinks) or do not exist are dropped.
+func (t *Target) resolveInstanceDirs(ctx context.Context, r exec.Runner) {
+	seen := map[string]bool{}
+	add := func(dir string) {
+		if dir == "" {
+			return
+		}
+		real, err := filepath.EvalSymlinks(dir)
+		if err != nil {
+			return
+		}
+		if st, err := os.Stat(real); err != nil || !st.IsDir() {
+			return
+		}
+		if !seen[real] {
+			seen[real] = true
+			t.KernelDirs = append(t.KernelDirs, dir)
+		}
+	}
+	add(t.KernelDir)
+	for i, in := range t.Instances {
+		var cands []string
+		if t.Sapcontrol != "" {
+			if v, err := t.Client(r, in.Nr, 20*time.Second).ParameterValue(ctx, "DIR_EXECUTABLE"); err == nil && v != "" {
+				cands = append(cands, v)
+			}
+		}
+		if in.ExeDir != "" {
+			cands = append(cands, in.ExeDir)
+		}
+		if in.Name != "" {
+			cands = append(cands, filepath.Join(UsrSap, t.SID, in.Name, "exe"))
+		}
+		if t.Snapshot != nil {
+			for _, si := range t.Snapshot.Instances {
+				if si.Nr == in.Nr && si.ExeDir != "" {
+					cands = append(cands, si.ExeDir)
+				}
+			}
+		}
+		for _, c := range cands {
+			if st, err := os.Stat(c); err == nil && st.IsDir() {
+				t.Instances[i].ExeDir = c
+				add(c)
+				break
+			}
+		}
+	}
 }
 
 // resolveKernelDir tries sapcontrol, then the snapshot, then SYS/exe/run.

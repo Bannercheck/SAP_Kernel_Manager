@@ -33,7 +33,7 @@ type HostInfo struct {
 // System is one SAP system (SID) as seen from this host.
 type System struct {
 	SID             string         `json:"sid"`
-	Type            string         `json:"type"` // ABAP | Java | Dual-stack | HANA | unknown
+	Type            string         `json:"type"` // AS ABAP | AS Java | Dual-stack (AS ABAP + AS Java) | HANA Database | unknown
 	Database        DB             `json:"database"`
 	Kernel          kernel.Version `json:"kernel"`
 	KernelSource    string         `json:"kernel_source"` // how the kernel version was determined
