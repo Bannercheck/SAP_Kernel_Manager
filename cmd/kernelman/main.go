@@ -16,6 +16,13 @@ func main() {
 
 func run(args []string) int {
 	pal := ui.Detect(os.Stdout)
+	args, demoMode := stripDemoFlag(args)
+	if demoMode || os.Getenv(version.EnvPrefix+"DEMO") == "1" {
+		if err := cli.EnableDemo(os.Getenv(version.EnvPrefix + "DEMO_ROOT")); err != nil {
+			fmt.Fprintln(os.Stderr, version.AppName+":", err)
+			return cli.ExitError
+		}
+	}
 	if len(args) == 0 {
 		if ui.IsTerminal(os.Stdin) || os.Getenv(version.EnvPrefix+"MENU") == "1" {
 			return cli.Menu(os.Stdin, os.Stdout, pal)
@@ -39,4 +46,20 @@ func run(args []string) int {
 		return cli.ExitUsage
 	}
 	return cli.Dispatch(op, args[1:])
+}
+
+// stripDemoFlag removes `demo` / `--demo` from the arguments and reports it.
+// `kernelman demo` opens the menu on the simulated host; `kernelman --demo status`
+// runs one command against it.
+func stripDemoFlag(args []string) ([]string, bool) {
+	var out []string
+	found := false
+	for _, a := range args {
+		if a == "demo" || a == "--demo" {
+			found = true
+			continue
+		}
+		out = append(out, a)
+	}
+	return out, found
 }

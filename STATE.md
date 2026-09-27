@@ -28,6 +28,9 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Binary adı `kernelman`.
 
 ## Karar günlüğü
+- 2026-09-27 · **Demo modu** (`kernelman demo`, `--demo`, `KERNELMAN_DEMO=1`): `~/.kernelman/demo` altında simüle SAP hostu (`internal/demo`);
+  cp/ls/chown gerçek, sapcontrol/SAPCAR/disp+work durum makinesiyle simüle. Kullanıcı macOS'ta tüm akışı deneyebilsin diye.
+  `make cross` darwin/arm64 + darwin/amd64 de üretir (yalnızca demo için); `make macos` → `dist/kernelman-macos-demo.zip`.
 - 2026-09-27 · Kullanıcı: **yalnızca Unix** (Linux, AIX); Windows kodu ve hedefi kaldırıldı (`platform_windows.go`, `vt_windows.go`, `.bat`). `make cross` → linux/amd64, linux/ppc64le, aix/ppc64.
 - 2026-09-27 · Kullanıcı prosedürü: klasik yerinde güncelleme. SAR'lar kernel dizinine kopyalanır ve orada `SAPCAR -xvf` ile sırayla açılır (staging yok).
   Güvenlik: Kernel Update, sistem durmadan ve **bugünkü** yedek olmadan çalışmaz (yoksa önce alır). Rollback = yedeği geri kopyala.

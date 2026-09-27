@@ -1,4 +1,4 @@
-$ ./kernelman.sh              # menü · 3 ⏎ /tmp/TestFlowFiles2163045031/001/download ⏎  ⏎  ⏎ q
+$ ./kernelman.sh              # menü · 3 ⏎ /tmp/TestFlowFiles1129434323/001/download ⏎  ⏎  ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mhost vm · dev[0m
 
   [33m●[0m  ABC             ABAP  kernel 793 patch 200 (changelist 2123456)  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -16,31 +16,31 @@ $ ./kernelman.sh              # menü · 3 ⏎ /tmp/TestFlowFiles2163045031/001/
 Select an operation (number or name, q to quit): 3
 
 [1m=== Kernel Files ===[0m
-  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64
+  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64
   [90m(sapcontrol ParameterValue DIR_CT_RUN (instance 00))[0m
 
-Directory with the downloaded .SAR files [/home/user/SAP_Kernel_Manager/internal/cli]: /tmp/TestFlowFiles2163045031/001/download
+Directory with the downloaded .SAR files [/tmp/TestDemoFlow2840549266/001/download]: /tmp/TestFlowFiles1129434323/001/download
 
   [36mArchives dated today, in apply order (lowest patch first)[0m
     #  ARCHIVE                    COMPONENT               PATCH  SIZE    MODIFIED
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-27 18:56
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-27 18:56
-    3  dw_421-80007541.sar        DW                      421    4.0 KB  2026-09-27 18:56
-    4  dw_423-80007541.sar        DW                      423    4.0 KB  2026-09-27 18:56
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-27 20:15
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-27 20:15
+    3  dw_421-80007541.sar        DW                      421    4.0 KB  2026-09-27 20:15
+    4  dw_423-80007541.sar        DW                      423    4.0 KB  2026-09-27 20:15
     → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
-Copy these 4 archive(s) into /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64? [Y/n]: 
-  [1/3] Copy 4 archive(s) to /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -p[0m
-  [2/3] chown -R abcadm:sapsys /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
+Copy these 4 archive(s) into /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64? [Y/n]: 
+  [1/3] Copy 4 archive(s) to /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -p[0m
+  [2/3] chown -R abcadm:sapsys /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
   [3/3] List archives in kernel directory ... [32mok[0m  [90mls -la[0m
 
-  [36mArchives now in /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64[0m
-    -rw-r--r-- 1 root root 4096 Sep 27 18:56 /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64/SAPEXEDB_403-80007808.SAR
-    -rw-r--r-- 1 root root 4096 Sep 27 18:56 /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR
-    -rw-r--r-- 1 root root 4096 Sep 27 18:56 /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64/dw_421-80007541.sar
-    -rw-r--r-- 1 root root 4096 Sep 27 18:56 /tmp/TestFlowFiles2163045031/001/sapmnt/ABC/exe/uc/linuxx86_64/dw_423-80007541.sar
+  [36mArchives now in /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64[0m
+    -rw-r--r-- 1 root root 4096 Sep 27 20:15 /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64/SAPEXEDB_403-80007808.SAR
+    -rw-r--r-- 1 root root 4096 Sep 27 20:15 /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR
+    -rw-r--r-- 1 root root 4096 Sep 27 20:15 /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64/dw_421-80007541.sar
+    -rw-r--r-- 1 root root 4096 Sep 27 20:15 /tmp/TestFlowFiles1129434323/001/sapmnt/ABC/exe/uc/linuxx86_64/dw_423-80007541.sar
 
-  [32m✔[0m 4 archive(s) copied from /tmp/TestFlowFiles2163045031/001/download · chown skipped: not root
+  [32m✔[0m 4 archive(s) copied from /tmp/TestFlowFiles1129434323/001/download · chown skipped: not root
 
 --- Kernel Files: [32m✔[0m [32mdone[0m. Press Enter to return to the main menu.
 [1mKernelMan — SAP Kernel Manager[0m   [90mhost vm · dev[0m

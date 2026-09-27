@@ -16,7 +16,7 @@ $ ./kernelman.sh              # menü · 4 ⏎ K ⏎  ⏎ q
 Select an operation (number or name, q to quit): 4
 
 [1m=== SAP Stop / Start ===[0m
-  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowStop3844482543/001/sapmnt/ABC/exe/uc/linuxx86_64
+  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowStop3332116635/001/sapmnt/ABC/exe/uc/linuxx86_64
   [90m(sapcontrol ParameterValue DIR_CT_RUN (instance 00))[0m
 
   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN

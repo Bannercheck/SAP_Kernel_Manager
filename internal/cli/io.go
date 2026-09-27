@@ -25,6 +25,8 @@ var (
 	plat    platform.Platform
 	palette *ui.Palette
 	isRoot  = os.Geteuid() == 0
+	// defaultDownloadDir is offered when no download directory is remembered ("" = current directory).
+	defaultDownloadDir string
 )
 
 func platformNow() platform.Platform {

@@ -1,11 +1,18 @@
 #!/bin/sh
-# kernelman launcher for Unix/AIX: runs the prebuilt binary that matches this host.
+# kernelman launcher for Linux/AIX (and macOS for the demo): runs the matching prebuilt binary.
 # Expected layout:  <dir>/kernelman.sh   <dir>/bin/kernelman-<os>-<arch>
 # No runtime (Go, Python, Java) is required on the host.
 dir=$(cd "$(dirname "$0")" && pwd)
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$os" in
   aix) goos=aix; goarch=ppc64 ;;
+  darwin)
+    goos=darwin
+    case "$(uname -m)" in
+      arm64)  goarch=arm64 ;;
+      x86_64) goarch=amd64 ;;
+      *) echo "kernelman: unsupported macOS architecture: $(uname -m)" >&2; exit 2 ;;
+    esac ;;
   linux)
     goos=linux
     case "$(uname -m)" in

@@ -30,6 +30,14 @@ Root olarak çalıştırıldığında dosya işlemleri ve sapcontrol `su - <sid>
 
 Örnek ekran: [`docs/examples/status-linux.txt`](docs/examples/status-linux.txt)
 
+## Demo (SAP olmayan makinede, macOS dahil)
+
+```sh
+./kernelman.sh demo        # ~/.kernelman/demo altında simüle SAP hostu; 6 işlemin hepsi denenebilir
+```
+
+Ayrıntı: [`docs/MACOS-DEMO.md`](docs/MACOS-DEMO.md)
+
 ## Geliştirme
 
 ```sh

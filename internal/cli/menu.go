@@ -66,8 +66,12 @@ func Menu(in io.Reader, out io.Writer, pal ui.Palette) int {
 
 func printMenu(w io.Writer, pal ui.Palette, results map[string]int, summary []string) {
 	host, _ := os.Hostname()
-	fmt.Fprintf(w, "%s   %s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName),
-		pal.Paint(ui.Dim, fmt.Sprintf("host %s · %s", host, version.Version)))
+	badge := ""
+	if demoRoot != "" {
+		badge = "  " + pal.Paint(ui.Yellow, "DEMO · simulated SAP host in "+demoRoot)
+	}
+	fmt.Fprintf(w, "%s   %s%s\n\n", pal.Paint(ui.Bold, version.DisplayName+" — "+version.ProductName),
+		pal.Paint(ui.Dim, fmt.Sprintf("host %s · %s", host, version.Version)), badge)
 	for _, l := range summary {
 		fmt.Fprintln(w, "  "+l)
 	}

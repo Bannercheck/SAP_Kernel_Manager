@@ -59,6 +59,9 @@ func pickArchives(t *system.Target, from string, yes bool) ([]ops.SARFile, strin
 			def = t.Snapshot.LastDownloadDir
 		}
 		if def == "" {
+			def = defaultDownloadDir
+		}
+		if def == "" {
 			def, _ = os.Getwd()
 		}
 		dir = ask("Directory with the downloaded .SAR files", def)

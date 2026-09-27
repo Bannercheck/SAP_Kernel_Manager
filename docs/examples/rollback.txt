@@ -16,15 +16,15 @@ $ ./kernelman.sh              # menü · 6 ⏎  ⏎ y ⏎  ⏎  ⏎ q
 Select an operation (number or name, q to quit): 6
 
 [1m=== Kernel Rollback ===[0m
-  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/linuxx86_64
+  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64
   [90m(sapcontrol ParameterValue DIR_CT_RUN (instance 00))[0m
 
-Backup to restore [/tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/exe_20260927]: 
+Backup to restore [/tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927]: 
   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
-Copy /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/linuxx86_64? [y/N]: y
-  [1/4] Copy /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -pR[0m
-  [2/4] chown -R abcadm:sapsys /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
-  [3/4] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /tmp/TestFlowRollback2397295293/001/sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
+Copy /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64? [y/N]: y
+  [1/4] Copy /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/exe_20260927 over /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -pR[0m
+  [2/4] chown -R abcadm:sapsys /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: not root[0m
+  [3/4] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /tmp/TestFlowRollback3157644436/001/sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
   [4/4] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 patch 200[0m
 
   [32m✔[0m Kernel ABC restored: 793 patch 423 → [1m793 patch 200[0m

@@ -2,25 +2,31 @@ $ make cross
     dist/bin/kernelman-linux-amd64
     dist/bin/kernelman-linux-ppc64le
     dist/bin/kernelman-aix-ppc64
+    dist/bin/kernelman-darwin-arm64
+    dist/bin/kernelman-darwin-amd64
 
 $ ls -la dist dist/bin
   dist:
   total 20
-  drwxr-xr-x 3 root root 4096 Sep 27 18:56 .
-  drwxr-xr-x 9 root root 4096 Sep 27 18:56 ..
-  -rw-r--r-- 1 root root  355 Sep 27 18:56 SHA256SUMS
-  drwxr-xr-x 2 root root 4096 Sep 27 18:56 bin
-  -rwxr-xr-x 1 root root  859 Sep 27 18:56 kernelman.sh
+  drwxr-xr-x 3 root root 4096 Sep 27 20:16 .
+  drwxr-xr-x 9 root root 4096 Sep 27 20:15 ..
+  -rw-r--r-- 1 root root  541 Sep 27 20:16 SHA256SUMS
+  drwxr-xr-x 2 root root 4096 Sep 27 20:16 bin
+  -rwxr-xr-x 1 root root 1081 Sep 27 20:16 kernelman.sh
   
   dist/bin:
-  total 9000
-  drwxr-xr-x 2 root root    4096 Sep 27 18:56 .
-  drwxr-xr-x 3 root root    4096 Sep 27 18:56 ..
-  -rwxr-xr-x 1 root root 3369077 Sep 27 18:56 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 2879672 Sep 27 18:56 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 2949304 Sep 27 18:56 kernelman-linux-ppc64le
+  total 14840
+  drwxr-xr-x 2 root root    4096 Sep 27 20:16 .
+  drwxr-xr-x 3 root root    4096 Sep 27 20:16 ..
+  -rwxr-xr-x 1 root root 3427962 Sep 27 20:15 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 2937440 Sep 27 20:16 kernelman-darwin-amd64
+  -rwxr-xr-x 1 root root 2869938 Sep 27 20:16 kernelman-darwin-arm64
+  -rwxr-xr-x 1 root root 2924728 Sep 27 20:15 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 3014840 Sep 27 20:15 kernelman-linux-ppc64le
 
 $ file dist/bin/*
   dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped
+  dist/bin/kernelman-darwin-amd64:  Mach-O 64-bit x86_64 executable
+  dist/bin/kernelman-darwin-arm64:  Mach-O 64-bit arm64 executable
   dist/bin/kernelman-linux-amd64:   ELF 64-bit LSB executable
   dist/bin/kernelman-linux-ppc64le: ELF 64-bit LSB executable

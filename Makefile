@@ -10,8 +10,10 @@ EXENV := KERNELMAN_COLOR=always KERNELMAN_UNICODE=1
 
 # os/arch pairs that SAP kernels ship for and Go can target
 TARGETS := linux/amd64 linux/ppc64le aix/ppc64
+# developer/demo targets (no SAP, `kernelman demo` only)
+DEV_TARGETS := darwin/arm64 darwin/amd64
 
-.PHONY: build check test vet fmt cross clean examples
+.PHONY: build check test vet fmt cross clean examples macos
 
 build:
 	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/kernelman
@@ -31,7 +33,7 @@ test:
 # Nothing has to be installed on the SAP host: copy dist/ and run kernelman.sh / kernelman.bat.
 cross:
 	@mkdir -p dist/bin
-	@for t in $(TARGETS); do \
+	@for t in $(TARGETS) $(DEV_TARGETS); do \
 	  os=$${t%/*}; arch=$${t#*/}; ext=""; \
 	  out=dist/bin/$(BIN)-$$os-$$arch$$ext; echo "  $$out"; \
 	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/kernelman || exit 1; \
@@ -47,9 +49,16 @@ examples: build
 	@KERNELMAN_WRITE_EXAMPLE=1 go test ./internal/cli >/dev/null
 	@{ echo '$$ ./kernelman.sh version'; ./bin/kernelman version; } > docs/examples/version.txt
 	@{ echo '$$ ./kernelman.sh status      # SAP kurulu olmayan bir hostta'; $(EXENV) ./bin/kernelman status; echo "exit code: $$?"; } > docs/examples/status-nosap.txt
+	@rm -rf /tmp/kernelman-demo-example && { echo '$$ ./kernelman.sh demo         # simüle SAP hostu · 2 ⏎ ⏎ ⏎ 4 ⏎ K ⏎ ⏎ q'; printf '2\n\n\n4\nK\n\n\nq\n' | KERNELMAN_DEMO=1 KERNELMAN_DEMO_ROOT=/tmp/kernelman-demo-example KERNELMAN_MENU=1 $(EXENV) ./bin/kernelman | sed 's|/tmp/kernelman-demo-example|~/.kernelman/demo|g'; } > docs/examples/demo.txt
 	@{ echo '$$ make cross'; $(MAKE) -s cross 2>&1 | sed 's/^/  /'; echo; echo '$$ ls -la dist dist/bin'; ls -la dist dist/bin | sed 's/^/  /'; echo; echo '$$ file dist/bin/*'; file dist/bin/* | sed 's/,.*//;s/^/  /'; } > docs/examples/cross-build.txt
 	@for f in docs/examples/*.txt; do python3 scripts/screen2png.py $$f $${f%.txt}.png "$(BIN) — $$(basename $${f%.txt})" >/dev/null || exit 1; done
 	@ls docs/examples/*.png
+
+# macOS demo package: launcher + darwin binaries + Turkish quick start
+macos: cross
+	@rm -rf dist/macos && mkdir -p dist/macos/bin
+	@cp dist/bin/$(BIN)-darwin-* dist/macos/bin/ && cp scripts/kernelman.sh dist/macos/ && cp docs/MACOS-DEMO.md dist/macos/README.md
+	@cd dist && rm -f kernelman-macos-demo.zip && zip -qr kernelman-macos-demo.zip macos && ls -la kernelman-macos-demo.zip
 
 clean:
 	rm -rf bin dist

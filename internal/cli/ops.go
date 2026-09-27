@@ -51,6 +51,9 @@ func Usage(w io.Writer) {
 		fmt.Fprintf(w, "  %-9s %-17s %s\n", op.ID, op.Name, op.Summary)
 	}
 	fmt.Fprint(w, `
+Demo:  kernelman demo            simulated SAP host under ~/.kernelman/demo (no SAP needed; try every operation)
+       kernelman --demo status  one command against the simulated host
+
 Common flags: --sid SID   (needed only when the host runs several systems)
   status   --output table|json
   files    --from DIR [--yes]

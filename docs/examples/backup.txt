@@ -16,30 +16,30 @@ $ ./kernelman.sh              # menü · 2 ⏎  ⏎  ⏎ q
 Select an operation (number or name, q to quit): 2
 
 [1m=== Kernel Backup ===[0m
-  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/linuxx86_64
+  System [1mABC[0m · user abcadm · kernel dir /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/linuxx86_64
   [90m(sapcontrol ParameterValue DIR_CT_RUN (instance 00))[0m
 
-Copy /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/linuxx86_64 to /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/exe_20260927? [Y/n]: 
-  [1/4] Check kernel directory /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
-  [2/4] Copy to /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
+Copy /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/linuxx86_64 to /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/exe_20260927? [Y/n]: 
+  [1/4] Check kernel directory /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
+  [2/4] Copy to /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/exe_20260927 ... [32mok[0m  [90mcp -pR[0m
   [3/4] Verify copy ... [32mok[0m  [90m9 files match[0m
   [4/4] List backup directory ... [32mok[0m  [90mls -la[0m
 
-  [36mBackup directory /tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/exe_20260927[0m
+  [36mBackup directory /tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/exe_20260927[0m
     total 44
-    drwxr-xr-x 2 root root 4096 Sep 27 18:56 .
-    drwxr-xr-x 4 root root 4096 Sep 27 18:56 ..
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 SAPCAR
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 gwrd
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 icman
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 libsapu16.so
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 msg_server
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 sapcpe
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 saproot.sh
-    -rwxr-xr-x 1 root root   17 Sep 27 18:56 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 27 20:15 .
+    drwxr-xr-x 4 root root 4096 Sep 27 20:15 ..
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 SAPCAR
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 gwrd
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 icman
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 libsapu16.so
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 msg_server
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 sapcpe
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 saproot.sh
+    -rwxr-xr-x 1 root root   17 Sep 27 20:15 sapstartsrv
 
-  [32m✔[0m Backup ready: [1m/tmp/TestFlowBackup3389599628/001/sapmnt/ABC/exe/uc/exe_20260927[0m  (9 files, 153 B)
+  [32m✔[0m Backup ready: [1m/tmp/TestFlowBackup2072877453/001/sapmnt/ABC/exe/uc/exe_20260927[0m  (9 files, 153 B)
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m. Press Enter to return to the main menu.
 [1mKernelMan — SAP Kernel Manager[0m   [90mhost vm · dev[0m
