@@ -87,6 +87,12 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   paylaşımı: `ControlMaster=auto`, `ControlPath=/tmp/km-ssh-*/%h-%p-%r`, `ControlPersist=300` → host başına **tek**
   parola; host bitince `ssh -O exit`. Seçenekleri tanımayan eski ssh'ta (AIX) `StrictHostKeyChecking=no` + paylaşımsız
   moda düşülür ve ekranda söylenir.
+- 2026-09-28 · Kullanıcı: "1 ASCS + 3 app olan sistemlerde merkezi kopya" (+ "diğer yapıları bozma"). Kernel File Transfer ve
+  Kernel Update'e **Scope** eklendi: `sapcontrol GetSystemInstanceList` başka hostta instance gösteriyorsa (dağıtık sistem)
+  düzen yazılır ve `[C] Central only (recommended)` / `[A] All kernel directories on this host` sorulur; C → yalnızca
+  `DIR_CT_RUN` (paylaşımlı `/sapmnt`), instance'lar start'ta `sapcpe` ile alır. Profilinde `sapcpe` olmayan uzak instance
+  için uyarı (orada KernelMan çalıştır → 8). Uzak instance çalışıyorsa Update'te uyarı + onay. **Tek hostlu sistemde hiçbir
+  şey değişmez** (soru çıkmaz, tüm dizinler). CLI: `--central`. Yedek her zaman bu hosttaki tüm dizinler.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

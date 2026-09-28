@@ -1,6 +1,6 @@
 $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K → M · q
-[1mKernelMan — SAP Kernel Manager[0m   [90m2799820-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 01:31
+[1mKernelMan — SAP Kernel Manager[0m   [90m363e4c1-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-28 20:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
@@ -12,7 +12,7 @@ $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K �
   ABC ASCS01  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [33m●[0m 28.2 GB free of 252.0 GB (24% used, /)
+  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [33m●[0m 28.1 GB free of 252.0 GB (25% used, /)
   ├── ABC            156 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -43,7 +43,7 @@ Select an operation (number or name, q to quit): 2
     ~/.kernelman/demo/ABC/ASCS01/exe  →  ~/.kernelman/demo/ABC/ASCS01/exe_20260928
 
   Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.2 GB[0m
+  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.1 GB[0m
   [2/11] Check ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m17 files, 627 B[0m
   [3/11] Copy to ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260928 ... [32mok[0m  [90mcp -pR[0m
   [4/11] Verify linuxx86_64_20260928 ... [32mok[0m  [90m17 files match[0m
@@ -53,56 +53,56 @@ Select an operation (number or name, q to quit): 2
   [8/11] Check ~/.kernelman/demo/ABC/ASCS01/exe ... [32mok[0m  [90m5 files, 195 B[0m
   [9/11] Copy to ~/.kernelman/demo/ABC/ASCS01/exe_20260928 ... [32mok[0m  [90mcp -pR[0m
   [10/11] Verify exe_20260928 ... [32mok[0m  [90m5 files match[0m
-  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260928_013118.log ... [32mok[0m  [90m3 directories[0m
+  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20260928_203733.log ... [32mok[0m  [90m3 directories[0m
 
   [36mBackup ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260928[0m
     total 76
-    drwxr-xr-x 2 root root 4096 Sep 28 01:31 .
-    drwxr-xr-x 4 root root 4096 Sep 28 01:31 ..
-    -rw-r--r-- 1 root root    3 Sep 28 01:31 .demo_patch
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 R3trans
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 SAPCAR
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 dbhdbslib.so
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 enq_replicator
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 enq_server
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 gwrd
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 icman
+    drwxr-xr-x 2 root root 4096 Sep 28 20:37 .
+    drwxr-xr-x 4 root root 4096 Sep 28 20:37 ..
+    -rw-r--r-- 1 root root    3 Sep 28 20:37 .demo_patch
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 R3trans
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 SAPCAR
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 dbhdbslib.so
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 enq_replicator
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 enq_server
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 gwrd
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 icman
     ... 8 more entries
 
 
   [36mBackup ~/.kernelman/demo/ABC/D00/exe_20260928[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 28 01:31 .
-    drwxr-xr-x 4 root root 4096 Sep 28 01:31 ..
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 28 20:37 .
+    drwxr-xr-x 4 root root 4096 Sep 28 20:37 ..
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapstartsrv
 
 
   [36mBackup ~/.kernelman/demo/ABC/ASCS01/exe_20260928[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Sep 28 01:31 .
-    drwxr-xr-x 4 root root 4096 Sep 28 01:31 ..
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 disp+work
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapcontrol
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapcpe
-    -rwxr-xr-x 1 root root   39 Sep 28 01:31 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 28 20:37 .
+    drwxr-xr-x 4 root root 4096 Sep 28 20:37 ..
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 disp+work
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapcontrol
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapcpe
+    -rwxr-xr-x 1 root root   39 Sep 28 20:37 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 27 files, 1017 B
     [1m~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20260928
     ~/.kernelman/demo/ABC/D00/exe_20260928
     ~/.kernelman/demo/ABC/ASCS01/exe_20260928[0m
-    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260928_013118.log
+    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20260928_203733.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90m2799820-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 01:31
+[1mKernelMan — SAP Kernel Manager[0m   [90m363e4c1-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-28 20:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
@@ -114,7 +114,7 @@ Select an operation (number or name, q to quit): 2
   ABC ASCS01  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.2 GB free of 252.0 GB (24% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.1 GB free of 252.0 GB (25% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -155,8 +155,8 @@ Select an operation (number or name, q to quit): 5
 --- SAP Stop / Start: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90m2799820-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 01:31
+[1mKernelMan — SAP Kernel Manager[0m   [90m363e4c1-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-09-28 20:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [31m●[0m  ASCS01 [31m●[0m
@@ -168,7 +168,7 @@ Select an operation (number or name, q to quit): 5
   ABC ASCS01  [31m●[0m [31mnot running[0m  ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.2 GB free of 252.0 GB (24% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 28.1 GB free of 252.0 GB (25% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB

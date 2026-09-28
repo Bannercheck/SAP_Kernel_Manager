@@ -145,10 +145,7 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 	if len(files) == 0 {
 		return res, fmt.Errorf("no archives to copy")
 	}
-	dirs := e.T.KernelDirs
-	if len(dirs) == 0 {
-		dirs = []string{e.T.KernelDir}
-	}
+	dirs := e.kernelDirs()
 	n := 2*len(dirs) + 2
 	step := 1
 	if err := e.step(step, n, fmt.Sprintf("Check permissions of %d archive(s) in %s", len(files), filepath.Dir(files[0].Path)), func() (string, error) {

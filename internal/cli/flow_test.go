@@ -421,6 +421,37 @@ func TestDownloadOffline(t *testing.T) {
 
 // TestFlowShip sends today's archives and a KernelMan distribution to two
 // hosts; ssh/scp are faked, cksum runs for real on the local files.
+// A distributed system (application servers on other hosts): the scope
+// question appears and C copies only into the central directory.
+func TestFlowFilesCentral(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	fe.fake.On(fe.sc+"00 -function GetSystemInstanceList", "\n28.09.2026 10:00:00\nGetSystemInstanceList\nOK\n"+
+		"hostname, instanceNr, httpPort, httpsPort, startPriority, features, dispstatus\n"+
+		"sapci, 1, 50113, 50114, 1, MESSAGESERVER|ENQUE, GRAY\nsapci, 0, 50013, 50014, 3, ABAP|GATEWAY|ICMAN|IGS, GRAY\n"+
+		"app1, 3, 50313, 50314, 3, ABAP|GATEWAY|ICMAN|IGS, GRAY\napp2, 4, 50413, 50414, 3, ABAP|GATEWAY|ICMAN|IGS, GRAY\napp3, 5, 50513, 50514, 3, ABAP|GATEWAY|ICMAN|IGS, GRAY\n", 0)
+	prof := filepath.Join(fe.root, "usr", "sap", "ABC", "SYS", "profile")
+	os.MkdirAll(prof, 0o755)
+	os.WriteFile(filepath.Join(prof, "ABC_D00_sapci"), []byte("SAPSYSTEMNAME = ABC\n"), 0o644)
+	for _, p := range []string{"ABC_D03_app1", "ABC_D04_app2"} {
+		os.WriteFile(filepath.Join(prof, p), []byte("SAPSYSTEMNAME = ABC\nExecute_00 = immediate $(DIR_CT_RUN)/sapcpe$(FT_EXE) pf=$(_PF)\n"), 0o644)
+	}
+	os.WriteFile(filepath.Join(prof, "ABC_D05_app3"), []byte("SAPSYSTEMNAME = ABC\n"), 0o644) // no sapcpe
+	fe.target.Instances[0].Profile = filepath.Join(prof, "ABC_D00_sapci")
+	out := runMenu(t, "files-central", "4\nc\ny\nm\nq\n") // 4, C = central only, Y = all archives, M, quit
+	mustContain(t, out, "Scope", "this host    central "+fe.kernelDir+" + 2 local instance directories (D00, ASCS01)",
+		"other hosts  3 instance(s): app1/03  app2/04  app3/05", "! app3/05: profile without sapcpe",
+		"[C] Central only (recommended)  [A] All kernel directories on this host", "central only: one copy in "+fe.kernelDir,
+		"Copy these 4 archive(s) into 1 kernel directory?", "[2/4] Copy 4 archive(s) to "+fe.kernelDir, "[4/4] List archives",
+		"4 archive(s) copied into 1 kernel directories")
+	if _, err := os.Stat(filepath.Join(fe.target.KernelDirs[1], "SAPEXE_403-80007807.SAR")); err == nil {
+		t.Error("central only, yet an archive landed in a local instance directory")
+	}
+	if _, err := os.Stat(filepath.Join(fe.kernelDir, "SAPEXE_403-80007807.SAR")); err != nil {
+		t.Error("archive missing in the central directory")
+	}
+}
+
 func TestFlowFilesSelect(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)

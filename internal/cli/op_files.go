@@ -38,6 +38,7 @@ func FilesOp(args []string) int {
 	sid := fs.String("sid", "", "SAP system")
 	from := fs.String("from", "", "search only this directory instead of the whole server")
 	yes := fs.Bool("yes", false, "do not ask for confirmation")
+	central := fs.Bool("central", false, "copy only into the central kernel directory (DIR_CT_RUN)")
 	if err := fs.Parse(args); err != nil {
 		return ExitUsage
 	}
@@ -47,11 +48,12 @@ func FilesOp(args []string) int {
 	if err != nil {
 		return fail(err)
 	}
-	files, ok := pickArchives(ctx, t, *from, *yes)
+	e := newEnv(t)
+	chooseScope(ctx, e, *central, *yes)
+	files, ok := pickArchives(ctx, t, *from, *yes, len(e.KernelDirs()))
 	if !ok {
 		return ExitError
 	}
-	e := newEnv(t)
 	res, err := ops.CopySARs(ctx, e, files)
 	if res != nil && res.Listing != "" {
 		e.Pr.Block("Archives now in "+t.KernelDir, res.Listing)
@@ -67,7 +69,7 @@ func FilesOp(args []string) int {
 // pickArchives scans the server for archives dated today, shows them in
 // apply order and asks for confirmation. With from set only that directory
 // is searched. When nothing is found the user may type a directory.
-func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) ([]ops.SARFile, bool) {
+func pickArchives(ctx context.Context, t *system.Target, from string, yes bool, ndirs int) ([]ops.SARFile, bool) {
 	pal := currentPalette()
 	roots := scanRoots
 	if from != "" {
@@ -85,7 +87,7 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 			if yes {
 				return res.Today, true
 			}
-			return chooseArchives(res.Today, fmt.Sprintf("Copy %s into %d kernel directories?", "%s", len(kernelDirs(t))))
+			return chooseArchives(res.Today, fmt.Sprintf("Copy %s into %d kernel director%s?", "%s", ndirs, plural(ndirs, "y", "ies")))
 		}
 		fmt.Fprintf(stdout, "  %s no .SAR files placed today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
 		if res.Older > 0 {

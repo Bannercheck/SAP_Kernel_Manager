@@ -1,2 +1,2 @@
 $ ./kernelman.sh version
-kernelman 2799820-dirty (commit 2799820, built 2026-09-28T01:31:16Z, linux/amd64, go1.24.7)
+kernelman 363e4c1-dirty (commit 363e4c1, built 2026-09-28T20:37:32Z, linux/amd64, go1.24.7)

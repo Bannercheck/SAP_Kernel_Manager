@@ -32,6 +32,9 @@ type UpdateResult struct {
 }
 
 func (e *Env) kernelDirs() []string {
+	if e.CentralOnly {
+		return []string{e.T.KernelDir}
+	}
 	if len(e.T.KernelDirs) > 0 {
 		return e.T.KernelDirs
 	}

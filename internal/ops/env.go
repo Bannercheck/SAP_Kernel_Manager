@@ -32,6 +32,7 @@ type Env struct {
 	T            *system.Target
 	Pr           Progress
 	IsRoot       bool
+	CentralOnly  bool   // touch only DIR_CT_RUN (distributed systems: the other hosts take it via sapcpe)
 	User         string // login name of the current user
 	Now          func() time.Time
 	StopTimeout  time.Duration
