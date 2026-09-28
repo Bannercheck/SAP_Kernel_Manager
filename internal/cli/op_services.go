@@ -168,7 +168,7 @@ func ServiceLines(rep *status.Report, pal ui.Palette) []string {
 	}
 	hint := "sapstartsrv per instance and its profile (pf=)"
 	if len(down) > 0 || (rep.HostAgent.Installed && !rep.HostAgent.Healthy()) {
-		hint = "something is down → 9) SAP Services starts it"
+		hint = "something is down → 5) SAP Stop / Start starts it"
 	}
 	return append([]string{pal.Header("SERVICES") + "  " + pal.Paint(ui.Dim, hint)}, lines...)
 }

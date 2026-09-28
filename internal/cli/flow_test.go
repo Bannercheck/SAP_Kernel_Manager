@@ -111,6 +111,9 @@ func newFlow(t *testing.T) *flowEnv {
 	}
 	f := exec.NewFake()
 	f.Paths["sapcontrol"] = "/usr/sap/hostctrl/exe/sapcontrol"
+	f.Paths["saphostexec"] = "/usr/sap/hostctrl/exe/saphostexec"
+	f.On("/usr/sap/hostctrl/exe/saphostexec -status", "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\nsaposcol running (pid = 4244)\n", 0).
+		On("/usr/sap/hostctrl/exe/saphostexec -version", "kernel release                722\n\npatch number                  65\n", 0)
 	sc := "/usr/sap/hostctrl/exe/sapcontrol -nr "
 	f.On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0).
 		On(sc+"00 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).On(sc+"01 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).
@@ -133,7 +136,8 @@ func newFlow(t *testing.T) *flowEnv {
 
 	tgt := &system.Target{SID: "ABC", SIDAdm: "abcadm", Group: "sapsys", KernelDir: kdir, KernelDirs: []string{kdir, d00, ascs}, DirExeRoot: "/usr/sap/ABC/SYS/exe",
 		StateDir: filepath.Join(root, "state"), Sapcontrol: "/usr/sap/hostctrl/exe/sapcontrol", Source: "sapcontrol ParameterValue DIR_CT_RUN (instance 00)",
-		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", Type: "D", Host: "sapci", ExeDir: d00}, {SID: "ABC", Nr: "01", Name: "ASCS01", Type: "ASCS", Host: "sapci", ExeDir: ascs}}}
+		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", Type: "D", Host: "sapci", ExeDir: d00, Profile: "/usr/sap/ABC/SYS/profile/ABC_D00_sapci"},
+			{SID: "ABC", Nr: "01", Name: "ASCS01", Type: "ASCS", Host: "sapci", ExeDir: ascs, Profile: "/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci"}}}
 	os.MkdirAll(tgt.StateDir, 0o755)
 	return &flowEnv{fake: f, target: tgt, kernelDir: kdir, download: dl, root: root, sc: sc}
 }
@@ -237,7 +241,8 @@ func TestFlowStop(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	out := runMenu(t, "stop", "5\nk\nm\nq\n") // 5, K = stop, M = main menu, quit
-	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [M] Main menu", "⬤ RUNNING", "[1/5] StopSystem ALL ... ok",
+	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [M] Main menu", "⬤ RUNNING", "SAP Host Agent   ⬤ RUNNING",
+		"D00 (00)     ● running    /usr/sap/ABC/SYS/profile/ABC_D00_sapci", "[1/5] StopSystem ALL ... ok",
 		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "5) ✔ SAP Stop / Start")
 }
 
@@ -486,39 +491,31 @@ func TestParseSelection(t *testing.T) {
 	}
 }
 
+// SAP Host Agent stopped and ASCS01's sapstartsrv down: 5 → A starts both,
+// sapstartsrv through the profile when sapcontrol StartService fails.
 func TestFlowServices(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	// SAP Host Agent stopped and ASCS01's sapstartsrv down for the home screen and the first look; up afterwards
-	calls := 0
-	collectStatus = func(context.Context, status.Options) *status.Report {
-		calls++
-		rep := exampleReport()
-		rep.Systems = rep.Systems[:1]
-		if calls <= 2 {
-			rep.HostAgent.Running, rep.HostAgent.Processes = false, nil
-			rep.Systems[0].Instances[1].Sapstartsrv = "not running"
-		}
-		return rep
-	}
 	isRoot = true
 	ha := "/usr/sap/hostctrl/exe/saphostexec"
-	fe.fake.Paths["saphostexec"] = ha
-	fe.fake.On(ha+" -restart", "", 0).OnSeq(ha+" -status", exec.Result{Stdout: "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\nsaposcol running (pid = 4244)\n"})
-	fe.fake.On(ha+" -version", "kernel release                722\n\npatch number                  65\n", 0)
+	fe.fake.On(ha+" -restart", "", 0)
+	fe.fake.OnSeq(ha+" -status", exec.Result{Stderr: "saphostexec not running", ExitCode: 1}, // first look
+		exec.Result{Stdout: "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\nsaposcol running (pid = 4244)\n"})
+	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3))
+	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down, procs("GRAY", 4)) // down on the first look, answers once started
 	// sapcontrol StartService fails (sapstartsrv never ran with the profile) → sapstartsrv pf=<profile> -D -u abcadm
 	fe.fake.On(fe.sc+"01 -function StartService ABC", "\n28.09.2026 10:00:00\nStartService\nFAIL: NIECONN_REFUSED (Connection refused)\n", 1)
-	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GRAY", 4))
 	ascs := fe.target.Instances[1].ExeDir
 	fe.fake.On(ascs+"/sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D -u abcadm", "", 0)
-	out := runMenu(t, "services", "9\na\nm\nq\n") // 9, A = start all, M, quit
-	mustContain(t, out, "=== SAP Services ===", "SAP Host Agent   ⬤ STOPPED", "● saphostexec not running   ● sapstartsrv not running   ● saposcol not running",
-		"ABC ASCS01  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
-		"[H] Start SAP Host Agent  [S] Start sapstartsrv (1 instance(s))  [A] Start all  [M] Main menu",
+	out := runMenu(t, "services", "5\na\nm\nq\n") // 5, A = start Host Agent and sapstartsrv, M, quit
+	mustContain(t, out, "=== SAP Stop / Start ===", "ASCS01 (sapstartsrv down)", "SAP Host Agent   ⬤ STOPPED",
+		"● saphostexec not running   ● sapstartsrv not running   ● saposcol not running",
+		"ASCS01 (01)  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
+		"[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [H] Start SAP Host Agent  [V] Start sapstartsrv (1)  [A] Start both  [M] Main menu",
 		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · saphostexec, sapstartsrv, saposcol running",
 		"[2/2] Start sapstartsrv ASCS01 (01) ... ok  StartService failed", "→ sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D · answers",
 		"SAP Host Agent   ⬤ RUNNING", "● saphostexec running (pid = 4242)   ● sapstartsrv running (pid = 4243)   ● saposcol running (pid = 4244)",
-		"ABC ASCS01  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "9) ✔ SAP Services")
+		"ASCS01 (01)  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "5) ✔ SAP Stop / Start")
 	var started bool
 	for _, c := range fe.fake.Calls {
 		if strings.HasSuffix(c.Path, "/sapstartsrv") && len(c.Env) == 1 && strings.HasSuffix(c.Env[0], "="+ascs) {
@@ -527,6 +524,22 @@ func TestFlowServices(t *testing.T) {
 	}
 	if !started {
 		t.Errorf("sapstartsrv was not started with the instance library path")
+	}
+}
+
+// One instance only: 5 → I → 2 (ASCS01) → S.
+func TestFlowInstance(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3))
+	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GRAY", 4), procs("GRAY", 4), procs("GREEN", 3)) // screen, sapstartsrv check, lights after
+	fe.fake.On(fe.sc+"01 -function Start", okBody("Start"), 0)
+	out := runMenu(t, "instance", "5\ni\n2\ns\nm\nq\n")
+	mustContain(t, out, "⬤ PARTIAL", "Instance  [1] D00  [2] ASCS01  [M] Main menu", "ASCS01 (01)  [S] Start  [K] Stop (Kapat)  [M] Main menu",
+		"[1/3] sapstartsrv ASCS01 (01) ... ok  already running", "[2/3] Start ASCS01 (01) ... ok  sapcontrol Start",
+		"[3/3] WaitforStarted ASCS01 (01) ... ok  all processes GREEN", "instance ASCS01 started", "⬤ RUNNING")
+	if strings.Contains(out, "StartSystem ALL") {
+		t.Error("one instance asked, whole system started")
 	}
 }
 

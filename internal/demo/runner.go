@@ -203,6 +203,10 @@ func (r *Runner) sapcontrol(args []string) exec.Result {
 				r.running[k] = true
 			}
 		}
+	case "Start":
+		r.running[nr] = true
+	case "Stop":
+		r.running[nr] = false
 	case "StopService":
 		r.up[nr] = false
 	case "WaitforStopped", "WaitforStarted":

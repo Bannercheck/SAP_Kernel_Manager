@@ -180,6 +180,18 @@ func (c *Client) wait(ctx context.Context, fn string, timeout, delay time.Durati
 	return nil
 }
 
+// Start starts this instance's processes (sapcontrol Start).
+func (c *Client) Start(ctx context.Context) error {
+	_, _, err := c.call(ctx, "Start")
+	return err
+}
+
+// Stop stops this instance's processes; sapstartsrv keeps running.
+func (c *Client) Stop(ctx context.Context) error {
+	_, _, err := c.call(ctx, "Stop")
+	return err
+}
+
 // StopService stops this instance's sapstartsrv.
 func (c *Client) StopService(ctx context.Context) error {
 	_, _, err := c.call(ctx, "StopService")

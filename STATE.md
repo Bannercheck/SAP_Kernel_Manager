@@ -93,6 +93,15 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   `DIR_CT_RUN` (paylaşımlı `/sapmnt`), instance'lar start'ta `sapcpe` ile alır. Profilinde `sapcpe` olmayan uzak instance
   için uyarı (orada KernelMan çalıştır → 8). Uzak instance çalışıyorsa Update'te uyarı + onay. **Tek hostlu sistemde hiçbir
   şey değişmez** (soru çıkmaz, tüm dizinler). CLI: `--central`. Yedek her zaman bu hosttaki tüm dizinler.
+- 2026-09-28 · Kullanıcı: "ASCS'li sistemde /sapmnt yedeği her hostta tekrar alınıyor; Host Agent ve sapstartsrv'yi 5'e taşı,
+  instance bazlı start/stop ekle; ayrı yerden başlatınca plugin open hatası". (1) `Backup`: dizinin bugünkü yedeği
+  (`<ad>_<YYYYMMDD>`) varsa **atlanır** ("Already backed up today … skipped"); aynı gün ikinci yedekte artık saat eki yok.
+  Paylaşımlı `/sapmnt` ilk hostta alınır, diğer hostlar yalnızca kendi `exe`'lerini ekler. (2) **9) SAP Services menüden
+  kaldırıldı** (CLI `services` kaldı); içeriği 5) SAP Stop / Start'a taşındı: ışıklar + Host Agent (3 süreç) + sapstartsrv
+  tablosu (profil) → `[S] [K] [I] One instance [H] [V] [A] [M]`. `I`: instance seç → `S`/`K` → sapstartsrv gerekirse
+  başlatılır → `sapcontrol Start`/`Stop` + `Waitfor*`. CLI: `start/stop --nr NN`. (3) "plugin_fopen / NIECONN_REFUSED" =
+  o instance'ın sapstartsrv'si kapalı: mesaj anlaşılır hale getirildi ("start it first — 5 → V"); `Start` öncesi uzak
+  instance'ların sapstartsrv'si `sapcontrol -host` ile yoklanır, kapalıysa uyarı (StartSystem ALL onlara ulaşamaz).
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

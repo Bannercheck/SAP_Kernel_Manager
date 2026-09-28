@@ -138,15 +138,15 @@ func TestBackup(t *testing.T) {
 	if e.T.Snapshot == nil || e.T.Snapshot.LastBackup != want || e.T.Snapshot.LastBackups[e.T.KernelDirs[1]] == "" {
 		t.Errorf("snapshot not updated: %+v", e.T.Snapshot)
 	}
-	// second backup on the same day gets a time suffix
+	// a second run on the same day (or from another host sharing /sapmnt) leaves today's backups alone
 	res2, err := Backup(context.Background(), e)
-	if err != nil || res2.Dirs[0].Dest != want+"_100000" {
+	if err != nil || res2.Dirs[0].Dest != want || !res2.Dirs[0].Skipped || res2.Dirs[0].Files != 4 || res2.Files() != 8 {
 		t.Errorf("second backup: %v %+v", err, res2.Dirs)
 	}
 	if latest, ok := LatestBackup(e.T.KernelDir); !ok || !strings.HasPrefix(latest, want) {
 		t.Errorf("LatestBackup = %q %v", latest, ok)
 	}
-	if sib := BackupSiblings(e.T.KernelDir); len(sib) != 2 {
+	if sib := BackupSiblings(e.T.KernelDir); len(sib) != 1 {
 		t.Errorf("BackupSiblings = %v", sib)
 	}
 }

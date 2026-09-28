@@ -13,7 +13,6 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
-	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
@@ -257,22 +256,4 @@ func fail(err error) int {
 }
 
 // lights prints the system state as a big badge plus one light per instance.
-func lights(ctx context.Context, e *ops.Env) bool {
-	pal := currentPalette()
-	states := ops.Probe(ctx, e)
-	var parts []string
-	var agg []string
-	for _, st := range states {
-		switch {
-		case !st.Sapstartsrv:
-			parts = append(parts, fmt.Sprintf("%s %s (sapstartsrv down)", pal.Light(ui.Red), st.Name))
-			agg = append(agg, "GRAY")
-		default:
-			parts = append(parts, fmt.Sprintf("%s %s %s", statusLight(pal, st.Status), st.Name, st.Status))
-			agg = append(agg, st.Status)
-		}
-	}
-	sys := sapcontrol.Aggregate(agg)
-	fmt.Fprintf(stdout, "  %s   %s\n", pal.Badge(statusColour(sys), stateWord(sys)), strings.Join(parts, "   "))
-	return ops.IsStopped(states)
-}
+func lights(ctx context.Context, e *ops.Env) bool { return lightsFor(ops.Probe(ctx, e)) }

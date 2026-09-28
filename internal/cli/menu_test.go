@@ -51,13 +51,13 @@ func TestMenuMarksResults(t *testing.T) {
 		"--- SAP Status: OK done",
 		"[M] Main menu  [Q] Quit",
 		`!! unknown choice "zzz"`,
-		"7)   Kernel Rollback", "8)   Send to Other Servers", "9)   SAP Services",
+		"7)   Kernel Rollback", "8)   Send to Other Servers",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("menu output lacks %q\n%s", want, s)
 		}
 	}
-	if strings.Contains(s, "10)") || strings.Contains(s, ") SAP Stop\n") {
+	if strings.Contains(s, "9)") || strings.Contains(s, ") SAP Stop\n") {
 		t.Errorf("command-line-only operations must not be listed:\n%s", s)
 	}
 }

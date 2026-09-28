@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/sapcontrol"
 )
 
@@ -132,10 +133,17 @@ func Start(ctx context.Context, e *Env) error {
 			return err
 		}
 	}
+	for _, r := range RemoteInstances(ctx, e) { // StartSystem ALL only reaches a running sapstartsrv
+		c := e.T.Client(e.R, r.Nr, 30*time.Second)
+		c.Host = r.Host
+		if _, err := c.GetProcessList(ctx); sapcontrol.IsConnRefused(err) {
+			e.Pr.Info(fmt.Sprintf("! %s: sapstartsrv not running there, StartSystem ALL cannot start that instance — on %s run KernelMan 5 → V (or sapcontrol -nr %s -function StartService %s)", r.Label(), r.Host, r.Nr, e.T.SID))
+		}
+	}
 	i++
 	if err := e.step(i, n, "StartSystem ALL", func() (string, error) {
 		c := e.T.Client(e.R, insts[0].Nr, 2*time.Minute)
-		return "instance " + c.Nr, c.StartSystem(ctx)
+		return "instance " + c.Nr, friendly(c.StartSystem(ctx), insts[0].Name, insts[0].Nr)
 	}); err != nil {
 		return err
 	}
@@ -148,6 +156,66 @@ func Start(ctx context.Context, e *Env) error {
 		}
 	}
 	return nil
+}
+
+// friendly turns sapcontrol's "NIECONN_REFUSED ... plugin_fopen" into words.
+func friendly(err error, name, nr string) error {
+	if sapcontrol.IsConnRefused(err) {
+		return fmt.Errorf("sapstartsrv of %s (%s) is not running, sapcontrol cannot connect (plugin_fopen / connection refused): start it first — 5 → V", name, nr)
+	}
+	return err
+}
+
+// StartInstance starts one local instance: its sapstartsrv when needed,
+// then Start and WaitforStarted. The rest of the system is left alone.
+func StartInstance(ctx context.Context, e *Env, nr string) error {
+	in, ok := e.instance(nr)
+	if !ok {
+		return fmt.Errorf("instance %s is not on this host", nr)
+	}
+	const n = 3
+	if _, err := e.T.Client(e.R, nr, 30*time.Second).GetProcessList(ctx); err == nil {
+		if err := e.step(1, n, fmt.Sprintf("sapstartsrv %s (%s)", in.Name, nr), func() (string, error) { return "already running", nil }); err != nil {
+			return err
+		}
+	} else if err := StartSapstartsrv(ctx, e, []ServiceInstance{{Nr: nr, Name: in.Name, Profile: in.Profile, ExeDir: in.ExeDir}}, 1, n); err != nil {
+		return err
+	}
+	if err := e.step(2, n, fmt.Sprintf("Start %s (%s)", in.Name, nr), func() (string, error) {
+		return "sapcontrol Start", friendly(e.T.Client(e.R, nr, 2*time.Minute).Start(ctx), in.Name, nr)
+	}); err != nil {
+		return err
+	}
+	return e.step(3, n, fmt.Sprintf("WaitforStarted %s (%s)", in.Name, nr), func() (string, error) {
+		return "all processes GREEN", e.T.Client(e.R, nr, time.Minute).WaitforStarted(ctx, e.startTimeout(), waitDelay)
+	})
+}
+
+// StopInstance stops one local instance's processes (Stop, WaitforStopped);
+// its sapstartsrv keeps running so sapcontrol still answers.
+func StopInstance(ctx context.Context, e *Env, nr string) error {
+	in, ok := e.instance(nr)
+	if !ok {
+		return fmt.Errorf("instance %s is not on this host", nr)
+	}
+	const n = 2
+	if err := e.step(1, n, fmt.Sprintf("Stop %s (%s)", in.Name, nr), func() (string, error) {
+		return "sapcontrol Stop", friendly(e.T.Client(e.R, nr, 2*time.Minute).Stop(ctx), in.Name, nr)
+	}); err != nil {
+		return err
+	}
+	return e.step(2, n, fmt.Sprintf("WaitforStopped %s (%s)", in.Name, nr), func() (string, error) {
+		return "all processes GRAY", e.T.Client(e.R, nr, time.Minute).WaitforStopped(ctx, e.stopTimeout(), waitDelay)
+	})
+}
+
+func (e *Env) instance(nr string) (discovery.Instance, bool) {
+	for _, in := range e.T.Instances {
+		if in.Nr == nr {
+			return in, true
+		}
+	}
+	return discovery.Instance{}, false
 }
 
 // waitForSapstartsrv polls GetProcessList until sapstartsrv answers.

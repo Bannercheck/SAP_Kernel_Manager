@@ -1,4 +1,4 @@
-$ ./kernelman.sh              # menü · 4 ⏎ c ⏎ y ⏎ m ⏎ q
+$ ./kernelman.sh              # menü · 5 ⏎ i ⏎ 2 ⏎ s ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
   Hostname [1mvm[0m · User root · 2026-09-28 22:07
 
@@ -35,50 +35,37 @@ $ ./kernelman.sh              # menü · 4 ⏎ c ⏎ y ⏎ m ⏎ q
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
-Select an operation (number or name, q to quit): 4
+Select an operation (number or name, q to quit): 5
 
-[1m=== Kernel File Transfer ===[0m
+[1m=== SAP Stop / Start ===[0m
   System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
   Kernel directories:
     /sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
     /usr/sap/ABC/D00/exe
     /usr/sap/ABC/ASCS01/exe
 
+  [33m⬤[0m [33m[1mPARTIAL[0m[0m   [32m●[0m D00 GREEN   [31m●[0m ASCS01 GRAY
+  SAP Host Agent   [32m⬤[0m [32m[1mRUNNING[0m[0m  /usr/sap/hostctrl/exe/saphostexec
+  [32m●[0m saphostexec running (pid = 4242)   [32m●[0m sapstartsrv running (pid = 4243)   [32m●[0m saposcol running (pid = 4244)
+  [36m[1mSAPSTARTSRV[0m[0m  [90msapcontrol only works while it runs with the instance profile[0m
+  [36m[1mINSTANCE[0m[0m     [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  D00 (00)     [32m●[0m running    /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+  ASCS01 (01)  [32m●[0m running    /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
 
-  [36m[1mScope[0m[0m
-    this host    central /sapmnt/ABC/exe/uc/linuxx86_64 + 2 local instance directories (D00, ASCS01)
-    other hosts  3 instance(s): app1/03  app2/04  app3/05 — sapcpe copies the central kernel into their local exe when they start
-    [33m![0m app3/05: profile without sapcpe — run KernelMan there too (8) Send to Other Servers)
+  [1m[S][0m Start SAP  [1m[K][0m Stop SAP (Kapat)  [1m[I][0m One instance  [1m[M][0m Main menu  [90m›[0m i
 
-  [1m[C][0m Central only (recommended)  [1m[A][0m All kernel directories on this host  [90m›[0m c
-  [90mcentral only: one copy in /sapmnt/ABC/exe/uc/linuxx86_64; every instance takes it at its next start[0m
-  [90mscanning the whole server (/) including every user's home directory for .SAR files placed today (2026-09-28); system directories, kernel directories and backups are skipped[0m
-  [90m16 directories scanned[0m
+  Instance  [1m[1][0m D00  [1m[2][0m ASCS01  [1m[M][0m Main menu  [90m›[0m 2
 
-  [36mArchives placed on this server today, in apply order (lowest patch first)[0m
-    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
+  ASCS01 (01)  [1m[S][0m Start  [1m[K][0m Stop (Kapat)  [1m[M][0m Main menu  [90m›[0m s
 
+  [1mStart ASCS01[0m
+  [1/3] sapstartsrv ASCS01 (01) ... [32mok[0m  [90malready running[0m
+  [2/3] Start ASCS01 (01) ... [32mok[0m  [90msapcontrol Start[0m
+  [3/3] WaitforStarted ASCS01 (01) ... [32mok[0m  [90mall processes GREEN[0m
+  [32m✔[0m instance ASCS01 started
+  [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
 
-  Copy these 4 archive(s) into 1 kernel directory?  [1m[Y][0m Yes, all  [1m[S][0m Select  [1m[N][0m No  [90m›[0m y
-  [1/4] Check permissions of 4 archive(s) in /home/tcxxx/Downloads ... [32mok[0m  [90mchmod SAPEXE_403-80007807.SAR 0644 → 0755, SAPEXEDB_403-80007808.SAR 0644 → 0755, dw_421-80007541.sar 0644 → 0755, dw_423-80007541.sar 0644 → 0755[0m
-  [2/4] Copy 4 archive(s) to /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -p[0m
-  [3/4] chown -R abcadm:sapsys /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
-  [4/4] List archives in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mls -la[0m
-
-  [36mArchives now in /sapmnt/ABC/exe/uc/linuxx86_64[0m
-    -rwxr-xr-x 1 root root 4096 Sep 28 22:07 /sapmnt/ABC/exe/uc/linuxx86_64/SAPEXEDB_403-80007808.SAR
-    -rwxr-xr-x 1 root root 4096 Sep 28 22:07 /sapmnt/ABC/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR
-    -rwxr-xr-x 1 root root 4096 Sep 28 22:07 /sapmnt/ABC/exe/uc/linuxx86_64/dw_421-80007541.sar
-    -rwxr-xr-x 1 root root 4096 Sep 28 22:07 /sapmnt/ABC/exe/uc/linuxx86_64/dw_423-80007541.sar
-
-  [32m✔[0m 4 archive(s) copied into 1 kernel directories · chown skipped: run as root later (running as root)
-
---- Kernel File Transfer: [32m✔[0m [32mdone[0m
+--- SAP Stop / Start: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
@@ -110,8 +97,8 @@ Select an operation (number or name, q to quit): 4
    1)   SAP Status            [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
-   4) [32m✔[0m Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5)   SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
+   4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
+   5) [32m✔[0m SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m

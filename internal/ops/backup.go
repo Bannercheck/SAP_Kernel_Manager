@@ -21,6 +21,7 @@ type DirBackup struct {
 	Files   int
 	Bytes   int64
 	Listing string // ls -la of the backup directory (shortened for the screen)
+	Skipped bool   // today's backup already existed (shared /sapmnt backed up from another host): nothing copied
 }
 
 // BackupResult describes a finished Kernel Backup of every kernel directory.
@@ -45,17 +46,23 @@ func (r *BackupResult) Bytes() (n int64) {
 }
 
 // BackupName returns <base>_<YYYYMMDD> next to dir (exe → exe_20260927,
-// linuxx86_64 → linuxx86_64_20260927), with a time suffix when that exists.
+// linuxx86_64 → linuxx86_64_20260927). One backup per directory per day: a
+// second run the same day finds it and leaves it alone.
 func BackupName(dir string, now time.Time) string {
-	name := filepath.Base(dir) + "_" + now.Format("20060102")
-	if _, err := os.Stat(filepath.Join(filepath.Dir(dir), name)); err == nil {
-		name += "_" + now.Format("150405")
-	}
-	return filepath.Join(filepath.Dir(dir), name)
+	return filepath.Join(filepath.Dir(dir), filepath.Base(dir)+"_"+now.Format("20060102"))
+}
+
+// HasTodayBackup reports whether dir already has today's backup next to it.
+func HasTodayBackup(dir string, now time.Time) bool {
+	st, err := os.Stat(BackupName(dir, now))
+	return err == nil && st.IsDir()
 }
 
 // Backup copies every kernel directory next to itself under its own name
 // plus the date, verifies the file counts and keeps the listings as proof.
+// A directory whose backup of today already exists is skipped: on a
+// distributed system the shared central directory is backed up once, by
+// whichever host runs first, and the other hosts add only their own.
 func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
 	dirs := e.T.KernelDirs
 	if len(dirs) == 0 {
@@ -63,10 +70,22 @@ func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
 	}
 	res := &BackupResult{LogFile: filepath.Join(e.T.StateDir, "backup_"+e.now().Format("20060102_150405")+".log")}
 	var log strings.Builder
-	n := 3*len(dirs) + 2
+	var todo []string
+	n := 2
+	for _, src := range dirs {
+		if HasTodayBackup(src, e.now()) {
+			n++
+		} else {
+			n += 3
+			todo = append(todo, src)
+		}
+	}
 	step := 1
 	if err := e.step(step, n, "Check free space", func() (string, error) {
-		return checkFreeSpace(ctx, e, dirs)
+		if len(todo) == 0 {
+			return "nothing to copy: every directory already has today's backup", nil
+		}
+		return checkFreeSpace(ctx, e, todo)
 	}); err != nil {
 		return res, err
 	}
@@ -74,6 +93,23 @@ func Backup(ctx context.Context, e *Env) (*BackupResult, error) {
 		db := DirBackup{Source: src, Dest: BackupName(src, e.now())}
 		var srcFiles int
 		step++
+		if HasTodayBackup(src, e.now()) {
+			if err := e.step(step, n, "Already backed up today: "+db.Dest, func() (string, error) {
+				var err error
+				db.Files, db.Bytes, err = treeStats(db.Dest)
+				db.Skipped = true
+				out, lerr := e.run(ctx, exec.Cmd{Path: "ls", Args: []string{"-la", db.Dest}})
+				if lerr == nil {
+					fmt.Fprintf(&log, "== %s (existing)\n%s\n", db.Dest, out.Stdout)
+					db.Listing = shorten(out.Stdout, 12)
+				}
+				return fmt.Sprintf("%d files, %s · skipped", db.Files, HumanSize(db.Bytes)), err
+			}); err != nil {
+				return res, err
+			}
+			res.Dirs = append(res.Dirs, db)
+			continue
+		}
 		if err := e.step(step, n, "Check "+src, func() (string, error) {
 			if st, err := os.Stat(src); err != nil || !st.IsDir() {
 				return "", fmt.Errorf("%s: not a directory", src)
