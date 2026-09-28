@@ -127,13 +127,18 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 		rows = append(rows, []string{pal.Badge(ui.Dim, "NO SAP"), pal.Paint(ui.Dim, "no SAP instances found on this host"), "", rep.Host.Hostname, "", ""})
 	}
 	ha := rep.HostAgent
-	switch {
-	case !ha.Installed:
-		rows = append(rows, []string{pal.Badge(ui.Red, "MISSING"), "SAP Host Agent", "", rep.Host.Hostname, "", ""})
-	case ha.Running:
-		rows = append(rows, []string{pal.Badge(ui.Green, "RUNNING"), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), ""})
-	default:
-		rows = append(rows, []string{pal.Badge(ui.Red, "STOPPED"), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), ""})
+	if !ha.Installed {
+		rows = append(rows, []string{hostAgentBadge(pal, ha), "SAP Host Agent", "", rep.Host.Hostname, "", ""})
+	} else {
+		var procs []string
+		for _, c := range ha.Components() {
+			light := pal.Light(ui.Green)
+			if !c.Running {
+				light = pal.Light(ui.Red)
+			}
+			procs = append(procs, c.Name+" "+light)
+		}
+		rows = append(rows, []string{hostAgentBadge(pal, ha), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), strings.Join(procs, "  ")})
 	}
 	lines := ui.Table("", rows)
 	if sl := ServiceLines(rep, pal); len(sl) > 0 {

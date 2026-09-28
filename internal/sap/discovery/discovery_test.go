@@ -71,3 +71,21 @@ func TestMerge(t *testing.T) {
 		t.Errorf("merged = %+v", m)
 	}
 }
+
+func TestHostAgentComponents(t *testing.T) {
+	ha := HostAgent{Installed: true, Running: true, Processes: []string{"saphostexec running (pid = 4242)", "sapstartsrv running (pid = 4243)", "saposcol stopped"}}
+	c := ha.Components()
+	if len(c) != 3 || !c[0].Running || c[0].Detail != "running (pid = 4242)" || !c[1].Running || c[2].Running || c[2].Name != "saposcol" || c[2].Detail != "stopped" {
+		t.Errorf("components = %+v", c)
+	}
+	if ha.Healthy() {
+		t.Error("healthy with saposcol stopped")
+	}
+	ha.Processes[2] = "saposcol running (pid = 4244)"
+	if !ha.Healthy() {
+		t.Error("not healthy with all three running")
+	}
+	if (HostAgent{Installed: true}).Components()[0].Detail != "not running" {
+		t.Error("missing line must read as not running")
+	}
+}

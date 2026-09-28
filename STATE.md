@@ -66,6 +66,13 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   değilse komut yazılır). `[S]` önce `sapcontrol -nr NN -function StartService SID`; başarısızsa / cevap yoksa sapservices'in
   yaptığı gibi `<exe>/sapstartsrv pf=<profil> -D [-u sidadm]` (LD_LIBRARY_PATH/LIBPATH = exe dizini). Ana sayfada
   **SERVICES** bloğu: instance · sapstartsrv ışığı · profil; bir şey duruyorsa "→ 9) SAP Services". Örnek: `services.png`.
+- 2026-09-28 · Kullanıcı: "Host Agent start'ta hâlâ bekliyor; saphostexec/sapstartsrv/saposcol'u ayrı kontrol et; bulunan
+  dosyalara 755 ver; cp /home/tcxxx'te permission denied". (1) Takılma: `saphostexec -restart` / `sapstartsrv -D` arkada
+  bıraktığı daemon'a stdout borusunu miras bırakır, Go `Wait` boru kapanana dek bekler → `exec.Real.WaitDelay` (5 s,
+  `ErrWaitDelay` = başarı). (2) `HostAgent.Components()`: üç bileşen `-status` satırlarından; hepsi çalışmıyorsa rozet
+  **PARTIAL** ve `[H] Restart`; doğrulama üçü de çalışana kadar. (3) Kernel File Transfer'de yeni ilk adım
+  "Check permissions": kaynak arşivler `chmod 755` (sahibi/root değilse uyarı). (4) `cp` artık `su - sidadm` ile değil
+  mevcut kullanıcı (root) olarak çalışır — `/home/<user>` 700 olsa da okunur; ardından `chown -R sidadm:sapsys`.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

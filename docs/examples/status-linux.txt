@@ -8,6 +8,7 @@ $ ./kernelman.sh status
   OS Architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         abcadm (not privileged)
   SAP Host Agent               [32m⬤[0m [32m[1mRUNNING[0m[0m · 722 Patch 65 · /usr/sap/hostctrl/exe/saphostexec
+                               [32m●[0m saphostexec running (pid = 4242)   [32m●[0m sapstartsrv running (pid = 4243)   [32m●[0m saposcol running (pid = 4244)
 
 [36mSYSTEM ABC · AS ABAP · Hostname sapci ·[0m [33m⬤[0m [33m[1mPARTIAL[0m[0m [90m(YELLOW)[0m
   SID                          ABC

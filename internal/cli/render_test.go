@@ -24,7 +24,8 @@ func exampleReport() *status.Report {
 		Host: status.HostInfo{Hostname: "sapci", OS: "linux", OSVersion: "SUSE Linux Enterprise Server 15 SP5 (kernel 5.14.21)",
 			Arch: "amd64", KernelDirName: "linuxx86_64", User: "abcadm"},
 		HostAgent: discovery.HostAgent{Installed: true, Running: true, Path: "/usr/sap/hostctrl/exe/saphostexec",
-			Version: kernel.Version{Release: 722, Patch: 65}},
+			Version:   kernel.Version{Release: 722, Patch: 65},
+			Processes: []string{"saphostexec running (pid = 4242)", "sapstartsrv running (pid = 4243)", "saposcol running (pid = 4244)"}},
 		Systems: []status.System{{
 			SID: "ABC", Type: "AS ABAP", Status: "YELLOW",
 			Database:     status.DB{Type: "hdb", Name: "HDB", Host: "saphdb"},

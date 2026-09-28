@@ -214,7 +214,8 @@ func TestFlowFiles(t *testing.T) {
 	fe.install(t)
 	out := runMenu(t, "files", "4\ny\nm\nq\n") // 4, Y = all, M = main menu, quit (no directory question: the server is scanned)
 	mustContain(t, out, "=== Kernel File Transfer ===", "scanning the whole server ("+fe.root+") including every user's home directory for .SAR files placed today", "Archives placed on this server today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
-		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
+		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/8] Check permissions of 4 archive(s) in "+fe.download+" ... ok  chmod SAPEXE_403-80007807.SAR 0644 → 0755",
+		"[2/8] Copy 4 archive(s)", "[6/8] Copy 4 archive(s)",
 		"4 archive(s) copied into 3 kernel directories", "4) ✔ Kernel File Transfer")
 	for _, dir := range fe.target.KernelDirs {
 		for _, n := range []string{"SAPEXE_403-80007807.SAR", "dw_423-80007541.sar"} {
@@ -426,7 +427,7 @@ func TestFlowFilesSelect(t *testing.T) {
 	out := runMenu(t, "files-select", "4\ns\n9\n1-2,4\ny\nm\nq\n")
 	mustContain(t, out, "[Y] Yes, all  [S] Select  [N] No", `"9" is not a number or range between 1 and 4`,
 		"Selected 3 of 4 archive(s), in apply order", "3  dw_423-80007541.sar", "target level after apply: patch 423",
-		"Copy these 3 archive(s) into 3 kernel directories?", "[1/7] Copy 3 archive(s)", "3 archive(s) copied into 3 kernel directories")
+		"Copy these 3 archive(s) into 3 kernel directories?", "[2/8] Copy 3 archive(s)", "3 archive(s) copied into 3 kernel directories")
 	for _, dir := range fe.target.KernelDirs {
 		if _, err := os.Stat(filepath.Join(dir, "dw_421-80007541.sar")); err == nil {
 			t.Errorf("unselected archive copied to %s", dir)
@@ -463,7 +464,7 @@ func TestFlowServices(t *testing.T) {
 		rep := exampleReport()
 		rep.Systems = rep.Systems[:1]
 		if calls <= 2 {
-			rep.HostAgent.Running = false
+			rep.HostAgent.Running, rep.HostAgent.Processes = false, nil
 			rep.Systems[0].Instances[1].Sapstartsrv = "not running"
 		}
 		return rep
@@ -471,7 +472,7 @@ func TestFlowServices(t *testing.T) {
 	isRoot = true
 	ha := "/usr/sap/hostctrl/exe/saphostexec"
 	fe.fake.Paths["saphostexec"] = ha
-	fe.fake.On(ha+" -restart", "", 0).OnSeq(ha+" -status", exec.Result{Stdout: "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\n"})
+	fe.fake.On(ha+" -restart", "", 0).OnSeq(ha+" -status", exec.Result{Stdout: "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\nsaposcol running (pid = 4244)\n"})
 	fe.fake.On(ha+" -version", "kernel release                722\n\npatch number                  65\n", 0)
 	// sapcontrol StartService fails (sapstartsrv never ran with the profile) → sapstartsrv pf=<profile> -D -u abcadm
 	fe.fake.On(fe.sc+"01 -function StartService ABC", "\n28.09.2026 10:00:00\nStartService\nFAIL: NIECONN_REFUSED (Connection refused)\n", 1)
@@ -479,11 +480,13 @@ func TestFlowServices(t *testing.T) {
 	ascs := fe.target.Instances[1].ExeDir
 	fe.fake.On(ascs+"/sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D -u abcadm", "", 0)
 	out := runMenu(t, "services", "9\na\nm\nq\n") // 9, A = start all, M, quit
-	mustContain(t, out, "=== SAP Services ===", "SAP Host Agent   ⬤ STOPPED", "ABC ASCS01  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
+	mustContain(t, out, "=== SAP Services ===", "SAP Host Agent   ⬤ STOPPED", "● saphostexec not running   ● sapstartsrv not running   ● saposcol not running",
+		"ABC ASCS01  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
 		"[H] Start SAP Host Agent  [S] Start sapstartsrv (1 instance(s))  [A] Start all  [M] Main menu",
-		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · running",
+		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · saphostexec, sapstartsrv, saposcol running",
 		"[2/2] Start sapstartsrv ASCS01 (01) ... ok  StartService failed", "→ sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D · answers",
-		"SAP Host Agent   ⬤ RUNNING", "ABC ASCS01  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "9) ✔ SAP Services")
+		"SAP Host Agent   ⬤ RUNNING", "● saphostexec running (pid = 4242)   ● sapstartsrv running (pid = 4243)   ● saposcol running (pid = 4244)",
+		"ABC ASCS01  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "9) ✔ SAP Services")
 	var started bool
 	for _, c := range fe.fake.Calls {
 		if strings.HasSuffix(c.Path, "/sapstartsrv") && len(c.Env) == 1 && strings.HasSuffix(c.Env[0], "="+ascs) {

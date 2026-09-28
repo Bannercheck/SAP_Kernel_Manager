@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestShellQuoteAndLine(t *testing.T) {
@@ -55,5 +56,20 @@ func TestRealRunExitCode(t *testing.T) {
 	}
 	if _, err := r.Run(context.Background(), Cmd{Path: "/nonexistent/binary"}); err == nil {
 		t.Error("expected not-found error")
+	}
+}
+
+// A command that leaves a daemon behind (sapstartsrv -D, saphostexec -restart)
+// must not block Run until that daemon exits.
+func TestRealRunDaemonDoesNotHang(t *testing.T) {
+	r := NewReal()
+	r.WaitDelay = 300 * time.Millisecond
+	start := time.Now()
+	res, err := r.Run(context.Background(), Cmd{Path: "sh", Args: []string{"-c", "sleep 20 & echo started"}, Timeout: 10 * time.Second})
+	if err != nil || res.ExitCode != 0 || !strings.Contains(res.Stdout, "started") {
+		t.Fatalf("res=%+v err=%v", res, err)
+	}
+	if d := time.Since(start); d > 5*time.Second {
+		t.Errorf("Run waited %s for the background child", d)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
@@ -61,9 +62,10 @@ func StartSapstartsrv(ctx context.Context, e *Env, insts []ServiceInstance, firs
 }
 
 // StartHostAgent starts the SAP Host Agent as step i of n: saphostexec
-// -restart (which also starts a stopped agent), then hostexecstart -start as
-// a fallback, verified with saphostexec -status. Both need root: the agent
-// runs as sapadm and only root may start it.
+// -restart (which also starts a stopped agent and its saposcol), then
+// hostexecstart -start as a fallback, verified with saphostexec -status
+// until saphostexec, sapstartsrv and saposcol all run. Both need root: the
+// agent runs as sapadm and only root may start it.
 func StartHostAgent(ctx context.Context, e *Env, i, n int) error {
 	return e.step(i, n, "Start SAP Host Agent", func() (string, error) {
 		bin, err := discovery.HostctrlTool(e.R, e.P, "saphostexec")
@@ -77,7 +79,7 @@ func StartHostAgent(ctx context.Context, e *Env, i, n int) error {
 		if _, rerr := e.run(ctx, exec.Cmd{Path: bin, Args: []string{"-restart"}, Timeout: 3 * time.Minute}); rerr != nil {
 			attempts = append(attempts, rerr.Error())
 		} else if hostAgentUp(ctx, e) {
-			return "saphostexec -restart · running", nil
+			return "saphostexec -restart · saphostexec, sapstartsrv, saposcol running", nil
 		}
 		if start, serr := discovery.HostctrlTool(e.R, e.P, "hostexecstart"); serr == nil {
 			if _, rerr := e.run(ctx, exec.Cmd{Path: start, Args: []string{"-start"}, Timeout: 3 * time.Minute}); rerr != nil {
@@ -89,15 +91,28 @@ func StartHostAgent(ctx context.Context, e *Env, i, n int) error {
 		if len(attempts) == 0 {
 			attempts = append(attempts, "saphostexec -status does not report it running")
 		}
-		return "", fmt.Errorf("SAP Host Agent did not start: %s", lastLines(fmt.Sprint(attempts), 2))
+		return "", fmt.Errorf("SAP Host Agent not fully up (%s): %s", componentSummary(ctx, e), lastLines(fmt.Sprint(attempts), 2))
 	})
+}
+
+// componentSummary is "saphostexec running, sapstartsrv running, saposcol not running".
+func componentSummary(ctx context.Context, e *Env) string {
+	var parts []string
+	for _, c := range discovery.CheckHostAgent(ctx, e.R, e.P).Components() {
+		state := "not running"
+		if c.Running {
+			state = "running"
+		}
+		parts = append(parts, c.Name+" "+state)
+	}
+	return strings.Join(parts, ", ")
 }
 
 // hostAgentUp polls saphostexec -status for up to a minute.
 func hostAgentUp(ctx context.Context, e *Env) bool {
 	deadline := e.now().Add(time.Minute)
 	for {
-		if discovery.CheckHostAgent(ctx, e.R, e.P).Running {
+		if discovery.CheckHostAgent(ctx, e.R, e.P).Healthy() {
 			return true
 		}
 		if !e.now().Before(deadline) {

@@ -82,10 +82,9 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 	switch {
 	case !ha.Installed:
 		kv(w, "SAP Host Agent", pal.Badge(ui.Red, "NOT INSTALLED")+" · "+ha.Error)
-	case ha.Running:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s · %s · %s", pal.Badge(ui.Green, "RUNNING"), ha.Version, ha.Path))
 	default:
-		kv(w, "SAP Host Agent", fmt.Sprintf("%s · %s · %s", pal.Badge(ui.Red, "STOPPED"), ha.Version, ha.Path))
+		kv(w, "SAP Host Agent", fmt.Sprintf("%s · %s · %s", hostAgentBadge(pal, ha), ha.Version, ha.Path))
+		kv(w, "", hostAgentComponents(pal, ha))
 	}
 
 	for _, sys := range rep.Systems {

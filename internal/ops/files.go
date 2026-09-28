@@ -149,8 +149,13 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 	if len(dirs) == 0 {
 		dirs = []string{e.T.KernelDir}
 	}
-	n := 2*len(dirs) + 1
-	step := 0
+	n := 2*len(dirs) + 2
+	step := 1
+	if err := e.step(step, n, fmt.Sprintf("Check permissions of %d archive(s) in %s", len(files), filepath.Dir(files[0].Path)), func() (string, error) {
+		return ensureMode(files, 0o755)
+	}); err != nil {
+		return res, err
+	}
 	for _, dir := range dirs {
 		step++
 		if err := e.step(step, n, fmt.Sprintf("Copy %d archive(s) to %s", len(files), dir), func() (string, error) {
@@ -159,7 +164,8 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 				args = append(args, f.Path)
 			}
 			args = append(args, dir+"/")
-			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: args, RunAs: e.asAdm(), Timeout: time.Hour})
+			// as the current user: root may read /home/<user> uploads that <sid>adm cannot; chown follows
+			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: args, Timeout: time.Hour})
 			if err == nil {
 				res.Dests = append(res.Dests, dir)
 			}
@@ -194,6 +200,44 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 		}
 	})
 	return res, nil
+}
+
+// ensureMode gives every archive the wanted permission bits (755: readable
+// and executable for <sid>adm and everyone else, as SAP expects in a kernel
+// directory). It reports what changed and complains about files it may not
+// change, without stopping: the copy then fails with a clear message only if
+// the file is really unreadable.
+func ensureMode(files []SARFile, mode os.FileMode) (string, error) {
+	var changed, failed []string
+	ok := 0
+	for _, f := range files {
+		info, err := os.Stat(f.Path)
+		if err != nil {
+			failed = append(failed, fmt.Sprintf("%s: %v", f.Name, err))
+			continue
+		}
+		if info.Mode().Perm() == mode {
+			ok++
+			continue
+		}
+		if err := os.Chmod(f.Path, mode); err != nil {
+			failed = append(failed, fmt.Sprintf("%s is %04o (owner may chmod, or root): %v", f.Name, info.Mode().Perm(), err))
+			continue
+		}
+		changed = append(changed, fmt.Sprintf("%s %04o → %04o", f.Name, info.Mode().Perm(), mode))
+	}
+	var parts []string
+	if ok > 0 {
+		parts = append(parts, fmt.Sprintf("%d already %04o", ok, mode))
+	}
+	if len(changed) > 0 {
+		parts = append(parts, "chmod "+strings.Join(changed, ", "))
+	}
+	detail := strings.Join(parts, " · ")
+	if len(failed) > 0 {
+		return detail, fmt.Errorf("cannot set %04o: %s", mode, strings.Join(failed, "; "))
+	}
+	return detail, nil
 }
 
 // chownTree runs chown -R <sid>adm:sapsys when root. As <sid>adm the files

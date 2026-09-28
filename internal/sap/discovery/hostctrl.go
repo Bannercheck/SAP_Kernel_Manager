@@ -67,6 +67,48 @@ type HostAgent struct {
 	Error     string         `json:"error,omitempty"`
 }
 
+// Component is one SAP Host Agent process as saphostexec -status lists it.
+type Component struct {
+	Name    string `json:"name"`
+	Running bool   `json:"running"`
+	Detail  string `json:"detail,omitempty"` // e.g. "running (pid = 4242)"
+}
+
+// hostAgentComponents are the processes a healthy SAP Host Agent runs.
+var hostAgentComponents = []string{"saphostexec", "sapstartsrv", "saposcol"}
+
+// Components reports saphostexec, sapstartsrv (the agent's own) and saposcol
+// from the -status lines; one that is not listed counts as not running.
+func (ha HostAgent) Components() []Component {
+	var out []Component
+	for _, name := range hostAgentComponents {
+		c := Component{Name: name, Detail: "not running"}
+		for _, l := range ha.Processes {
+			f := strings.Fields(l)
+			if len(f) < 2 || f[0] != name {
+				continue
+			}
+			c.Detail = strings.TrimSpace(strings.TrimPrefix(l, name))
+			c.Running = f[1] == "running"
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+// Healthy reports an installed agent with all three components running.
+func (ha HostAgent) Healthy() bool {
+	if !ha.Installed || !ha.Running {
+		return false
+	}
+	for _, c := range ha.Components() {
+		if !c.Running {
+			return false
+		}
+	}
+	return true
+}
+
 // CheckHostAgent inspects saphostexec (-status, -version).
 func CheckHostAgent(ctx context.Context, r exec.Runner, p platform.Platform) HostAgent {
 	ha := HostAgent{}

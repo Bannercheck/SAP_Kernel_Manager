@@ -4,9 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/status"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 )
@@ -38,7 +40,11 @@ func ServicesOp(args []string) int {
 	} else {
 		var opts []choice
 		if haDown {
-			opts = append(opts, choice{"H", "Start SAP Host Agent", []string{"hostagent", "host"}})
+			label := "Start SAP Host Agent"
+			if rep.HostAgent.Running {
+				label = "Restart SAP Host Agent"
+			}
+			opts = append(opts, choice{"H", label, []string{"hostagent", "host"}})
 		}
 		if len(down) > 0 {
 			opts = append(opts, choice{"S", fmt.Sprintf("Start sapstartsrv (%d instance(s))", len(down)), []string{"sapstartsrv", "start"}})
@@ -130,12 +136,15 @@ func servicesScreen(rep *status.Report) (down []downInstance, haDown bool) {
 	ha := rep.HostAgent
 	switch {
 	case !ha.Installed:
-		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s\n", pal.Badge(ui.Red, "MISSING"), ha.Error)
-	case ha.Running:
-		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s · %s\n", pal.Badge(ui.Green, "RUNNING"), ha.Path, ha.Version.String())
+		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s\n", hostAgentBadge(pal, ha), ha.Error)
+	case ha.Healthy():
+		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s · %s\n", hostAgentBadge(pal, ha), ha.Path, ha.Version.String())
 	default:
 		haDown = true
-		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s · %s · start: saphostexec -restart (root)\n", pal.Badge(ui.Red, "STOPPED"), ha.Path, ha.Version.String())
+		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s · %s · start: saphostexec -restart (root)\n", hostAgentBadge(pal, ha), ha.Path, ha.Version.String())
+	}
+	if ha.Installed {
+		fmt.Fprintf(stdout, "  %s\n", hostAgentComponents(pal, ha))
 	}
 	lines, downList := serviceTable(rep, pal, false)
 	if len(lines) == 0 {
@@ -158,7 +167,7 @@ func ServiceLines(rep *status.Report, pal ui.Palette) []string {
 		return nil
 	}
 	hint := "sapstartsrv per instance and its profile (pf=)"
-	if len(down) > 0 || (rep.HostAgent.Installed && !rep.HostAgent.Running) {
+	if len(down) > 0 || (rep.HostAgent.Installed && !rep.HostAgent.Healthy()) {
 		hint = "something is down → 9) SAP Services starts it"
 	}
 	return append([]string{pal.Header("SERVICES") + "  " + pal.Paint(ui.Dim, hint)}, lines...)
@@ -208,6 +217,35 @@ func sidsOf(down []downInstance) []string {
 		}
 	}
 	return out
+}
+
+// hostAgentBadge is RUNNING (all three components), PARTIAL (saphostexec
+// runs but sapstartsrv or saposcol does not), STOPPED or MISSING.
+func hostAgentBadge(pal ui.Palette, ha discovery.HostAgent) string {
+	switch {
+	case !ha.Installed:
+		return pal.Badge(ui.Red, "MISSING")
+	case ha.Healthy():
+		return pal.Badge(ui.Green, "RUNNING")
+	case ha.Running:
+		return pal.Badge(ui.Yellow, "PARTIAL")
+	}
+	return pal.Badge(ui.Red, "STOPPED")
+}
+
+// hostAgentComponents renders "● saphostexec running (pid = 4242)   ● sapstartsrv …   ○ saposcol not running".
+func hostAgentComponents(pal ui.Palette, ha discovery.HostAgent) string {
+	var parts []string
+	for _, c := range ha.Components() {
+		light := pal.Light(ui.Green)
+		detail := c.Detail
+		if !c.Running {
+			light = pal.Light(ui.Red)
+			detail = pal.Paint(ui.Red, detail)
+		}
+		parts = append(parts, light+" "+c.Name+" "+detail)
+	}
+	return strings.Join(parts, "   ")
 }
 
 // hostEnv is an operation environment without a target system.

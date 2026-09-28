@@ -55,14 +55,19 @@ type Runner interface {
 // Real runs commands on the local host.
 type Real struct {
 	DefaultTimeout time.Duration
-	SudoCmd        []string // used for RunAs when not root, e.g. ["sudo", "-n"]
-	CurrentUser    string   // login name of the current process user
-	IsRoot         bool
+	// WaitDelay bounds how long Run waits for the command's output pipes
+	// after the process exited. saphostexec -restart and sapstartsrv -D leave
+	// a daemon behind that inherits stdout: without this bound Run would wait
+	// for that daemon forever. Default 5s.
+	WaitDelay   time.Duration
+	SudoCmd     []string // used for RunAs when not root, e.g. ["sudo", "-n"]
+	CurrentUser string   // login name of the current process user
+	IsRoot      bool
 }
 
 // NewReal returns a Real runner with sane defaults.
 func NewReal() *Real {
-	r := &Real{DefaultTimeout: 2 * time.Minute, SudoCmd: []string{"sudo", "-n"}, IsRoot: os.Geteuid() == 0}
+	r := &Real{DefaultTimeout: 2 * time.Minute, WaitDelay: 5 * time.Second, SudoCmd: []string{"sudo", "-n"}, IsRoot: os.Geteuid() == 0}
 	if u, err := user.Current(); err == nil {
 		r.CurrentUser = u.Username
 	}
@@ -153,6 +158,10 @@ func (r *Real) Run(ctx context.Context, c Cmd) (Result, error) {
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	cmd.WaitDelay = r.WaitDelay
+	if cmd.WaitDelay == 0 {
+		cmd.WaitDelay = 5 * time.Second
+	}
 
 	start := time.Now()
 	err = cmd.Run()
@@ -161,6 +170,8 @@ func (r *Real) Run(ctx context.Context, c Cmd) (Result, error) {
 	var exitErr *osexec.ExitError
 	switch {
 	case err == nil:
+		return res, nil
+	case errors.Is(err, osexec.ErrWaitDelay): // exited fine; a daemon it started still holds the pipes
 		return res, nil
 	case errors.As(err, &exitErr):
 		res.ExitCode = exitErr.ExitCode()
