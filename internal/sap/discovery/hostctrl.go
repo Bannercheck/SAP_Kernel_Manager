@@ -31,8 +31,8 @@ func ParseListInstances(out string) []Instance {
 	return res
 }
 
-// hostctrlTool resolves a SAP Host Agent executable (saphostctrl, saphostexec).
-func hostctrlTool(r exec.Runner, p platform.Platform, name string) (string, error) {
+// HostctrlTool resolves a SAP Host Agent executable (saphostctrl, saphostexec).
+func HostctrlTool(r exec.Runner, p platform.Platform, name string) (string, error) {
 	bin := filepath.Join(p.HostctrlExeDir(), name+p.ExeSuffix())
 	if _, err := os.Stat(bin); err == nil {
 		return bin, nil
@@ -42,7 +42,7 @@ func hostctrlTool(r exec.Runner, p platform.Platform, name string) (string, erro
 
 // ListInstances asks the SAP Host Agent for the instances on this host.
 func ListInstances(ctx context.Context, r exec.Runner, p platform.Platform) ([]Instance, error) {
-	bin, err := hostctrlTool(r, p, "saphostctrl")
+	bin, err := HostctrlTool(r, p, "saphostctrl")
 	if err != nil {
 		return nil, fmt.Errorf("saphostctrl: %w", err)
 	}
@@ -70,7 +70,7 @@ type HostAgent struct {
 // CheckHostAgent inspects saphostexec (-status, -version).
 func CheckHostAgent(ctx context.Context, r exec.Runner, p platform.Platform) HostAgent {
 	ha := HostAgent{}
-	bin, err := hostctrlTool(r, p, "saphostexec")
+	bin, err := HostctrlTool(r, p, "saphostexec")
 	if err != nil {
 		ha.Error = "SAP Host Agent not found (" + p.HostctrlExeDir() + ")"
 		return ha

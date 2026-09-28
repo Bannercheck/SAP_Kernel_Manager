@@ -31,7 +31,7 @@ type router struct {
 	real exec.Runner
 }
 
-var fakeBins = map[string]bool{"sapcontrol": true, "SAPCAR": true, "disp+work": true, "saphostctrl": true, "saphostexec": true, "ssh": true, "scp": true}
+var fakeBins = map[string]bool{"sapcontrol": true, "SAPCAR": true, "disp+work": true, "saphostctrl": true, "saphostexec": true, "hostexecstart": true, "sapstartsrv": true, "ssh": true, "scp": true}
 
 func (r router) Run(ctx context.Context, c exec.Cmd) (exec.Result, error) {
 	if fakeBins[filepath.Base(c.Path)] {
@@ -450,6 +450,48 @@ func TestParseSelection(t *testing.T) {
 		if (err != nil) != tc.err || (err == nil && fmt.Sprint(got) != "["+tc.want+"]") {
 			t.Errorf("parseSelection(%q) = %v, %v", tc.in, got, err)
 		}
+	}
+}
+
+func TestFlowServices(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	// SAP Host Agent stopped and ASCS01's sapstartsrv down for the home screen and the first look; up afterwards
+	calls := 0
+	collectStatus = func(context.Context, status.Options) *status.Report {
+		calls++
+		rep := exampleReport()
+		rep.Systems = rep.Systems[:1]
+		if calls <= 2 {
+			rep.HostAgent.Running = false
+			rep.Systems[0].Instances[1].Sapstartsrv = "not running"
+		}
+		return rep
+	}
+	isRoot = true
+	ha := "/usr/sap/hostctrl/exe/saphostexec"
+	fe.fake.Paths["saphostexec"] = ha
+	fe.fake.On(ha+" -restart", "", 0).OnSeq(ha+" -status", exec.Result{Stdout: "saphostexec running (pid = 4242)\nsapstartsrv running (pid = 4243)\n"})
+	fe.fake.On(ha+" -version", "kernel release                722\n\npatch number                  65\n", 0)
+	// sapcontrol StartService fails (sapstartsrv never ran with the profile) → sapstartsrv pf=<profile> -D -u abcadm
+	fe.fake.On(fe.sc+"01 -function StartService ABC", "\n28.09.2026 10:00:00\nStartService\nFAIL: NIECONN_REFUSED (Connection refused)\n", 1)
+	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GRAY", 4))
+	ascs := fe.target.Instances[1].ExeDir
+	fe.fake.On(ascs+"/sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D -u abcadm", "", 0)
+	out := runMenu(t, "services", "9\na\nm\nq\n") // 9, A = start all, M, quit
+	mustContain(t, out, "=== SAP Services ===", "SAP Host Agent   ⬤ STOPPED", "ABC ASCS01  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
+		"[H] Start SAP Host Agent  [S] Start sapstartsrv (1 instance(s))  [A] Start all  [M] Main menu",
+		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · running",
+		"[2/2] Start sapstartsrv ASCS01 (01) ... ok  StartService failed", "→ sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D · answers",
+		"SAP Host Agent   ⬤ RUNNING", "ABC ASCS01  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "9) ✔ SAP Services")
+	var started bool
+	for _, c := range fe.fake.Calls {
+		if strings.HasSuffix(c.Path, "/sapstartsrv") && len(c.Env) == 1 && strings.HasSuffix(c.Env[0], "="+ascs) {
+			started = true
+		}
+	}
+	if !started {
+		t.Errorf("sapstartsrv was not started with the instance library path")
 	}
 }
 

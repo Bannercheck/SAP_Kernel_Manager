@@ -27,6 +27,7 @@ var Ops = []Op{
 	{ID: "update", Name: "Kernel Update", Summary: "extract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start", Menu: true, Run: UpdateOp},
 	{ID: "rollback", Name: "Kernel Rollback", Summary: "copy each directory's latest <name>_<date> backup back", Menu: true, Run: RollbackOp},
 	{ID: "ship", Name: "Send to Other Servers", Summary: "scp today's archives and KernelMan itself to other hosts, verify with cksum", Menu: true, Run: ShipOp},
+	{ID: "services", Name: "SAP Services", Summary: "SAP Host Agent and sapstartsrv per instance with profiles (pf=); start what is down", Menu: true, Run: ServicesOp},
 	{ID: "stop", Name: "SAP Stop", Summary: "stop the system (command line)", Run: StopOp},
 	{ID: "start", Name: "SAP Start", Summary: "start the system (command line)", Run: StartOp},
 	{ID: "version", Name: "Version", Summary: "build information", Run: Version},

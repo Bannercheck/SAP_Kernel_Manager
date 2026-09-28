@@ -1,11 +1,18 @@
 $ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 00:21
+  Hostname [1mvm[0m · User root · 2026-09-28 00:30
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 [31m●[0m  D11 [31m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           sapci     Kernel 722 Patch 65
+  
+  [36m[1mSERVICES[0m[0m  [90msomething is down → 9) SAP Services starts it[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAPSTARTSRV[0m[0m    [36m[1mPROFILE (pf=)[0m[0m
+  ABC D00     [32m●[0m running      /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+  ABC ASCS01  [32m●[0m running      /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+  QAS ASCS10  [31m●[0m [31mnot running[0m  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
+  QAS D11     [31m●[0m [31mnot running[0m  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
   
   [36m[1mDISK[0m[0m
   [1m/usr/sap[0m  [1m43.3 GB[0m   [32m●[0m 117.9 GB free of 199.9 GB (41% used, /usr/sap)
@@ -26,6 +33,7 @@ $ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
+   9)   SAP Services          [90mSAP Host Agent and sapstartsrv per instance with profiles (pf=); start what is down[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): 2
@@ -43,7 +51,7 @@ Select an operation (number or name, q to quit): 2
     /usr/sap/ABC/ASCS01/exe  →  /usr/sap/ABC/ASCS01/exe_20260928
 
   Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.4 GB[0m
+  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.3 GB[0m
   [2/11] Check /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
   [3/11] Copy to /sapmnt/ABC/exe/uc/linuxx86_64_20260928 ... [32mok[0m  [90mcp -pR[0m
   [4/11] Verify linuxx86_64_20260928 ... [32mok[0m  [90m9 files match[0m
@@ -53,56 +61,63 @@ Select an operation (number or name, q to quit): 2
   [8/11] Check /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m3 files, 51 B[0m
   [9/11] Copy to /usr/sap/ABC/ASCS01/exe_20260928 ... [32mok[0m  [90mcp -pR[0m
   [10/11] Verify exe_20260928 ... [32mok[0m  [90m3 files match[0m
-  [11/11] Write listing /state/backup_20260928_002137.log ... [32mok[0m  [90m3 directories[0m
+  [11/11] Write listing /state/backup_20260928_003047.log ... [32mok[0m  [90m3 directories[0m
 
   [36mBackup /sapmnt/ABC/exe/uc/linuxx86_64_20260928[0m
     total 44
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 SAPCAR
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 gwrd
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 icman
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 libsapu16.so
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 msg_server
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcpe
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 saproot.sh
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 28 00:30 .
+    drwxr-xr-x 4 root root 4096 Sep 28 00:30 ..
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 SAPCAR
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 gwrd
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 icman
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 libsapu16.so
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 msg_server
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapcpe
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 saproot.sh
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapstartsrv
 
 
   [36mBackup /usr/sap/ABC/D00/exe_20260928[0m
     total 20
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 28 00:30 .
+    drwxr-xr-x 4 root root 4096 Sep 28 00:30 ..
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapcontrol
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapstartsrv
 
 
   [36mBackup /usr/sap/ABC/ASCS01/exe_20260928[0m
     total 20
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Sep 28 00:30 .
+    drwxr-xr-x 4 root root 4096 Sep 28 00:30 ..
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 disp+work
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapcontrol
+    -rwxr-xr-x 1 root root   17 Sep 28 00:30 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 15 files, 255 B
     [1m/sapmnt/ABC/exe/uc/linuxx86_64_20260928
     /usr/sap/ABC/D00/exe_20260928
     /usr/sap/ABC/ASCS01/exe_20260928[0m
-    full listings: /state/backup_20260928_002137.log
+    full listings: /state/backup_20260928_003047.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 00:21
+  Hostname [1mvm[0m · User root · 2026-09-28 00:30
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  QAS             AS ABAP  sapci     Kernel 793 Patch 150  ASCS10 [31m●[0m  D11 [31m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           sapci     Kernel 722 Patch 65
+  
+  [36m[1mSERVICES[0m[0m  [90msomething is down → 9) SAP Services starts it[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAPSTARTSRV[0m[0m    [36m[1mPROFILE (pf=)[0m[0m
+  ABC D00     [32m●[0m running      /usr/sap/ABC/SYS/profile/ABC_D00_sapci
+  ABC ASCS01  [32m●[0m running      /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci
+  QAS ASCS10  [31m●[0m [31mnot running[0m  /usr/sap/QAS/SYS/profile/QAS_ASCS10_sapci
+  QAS D11     [31m●[0m [31mnot running[0m  /usr/sap/QAS/SYS/profile/QAS_D11_sapci
   
   [36m[1mDISK[0m[0m
   [1m/usr/sap[0m  [1m43.3 GB[0m   [32m●[0m 117.9 GB free of 199.9 GB (41% used, /usr/sap)
@@ -123,6 +138,7 @@ Select an operation (number or name, q to quit): 2
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
+   9)   SAP Services          [90mSAP Host Agent and sapstartsrv per instance with profiles (pf=); start what is down[0m
    q)   Quit
 
 Select an operation (number or name, q to quit): q

@@ -59,6 +59,13 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - 2026-09-28 · Kullanıcı: "Y deyince hepsini mi kopyalıyor, seçtiremiyorsan başka yol düşünelim". Tabloya
   `[Y] Yes, all · [S] Select · [N] No` geldi: S → numara/aralık (`1,3-4`), seçilenler apply sırasında tekrar listelenir
   ve Y/N ile onaylanır. Aynı seçim "Send to Other Servers"da da var. Örnek: `docs/examples/files-select.png`.
+- 2026-09-28 · Kullanıcı: "Host Agent start ekle; sappf/profilleri ana sayfada göster; sapcontrol çalışmayan sistemlerde
+  profilleri otomatik çekip start verebileceğimiz bir yer olsun". Yeni **9) SAP Services** (`internal/ops/services.go`,
+  `internal/cli/op_services.go`): Host Agent + her yerel instance'ın `sapstartsrv` durumu ve `pf=` profili (keşif:
+  `/usr/sap/sapservices` → yoksa `SAPPROFILE`). `[H]` `saphostexec -restart`, olmazsa `hostexecstart -start` (root gerekir,
+  değilse komut yazılır). `[S]` önce `sapcontrol -nr NN -function StartService SID`; başarısızsa / cevap yoksa sapservices'in
+  yaptığı gibi `<exe>/sapstartsrv pf=<profil> -D [-u sidadm]` (LD_LIBRARY_PATH/LIBPATH = exe dizini). Ana sayfada
+  **SERVICES** bloğu: instance · sapstartsrv ışığı · profil; bir şey duruyorsa "→ 9) SAP Services". Örnek: `services.png`.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.
