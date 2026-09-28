@@ -3,6 +3,7 @@ package ship
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -20,6 +21,7 @@ type Options struct {
 	Archives  []ops.SARFile
 	Program   Program
 	SSHOpts   []string // extra ssh/scp options
+	mux       []string // connection-sharing options for the current host ("" = off)
 }
 
 // HostResult is the outcome for one host.
@@ -37,6 +39,35 @@ type HostResult struct {
 // ssh itself on the terminal.
 var DefaultSSHOpts = []string{"-o", "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=15"}
 
+// fallbackSSHOpts are for an ssh too old for accept-new or connection sharing.
+var fallbackSSHOpts = []string{"-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15"}
+
+// ControlDir creates the directory for the ssh connection-sharing sockets of
+// one shipment; "" disables sharing (tests). Socket paths must stay short, so
+// it lives under /tmp rather than a long home path.
+var ControlDir = func() string {
+	d, err := os.MkdirTemp("/tmp", "km-ssh-")
+	if err != nil {
+		return ""
+	}
+	return d
+}
+
+// muxOpts make every ssh and scp of one host reuse the first, authenticated
+// connection: the password is typed once per host, not once per command.
+func muxOpts(dir string) []string {
+	return []string{"-o", "ControlMaster=auto", "-o", "ControlPath=" + dir + "/%h-%p-%r", "-o", "ControlPersist=300"}
+}
+
+// optionRejected recognises an ssh that does not know an option we passed.
+func optionRejected(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "bad configuration option") || strings.Contains(s, "unsupported option") || strings.Contains(s, "command-line: line 0") || strings.Contains(s, "command-line line 0")
+}
+
 // Send copies the archives and the program to every host, one after the
 // other, and verifies the copy with cksum on both sides.
 func Send(ctx context.Context, e *ops.Env, o Options) []HostResult {
@@ -47,11 +78,21 @@ func Send(ctx context.Context, e *ops.Env, o Options) []HostResult {
 		o.SSHOpts = DefaultSSHOpts
 	}
 	local := localChecksums(ctx, e, o)
+	var mux []string
+	if dir := ControlDir(); dir != "" {
+		defer os.RemoveAll(dir)
+		mux = muxOpts(dir)
+	}
 	var results []HostResult
 	for _, host := range o.Hosts {
 		start := time.Now()
 		r := HostResult{Host: host}
-		r.Err = sendOne(ctx, e, o, host, local, &r)
+		ho := o
+		ho.mux = mux
+		r.Err = sendOne(ctx, e, ho, host, local, &r)
+		if len(mux) > 0 { // close the shared connection; harmless when none was opened
+			_, _ = e.R.Run(ctx, exec.Cmd{Path: "ssh", Args: append(append(append([]string{}, o.SSHOpts...), mux...), "-O", "exit", o.target(host)), Timeout: 30 * time.Second})
+		}
 		r.OK = r.Err == nil
 		r.Duration = time.Since(start)
 		results = append(results, r)
@@ -66,12 +107,14 @@ func (o Options) target(host string) string {
 	return host
 }
 
+func (o Options) opts() []string { return append(append([]string{}, o.SSHOpts...), o.mux...) }
+
 func (o Options) ssh(host string, args ...string) exec.Cmd {
-	return exec.Cmd{Path: "ssh", Args: append(append(append([]string{}, o.SSHOpts...), o.target(host)), args...), Timeout: 30 * time.Minute}
+	return exec.Cmd{Path: "ssh", Args: append(append(o.opts(), o.target(host)), args...), Timeout: 30 * time.Minute}
 }
 
 func (o Options) scp(args ...string) exec.Cmd {
-	return exec.Cmd{Path: "scp", Args: append(append([]string{"-p", "-r"}, o.SSHOpts...), args...), Timeout: 6 * time.Hour}
+	return exec.Cmd{Path: "scp", Args: append(append([]string{"-p", "-r"}, o.opts()...), args...), Timeout: 6 * time.Hour}
 }
 
 // sendOne runs the numbered steps for one host.
@@ -81,6 +124,11 @@ func sendOne(ctx context.Context, e *ops.Env, o Options, host string, local map[
 	e.Pr.Info(fmt.Sprintf("── %s ──", tgt))
 	if err := e.Step(1, n, "Connect to "+host, func() (string, error) {
 		out, err := runOK(ctx, e, o.ssh(host, "uname", "-sn"))
+		if optionRejected(err) { // old ssh (AIX): no connection sharing, no accept-new
+			o.SSHOpts, o.mux = fallbackSSHOpts, nil
+			e.Pr.Info("this ssh is too old for connection sharing: the password may be asked for every step")
+			out, err = runOK(ctx, e, o.ssh(host, "uname", "-sn"))
+		}
 		return strings.TrimSpace(out), err
 	}); err != nil {
 		return err
@@ -107,8 +155,17 @@ func sendOne(ctx context.Context, e *ops.Env, o Options, host string, local map[
 		e.Pr.Info("[3/5] no archives selected: sending KernelMan only")
 	}
 	if err := e.Step(4, n, "Copy KernelMan to "+host+":"+o.RemoteDir+"/kernelman", func() (string, error) {
-		_, err := runOK(ctx, e, o.scp(o.Program.Dir+"/.", tgt+":"+o.RemoteDir+"/kernelman/"))
+		// the entries by name, never "<dir>/.": scp in SFTP mode (OpenSSH 9+) rejects that as "unexpected filename"
+		entries, err := os.ReadDir(o.Program.Dir)
 		if err != nil {
+			return "", err
+		}
+		var srcs []string
+		for _, en := range entries {
+			srcs = append(srcs, filepath.Join(o.Program.Dir, en.Name()))
+		}
+		sort.Strings(srcs)
+		if _, err := runOK(ctx, e, o.scp(append(srcs, tgt+":"+o.RemoteDir+"/kernelman/")...)); err != nil {
 			return "", err
 		}
 		_, err = runOK(ctx, e, o.ssh(host, "chmod", "-R", "u+x", o.RemoteDir+"/kernelman/kernelman.sh", o.RemoteDir+"/kernelman/bin"))

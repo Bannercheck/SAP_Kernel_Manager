@@ -502,6 +502,9 @@ func TestFlowServices(t *testing.T) {
 func TestFlowShip(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
+	prevCD := ship.ControlDir
+	ship.ControlDir = func() string { return "" } // fixed command lines for the fake
+	t.Cleanup(func() { ship.ControlDir = prevCD })
 	// a dist layout to ship: <dir>/kernelman.sh + <dir>/bin/kernelman-linux-amd64
 	dist := filepath.Join(t.TempDir(), "kernelman")
 	os.MkdirAll(filepath.Join(dist, "bin"), 0o755)
@@ -536,7 +539,7 @@ func TestFlowShip(t *testing.T) {
 		fe.fake.On(ssh+"uname -sn", "Linux "+host+"\n", 0).
 			On(ssh+"mkdir -p /usr/sap/download/kernelman", "", 0).
 			On("scp -p -r "+opts+strings.Join(localPaths[:len(today)], " ")+" abcadm@"+host+":/usr/sap/download/", "", 0).
-			On("scp -p -r "+opts+dist+"/. abcadm@"+host+":/usr/sap/download/kernelman/", "", 0).
+			On("scp -p -r "+opts+dist+"/bin "+dist+"/kernelman.sh abcadm@"+host+":/usr/sap/download/kernelman/", "", 0).
 			On(ssh+"chmod -R u+x /usr/sap/download/kernelman/kernelman.sh /usr/sap/download/kernelman/bin", "", 0).
 			On(ssh+"cksum "+strings.Join(sorted, " "), remoteOut, 0).
 			On(ssh+"ls -la /usr/sap/download", "total 8\ndrwxr-xr-x 3 abcadm sapsys 4096 Sep 27 22:40 kernelman\n-rw-r--r-- 1 abcadm sapsys 4096 Sep 27 22:40 SAPEXE_403-80007807.SAR\n", 0)

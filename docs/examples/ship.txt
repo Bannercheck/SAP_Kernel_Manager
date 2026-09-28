@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 8 ⏎ y ⏎ app2, app3 ⏎  ⏎  ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 01:11
+  Hostname [1mvm[0m · User root · 2026-09-28 01:31
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -50,10 +50,10 @@ Select an operation (number or name, q to quit): 8
 
   [36mArchives placed on this server today, in apply order (lowest patch first)[0m
     [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
-    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
-    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 01:31  /home/tcxxx/Downloads
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 01:31  /home/tcxxx/Downloads
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 01:31  /home/tcxxx/Downloads
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 01:31  /home/tcxxx/Downloads
     → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
 
@@ -65,7 +65,7 @@ Remote directory [/usr/sap/download]:
 
   [36m[1mShipment[0m[0m
     archives   4 file(s)
-    program    /tmp/TestFlowShip875701814/002/kernelman (2 files)
+    program    /tmp/TestFlowShip3006892289/002/kernelman (2 files)
     to         abcadm@{app2,app3}:/usr/sap/download
     [90mssh keys are used when set up; otherwise ssh asks for the password of each host[0m
 
@@ -106,7 +106,7 @@ Remote directory [/usr/sap/download]:
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 01:11
+  Hostname [1mvm[0m · User root · 2026-09-28 01:31
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m

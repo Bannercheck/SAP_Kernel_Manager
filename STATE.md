@@ -82,6 +82,11 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   da taşır. Çıkarma (SAPCAR -xvf) ve rollback `cp` artık root iken **root olarak** yapılır (saproot.sh'ın bıraktığı root
   sahipli setuid dosyalar — icmbnd, sapuxuserchk, saposcol — sidadm'in SAPCAR'ını "permission denied" ile durduruyordu);
   ardından `chown -R` + `saproot.sh` zaten çalışır. Root değilse root sahipli dosyalar için önceden uyarı yazılır.
+- 2026-09-28 · Kullanıcı: "scp: unexpected filename; her dosyada parola soruyor". (1) OpenSSH 9+ `scp` (SFTP modu)
+  `dizin/.` kaynağını reddediyor → program dizininin girdileri adıyla gönderilir (`bin`, `kernelman.sh`). (2) ssh bağlantı
+  paylaşımı: `ControlMaster=auto`, `ControlPath=/tmp/km-ssh-*/%h-%p-%r`, `ControlPersist=300` → host başına **tek**
+  parola; host bitince `ssh -O exit`. Seçenekleri tanımayan eski ssh'ta (AIX) `StrictHostKeyChecking=no` + paylaşımsız
+  moda düşülür ve ekranda söylenir.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

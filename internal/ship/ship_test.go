@@ -69,6 +69,9 @@ func TestLocateAssembles(t *testing.T) {
 }
 
 func TestSendVerifies(t *testing.T) {
+	prevCD := ControlDir
+	ControlDir = func() string { return "" } // fixed command lines for the fake
+	defer func() { ControlDir = prevCD }()
 	dl := t.TempDir()
 	arch := filepath.Join(dl, "dw_423-80007541.sar")
 	os.WriteFile(arch, []byte("CAR 2.01 fake"), 0o644)
@@ -95,7 +98,7 @@ func TestSendVerifies(t *testing.T) {
 	f.On(sshPrefix+"uname -sn", "Linux app2\n", 0).
 		On(sshPrefix+"mkdir -p /usr/sap/download/kernelman", "", 0).
 		On("scp -p -r -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "+arch+" abcadm@app2:/usr/sap/download/", "", 0).
-		On("scp -p -r -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "+prog.Dir+"/. abcadm@app2:/usr/sap/download/kernelman/", "", 0).
+		On("scp -p -r -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "+prog.Dir+"/bin "+prog.Dir+"/kernelman.sh abcadm@app2:/usr/sap/download/kernelman/", "", 0).
 		On(sshPrefix+"chmod -R u+x /usr/sap/download/kernelman/kernelman.sh /usr/sap/download/kernelman/bin", "", 0).
 		On(sshPrefix+"ls -la /usr/sap/download", "total 3\n-rw-r--r-- 1 abcadm sapsys 13 Sep 27 dw_423-80007541.sar\n", 0)
 	var remoteFiles []string
@@ -133,5 +136,41 @@ func TestSendVerifies(t *testing.T) {
 	results = Send(context.Background(), e, Options{Hosts: []string{"down"}, User: "abcadm", Program: prog})
 	if results[0].OK || !strings.Contains(results[0].Err.Error(), "No route to host") {
 		t.Errorf("down host: %+v", results[0])
+	}
+}
+
+// One password per host: ssh and scp share a connection; an ssh that rejects
+// the options falls back to the plain ones and says so.
+func TestSendSharesConnectionAndFallsBack(t *testing.T) {
+	prevCD := ControlDir
+	ControlDir = func() string { return "/tmp/km-ssh-test" }
+	defer func() { ControlDir = prevCD }()
+	prog, err := Locate(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := "-o ControlMaster=auto -o ControlPath=/tmp/km-ssh-test/%h-%p-%r -o ControlPersist=300 "
+	f := exec.NewFake()
+	f.On("ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "+mux+"abcadm@new uname -sn", "Linux new\n", 0)
+	f.Responses["ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "+mux+"abcadm@old uname -sn"] =
+		exec.Result{Stderr: "command-line: line 0: Bad configuration option: controlpersist", ExitCode: 255}
+	f.On("ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 abcadm@old uname -sn", "AIX old\n", 0)
+	rec := &recorder{}
+	e := &ops.Env{R: router{fake: f, real: exec.NewReal()}, T: &system.Target{SID: "ABC", SIDAdm: "abcadm"}, Pr: rec}
+	Send(context.Background(), e, Options{Hosts: []string{"new", "old"}, User: "abcadm", Program: prog})
+	joined := strings.Join(rec.lines, "\n")
+	for _, want := range []string{"[1/5] Connect to new\n  ok Linux new", "too old for connection sharing", "[1/5] Connect to old", "  ok AIX old"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("progress lacks %q\n%s", want, joined)
+		}
+	}
+	closed := false
+	for _, c := range f.Calls {
+		if strings.Contains(c.String(), "-O exit abcadm@new") {
+			closed = true
+		}
+	}
+	if !closed {
+		t.Error("shared connection to new was not closed")
 	}
 }
