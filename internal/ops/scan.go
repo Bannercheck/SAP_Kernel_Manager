@@ -43,6 +43,8 @@ type ScanResult struct {
 	Homes      int       // home directories from PasswdFile searched in addition (whole-server scans)
 	Unreadable int       // directories that could not be read (permissions)
 	UnreadEx   []string  // a few examples of unreadable directories
+	KernelDirs int       // kernel directories and their backups met on the way (never searched)
+	InKernel   int       // archives inside them, skipped: copies that are already in place
 }
 
 // FindTodaySARs walks the roots and returns the *.SAR/*.sar files placed on
@@ -70,6 +72,14 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	byName := map[string]SARFile{}
 	visited := map[string]bool{} // real paths of directories already walked (symlink loops)
 	seenRoot := map[string]bool{}
+	var excludeReal []string // the excluded subtrees with symlinks resolved: /usr/sap/SID/SYS/exe/uc is /sapmnt/SID/exe/uc
+	for _, ex := range opts.Exclude {
+		if r, err := filepath.EvalSymlinks(ex); err == nil {
+			excludeReal = append(excludeReal, r)
+		} else {
+			excludeReal = append(excludeReal, filepath.Clean(ex))
+		}
+	}
 
 	var walk func(dir string, level int) error
 	walk = func(dir string, level int) error {
@@ -80,7 +90,7 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		if err != nil {
 			return nil
 		}
-		if visited[real] {
+		if visited[real] || excluded(real, excludeReal) {
 			return nil
 		}
 		visited[real] = true
@@ -95,6 +105,11 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		res.Dirs++
 		if opts.Progress != nil && res.Dirs%2000 == 0 {
 			opts.Progress(res.Dirs, dir)
+		}
+		if n, kernel := kernelDirLike(dir, entries); kernel {
+			res.KernelDirs++
+			res.InKernel += n
+			return nil
 		}
 		for _, de := range entries {
 			path := filepath.Join(dir, de.Name())
@@ -174,6 +189,48 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	SortForApply(res.Today)
 	sort.Strings(res.Duplicates)
 	return res, nil
+}
+
+// kernelMarkers are executables every SAP kernel directory (and so every
+// backup of one) contains; a download directory never has them.
+var kernelMarkers = []string{"sapstartsrv", "sapcontrol"}
+
+// kernelDirNames are the usual last path elements of kernel directories.
+var kernelDirNames = map[string]bool{"exe": true, "run": true, "uc": true, "nuc": true, "linuxx86_64": true, "linuxppc64le": true,
+	"linuxppc64": true, "rs6000_64": true, "hpia64": true, "sunx86_64": true, "sun_64": true}
+
+// kernelDirLike reports whether dir is a kernel directory or a backup of one
+// (exe_20260928, run_old, ...): it holds the marker executables and lives
+// in an SAP tree or carries a kernel-like or backup-like name. Archives in
+// such a directory are copies already in place, never the ones to apply;
+// n is how many of them sit there. Extracting an archive in a download
+// directory under /home does not make that directory kernel-like.
+func kernelDirLike(dir string, entries []os.DirEntry) (n int, kernel bool) {
+	found := 0
+	for _, de := range entries {
+		switch {
+		case de.IsDir():
+		case strings.EqualFold(filepath.Ext(de.Name()), ".sar"):
+			n++
+		default:
+			for _, m := range kernelMarkers {
+				if de.Name() == m {
+					found++
+				}
+			}
+		}
+	}
+	if found < len(kernelMarkers) {
+		return 0, false
+	}
+	base := filepath.Base(dir)
+	if strings.Contains(dir, "/usr/sap/") || strings.Contains(dir, "/sapmnt/") || kernelDirNames[base] {
+		return n, true
+	}
+	if i := strings.LastIndexAny(base, "_.-"); i > 0 && (isBackupSuffix(base[i+1:]) || kernelDirNames[base[:i]]) {
+		return n, true // exe_20260928, exe.old, run-bak
+	}
+	return 0, false
 }
 
 func excluded(path string, subtrees []string) bool {

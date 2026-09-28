@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,11 +78,10 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 		res := scanFor(ctx, t, roots)
 		if len(res.Today) > 0 {
 			showArchives(res)
-			if !yes && !confirm(fmt.Sprintf("Copy these %d archive(s) into %d kernel directories?", len(res.Today), len(kernelDirs(t)))) {
-				fmt.Fprintln(stdout, "  cancelled")
-				return nil, false
+			if yes {
+				return res.Today, true
 			}
-			return res.Today, true
+			return chooseArchives(res.Today, fmt.Sprintf("Copy %s into %d kernel directories?", "%s", len(kernelDirs(t))))
 		}
 		fmt.Fprintf(stdout, "  %s no .SAR files placed today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
 		if res.Older > 0 {
@@ -130,6 +131,12 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 		res = &ops.ScanResult{}
 	}
 	summary := fmt.Sprintf("%d directories scanned", res.Dirs)
+	if res.KernelDirs > 0 {
+		summary += fmt.Sprintf(" · %d kernel directories/backups not searched", res.KernelDirs)
+		if res.InKernel > 0 {
+			summary += fmt.Sprintf(" (%d archive(s) inside them are copies already in place)", res.InKernel)
+		}
+	}
 	if res.Homes > 0 {
 		summary += fmt.Sprintf(" · %d home directories from %s", res.Homes, ops.PasswdFile)
 	}
@@ -143,20 +150,7 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 // showArchives prints the archives in apply order plus the resulting level.
 func showArchives(res *ops.ScanResult) {
 	pal := currentPalette()
-	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "PLACED", "FOUND IN")}
-	for i, f := range res.Today {
-		kind := f.Label
-		if f.Full {
-			kind += " (full kernel)"
-		}
-		rows = append(rows, []string{fmt.Sprint(i + 1), f.Name, kind, fmt.Sprint(f.Patch), ops.HumanSize(f.Size),
-			f.Placed.Format("2006-01-02 15:04"), filepath.Dir(f.Path)})
-	}
-	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Cyan, "Archives placed on this server today, in apply order (lowest patch first)"))
-	for _, l := range ui.Table("    ", rows) {
-		fmt.Fprintln(stdout, l)
-	}
-	fmt.Fprintf(stdout, "    → target level after apply: %s", pal.Paint(ui.Bold, fmt.Sprintf("patch %d", ops.TargetPatch(res.Today))))
+	showArchiveTable(res.Today, "Archives placed on this server today, in apply order (lowest patch first)")
 	if res.Older > 0 {
 		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Dim, fmt.Sprintf("%d older archive(s) ignored", res.Older)))
 	}
@@ -165,4 +159,93 @@ func showArchives(res *ops.ScanResult) {
 	}
 	fmt.Fprintln(stdout)
 	fmt.Fprintln(stdout)
+}
+
+// showArchiveTable prints numbered archives in apply order and the level they lead to.
+func showArchiveTable(files []ops.SARFile, title string) {
+	pal := currentPalette()
+	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "PLACED", "FOUND IN")}
+	for i, f := range files {
+		kind := f.Label
+		if f.Full {
+			kind += " (full kernel)"
+		}
+		rows = append(rows, []string{fmt.Sprint(i + 1), f.Name, kind, fmt.Sprint(f.Patch), ops.HumanSize(f.Size),
+			f.Placed.Format("2006-01-02 15:04"), filepath.Dir(f.Path)})
+	}
+	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Cyan, title))
+	for _, l := range ui.Table("    ", rows) {
+		fmt.Fprintln(stdout, l)
+	}
+	fmt.Fprintf(stdout, "    → target level after apply: %s", pal.Paint(ui.Bold, fmt.Sprintf("patch %d", ops.TargetPatch(files))))
+}
+
+var (
+	yesAll     = choice{"Y", "Yes, all", []string{"yes", "all", "e", "evet", "hepsi"}}
+	selectSome = choice{"S", "Select", []string{"select", "sec", "seç"}}
+)
+
+// chooseArchives asks whether to take all listed archives, a selection by
+// number, or none. question has one %s for "these N archive(s)".
+func chooseArchives(files []ops.SARFile, question string) ([]ops.SARFile, bool) {
+	pal := currentPalette()
+	switch choose(fmt.Sprintf(question, fmt.Sprintf("these %d archive(s)", len(files))), yesAll, selectSome, no) {
+	case "Y":
+		return files, true
+	case "N":
+		fmt.Fprintln(stdout, "  cancelled")
+		return nil, false
+	}
+	for {
+		in := ask("Numbers to take, e.g. 1,3-4 (Enter = cancel)", "")
+		if in == "" {
+			fmt.Fprintln(stdout, "  cancelled")
+			return nil, false
+		}
+		idx, err := parseSelection(in, len(files))
+		if err != nil {
+			fmt.Fprintf(stdout, "  %s %v\n", pal.Paint(ui.Yellow, "!"), err)
+			continue
+		}
+		var sel []ops.SARFile
+		for _, i := range idx {
+			sel = append(sel, files[i-1])
+		}
+		ops.SortForApply(sel)
+		showArchiveTable(sel, fmt.Sprintf("Selected %d of %d archive(s), in apply order", len(sel), len(files)))
+		fmt.Fprintln(stdout)
+		if confirm(fmt.Sprintf(question, fmt.Sprintf("these %d archive(s)", len(sel)))) {
+			return sel, true
+		}
+		fmt.Fprintln(stdout, "  cancelled")
+		return nil, false
+	}
+}
+
+// parseSelection turns "1,3-4 6" into sorted unique 1-based indexes within 1..n.
+func parseSelection(s string, n int) ([]int, error) {
+	seen := map[int]bool{}
+	for _, tok := range strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == ' ' || r == ';' }) {
+		lo, hi := tok, tok
+		if i := strings.IndexAny(tok, "-–"); i > 0 {
+			lo, hi = tok[:i], strings.TrimLeft(tok[i:], "-–")
+		}
+		a, err1 := strconv.Atoi(lo)
+		b, err2 := strconv.Atoi(hi)
+		if err1 != nil || err2 != nil || a < 1 || b > n || a > b {
+			return nil, fmt.Errorf("%q is not a number or range between 1 and %d", tok, n)
+		}
+		for i := a; i <= b; i++ {
+			seen[i] = true
+		}
+	}
+	if len(seen) == 0 {
+		return nil, fmt.Errorf("nothing selected")
+	}
+	var out []int
+	for i := range seen {
+		out = append(out, i)
+	}
+	sort.Ints(out)
+	return out, nil
 }

@@ -128,10 +128,10 @@ func pickArchivesForShip(ctx context.Context, t *system.Target, from string, yes
 		return nil, false
 	}
 	showArchives(res)
-	if !yes && !confirm(fmt.Sprintf("Include these %d archive(s) in the shipment?", len(res.Today))) {
-		return nil, false
+	if yes {
+		return res.Today, true
 	}
-	return res.Today, true
+	return chooseArchives(res.Today, "Include %s in the shipment?")
 }
 
 func splitHosts(s string) []string {

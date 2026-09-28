@@ -51,6 +51,14 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   (`ops.PlacedTime`; WinSCP/scp -p eski mtime'ı korur) — tabloda artık **PLACED** sütunu gösterilir, eskiler yalnızca sayı.
   (3) AIX'te `TZ=TRT-3` gibi POSIX değerlerini Go UTC'ye düşürüyordu → `platform.FixLocalTime`. (4) Örnek transkriptte
   arşivler `/home/tcxxx/Downloads` altında bulunur.
+- 2026-09-28 · Kullanıcı: "yedeklediği exe'lerin içindeki SAR'ları buluyor". İçinde `sapstartsrv` **ve** `sapcontrol` olan ve
+  SAP ağacında (`/usr/sap`, `/sapmnt`) ya da kernel/yedek adlı (`exe`, `run`, `exe_20260928`, `exe.old`…) her dizin
+  **kernel dizini sayılır, taranmaz** (`ops.kernelDirLike`); dışlama symlink çözümlenmiş gerçek yolla da yapılır
+  (`/usr/sap/SID/SYS/exe/uc` = `/sapmnt/SID/exe/uc`). Ekranda "N kernel directories/backups not searched (M archive(s)
+  inside them are copies already in place)". `/home` altında açılmış bir arşiv o dizini kernel dizini yapmaz.
+- 2026-09-28 · Kullanıcı: "Y deyince hepsini mi kopyalıyor, seçtiremiyorsan başka yol düşünelim". Tabloya
+  `[Y] Yes, all · [S] Select · [N] No` geldi: S → numara/aralık (`1,3-4`), seçilenler apply sırasında tekrar listelenir
+  ve Y/N ile onaylanır. Aynı seçim "Send to Other Servers"da da var. Örnek: `docs/examples/files-select.png`.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

@@ -212,7 +212,7 @@ func TestFlowBackup(t *testing.T) {
 func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
-	out := runMenu(t, "files", "4\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
+	out := runMenu(t, "files", "4\ny\nm\nq\n") // 4, Y = all, M = main menu, quit (no directory question: the server is scanned)
 	mustContain(t, out, "=== Kernel File Transfer ===", "scanning the whole server ("+fe.root+") including every user's home directory for .SAR files placed today", "Archives placed on this server today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
 		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
 		"4 archive(s) copied into 3 kernel directories", "4) ✔ Kernel File Transfer")
@@ -419,6 +419,40 @@ func TestDownloadOffline(t *testing.T) {
 
 // TestFlowShip sends today's archives and a KernelMan distribution to two
 // hosts; ssh/scp are faked, cksum runs for real on the local files.
+func TestFlowFilesSelect(t *testing.T) {
+	fe := newFlow(t)
+	fe.install(t)
+	// 4, S = select, a bad answer, then 1-2 and 4, Y, M, quit
+	out := runMenu(t, "files-select", "4\ns\n9\n1-2,4\ny\nm\nq\n")
+	mustContain(t, out, "[Y] Yes, all  [S] Select  [N] No", `"9" is not a number or range between 1 and 4`,
+		"Selected 3 of 4 archive(s), in apply order", "3  dw_423-80007541.sar", "target level after apply: patch 423",
+		"Copy these 3 archive(s) into 3 kernel directories?", "[1/7] Copy 3 archive(s)", "3 archive(s) copied into 3 kernel directories")
+	for _, dir := range fe.target.KernelDirs {
+		if _, err := os.Stat(filepath.Join(dir, "dw_421-80007541.sar")); err == nil {
+			t.Errorf("unselected archive copied to %s", dir)
+		}
+		if _, err := os.Stat(filepath.Join(dir, "dw_423-80007541.sar")); err != nil {
+			t.Errorf("selected archive missing in %s", dir)
+		}
+	}
+}
+
+func TestParseSelection(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want string
+		err  bool
+	}{
+		{"1,3-4", "1 3 4", false}, {"2", "2", false}, {"4-4 1 1", "1 4", false}, {"1;2", "1 2", false},
+		{"0", "", true}, {"5", "", true}, {"3-2", "", true}, {"a", "", true}, {"", "", true},
+	} {
+		got, err := parseSelection(tc.in, 4)
+		if (err != nil) != tc.err || (err == nil && fmt.Sprint(got) != "["+tc.want+"]") {
+			t.Errorf("parseSelection(%q) = %v, %v", tc.in, got, err)
+		}
+	}
+}
+
 func TestFlowShip(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)

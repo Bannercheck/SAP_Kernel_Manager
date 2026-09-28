@@ -1,4 +1,4 @@
-$ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
+$ ./kernelman.sh              # menü · 4 ⏎ s ⏎ 9 ⏎ 1-2,4 ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
   Hostname [1mvm[0m · User root · 2026-09-28 00:21
 
@@ -28,72 +28,56 @@ $ ./kernelman.sh              # menü · 2 ⏎ y ⏎ m ⏎ q
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
    q)   Quit
 
-Select an operation (number or name, q to quit): 2
+Select an operation (number or name, q to quit): 4
 
-[1m=== Kernel Backup ===[0m
+[1m=== Kernel File Transfer ===[0m
   System [1mABC[0m · [33m! running as root: not root and not abcadm — files will belong to root; run chown -R abcadm:sapsys as root afterwards[0m
   Kernel directories:
     /sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
     /usr/sap/ABC/D00/exe
     /usr/sap/ABC/ASCS01/exe
 
-  [36mKernel directories → backups[0m
-    /sapmnt/ABC/exe/uc/linuxx86_64  →  /sapmnt/ABC/exe/uc/linuxx86_64_20260928
-    /usr/sap/ABC/D00/exe  →  /usr/sap/ABC/D00/exe_20260928
-    /usr/sap/ABC/ASCS01/exe  →  /usr/sap/ABC/ASCS01/exe_20260928
+  [90mscanning the whole server (/) including every user's home directory for .SAR files placed today (2026-09-28); system directories, kernel directories and backups are skipped[0m
+  [90m14 directories scanned[0m
 
-  Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 28.4 GB[0m
-  [2/11] Check /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m9 files, 153 B[0m
-  [3/11] Copy to /sapmnt/ABC/exe/uc/linuxx86_64_20260928 ... [32mok[0m  [90mcp -pR[0m
-  [4/11] Verify linuxx86_64_20260928 ... [32mok[0m  [90m9 files match[0m
-  [5/11] Check /usr/sap/ABC/D00/exe ... [32mok[0m  [90m3 files, 51 B[0m
-  [6/11] Copy to /usr/sap/ABC/D00/exe_20260928 ... [32mok[0m  [90mcp -pR[0m
-  [7/11] Verify exe_20260928 ... [32mok[0m  [90m3 files match[0m
-  [8/11] Check /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m3 files, 51 B[0m
-  [9/11] Copy to /usr/sap/ABC/ASCS01/exe_20260928 ... [32mok[0m  [90mcp -pR[0m
-  [10/11] Verify exe_20260928 ... [32mok[0m  [90m3 files match[0m
-  [11/11] Write listing /state/backup_20260928_002137.log ... [32mok[0m  [90m3 directories[0m
-
-  [36mBackup /sapmnt/ABC/exe/uc/linuxx86_64_20260928[0m
-    total 44
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 SAPCAR
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 gwrd
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 icman
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 libsapu16.so
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 msg_server
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcpe
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 saproot.sh
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+  [36mArchives placed on this server today, in apply order (lowest patch first)[0m
+    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
 
-  [36mBackup /usr/sap/ABC/D00/exe_20260928[0m
-    total 20
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+  Copy these 4 archive(s) into 3 kernel directories?  [1m[Y][0m Yes, all  [1m[S][0m Select  [1m[N][0m No  [90m›[0m s
+Numbers to take, e.g. 1,3-4 (Enter = cancel): 9
+  [33m![0m "9" is not a number or range between 1 and 4
+Numbers to take, e.g. 1,3-4 (Enter = cancel): 1-2,4
 
+  [36mSelected 3 of 4 archive(s), in apply order[0m
+    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    3  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 00:21  /home/tcxxx/Downloads
+    → target level after apply: [1mpatch 423[0m
 
-  [36mBackup /usr/sap/ABC/ASCS01/exe_20260928[0m
-    total 20
-    drwxr-xr-x 2 root root 4096 Sep 28 00:21 .
-    drwxr-xr-x 4 root root 4096 Sep 28 00:21 ..
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 disp+work
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapcontrol
-    -rwxr-xr-x 1 root root   17 Sep 28 00:21 sapstartsrv
+  Copy these 3 archive(s) into 3 kernel directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
+  [1/7] Copy 3 archive(s) to /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mcp -p[0m
+  [2/7] chown -R abcadm:sapsys /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [3/7] Copy 3 archive(s) to /usr/sap/ABC/D00/exe ... [32mok[0m  [90mcp -p[0m
+  [4/7] chown -R abcadm:sapsys /usr/sap/ABC/D00/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [5/7] Copy 3 archive(s) to /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mcp -p[0m
+  [6/7] chown -R abcadm:sapsys /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [7/7] List archives in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mls -la[0m
 
-  [32m✔[0m Backup ready: 3 directories, 15 files, 255 B
-    [1m/sapmnt/ABC/exe/uc/linuxx86_64_20260928
-    /usr/sap/ABC/D00/exe_20260928
-    /usr/sap/ABC/ASCS01/exe_20260928[0m
-    full listings: /state/backup_20260928_002137.log
+  [36mArchives now in /sapmnt/ABC/exe/uc/linuxx86_64[0m
+    -rw-r--r-- 1 root root 4096 Sep 28 00:21 /sapmnt/ABC/exe/uc/linuxx86_64/SAPEXEDB_403-80007808.SAR
+    -rw-r--r-- 1 root root 4096 Sep 28 00:21 /sapmnt/ABC/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR
+    -rw-r--r-- 1 root root 4096 Sep 28 00:21 /sapmnt/ABC/exe/uc/linuxx86_64/dw_423-80007541.sar
 
---- Kernel Backup: [32m✔[0m [32mdone[0m
+  [32m✔[0m 3 archive(s) copied into 3 kernel directories · chown skipped: run as root later (running as root)
+
+--- Kernel File Transfer: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
@@ -116,9 +100,9 @@ Select an operation (number or name, q to quit): 2
   └── QAS            9.0 GB
 
    1)   SAP Status            [90mkernel version, sapstartsrv/sapcontrol, SID, hostname, instances[0m
-   2) [32m✔[0m Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
+   2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
-   4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
+   4) [32m✔[0m Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
    5)   SAP Stop / Start      [90mS = start the system, K = stop it[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m

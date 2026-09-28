@@ -171,12 +171,19 @@ func TestFindTodaySARs(t *testing.T) {
 	mk("tmp/kernel/dw_423-80007541.sar", now)
 	mk("tmp/kernel/SAPEXE_390-80007000.SAR", old) // older: ignored, only counted
 	mk("tmp/kernel/notes.txt", now)
-	mk("usr/sap/ABC/SYS/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR", now) // copy inside the kernel dir: excluded
-	mk("proc/1/SAPEXE_999-1.SAR", now)                                    // pruned
-	mk("export/home/tcxxx/SAPEXEDB_403-80007808.SAR", now)                // reached through a symlinked /home
+	mk("sapmnt/ABC/exe/uc/linuxx86_64/SAPEXE_403-80007807.SAR", now) // copy inside the kernel dir: excluded ...
+	os.MkdirAll(filepath.Join(root, "usr/sap/ABC/SYS/exe"), 0o755)   // ... also when reached as /usr/sap/ABC/SYS/exe/uc
+	os.Symlink(filepath.Join(root, "sapmnt/ABC/exe/uc"), filepath.Join(root, "usr/sap/ABC/SYS/exe/uc"))
+	for _, f := range []string{"sapstartsrv", "sapcontrol", "disp+work", "dw_423-80007541.sar"} { // today's backup of D00/exe
+		mk("usr/sap/ABC/D00/exe_"+now.Format("20060102")+"/"+f, now)
+	}
+	mk("home/basis/downloads/sapstartsrv", now) // an archive extracted for a look does not make a download dir kernel-like
+	mk("home/basis/downloads/sapcontrol", now)
+	mk("proc/1/SAPEXE_999-1.SAR", now)                     // pruned
+	mk("export/home/tcxxx/SAPEXEDB_403-80007808.SAR", now) // reached through a symlinked /home
 	os.Symlink(filepath.Join(root, "export/home"), filepath.Join(root, "home2"))
-	res, err := FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
-		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	exclude := []string{filepath.Join(root, "sapmnt/ABC/exe/uc/linuxx86_64")}
+	res, err := FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now, Exclude: exclude})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,6 +197,14 @@ func TestFindTodaySARs(t *testing.T) {
 	if res.Older != 1 || len(res.Duplicates) != 0 || res.Dirs == 0 || res.Today[0].Label != "SAPEXE" || res.Today[2].Label != "dw" || res.Unreadable != 0 {
 		t.Errorf("res = %+v", res)
 	}
+	if res.KernelDirs != 1 || res.InKernel != 1 {
+		t.Errorf("backup directory not skipped: kernel dirs %d, archives inside %d", res.KernelDirs, res.InKernel)
+	}
+	for _, f := range res.Today {
+		if strings.Contains(f.Path, "exe_") || strings.Contains(f.Path, "/usr/sap/") || strings.Contains(f.Path, "/sapmnt/") {
+			t.Errorf("archive from a kernel directory or backup offered: %s", f.Path)
+		}
+	}
 	// A file uploaded today with scp -p / WinSCP keeps its old modification
 	// time but gets today's change time: it counts as placed today.
 	ChangeTime = func(info os.FileInfo) time.Time {
@@ -198,8 +213,7 @@ func TestFindTodaySARs(t *testing.T) {
 		}
 		return time.Time{}
 	}
-	res, _ = FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
-		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	res, _ = FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now, Exclude: exclude})
 	if len(res.Today) != 5 || res.Older != 0 || res.Today[0].Name != "SAPEXE_390-80007000.SAR" || !res.Today[0].Placed.Equal(now) {
 		t.Errorf("copied-today archive: %+v", res)
 	}
