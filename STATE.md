@@ -73,6 +73,15 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   **PARTIAL** ve `[H] Restart`; doğrulama üçü de çalışana kadar. (3) Kernel File Transfer'de yeni ilk adım
   "Check permissions": kaynak arşivler `chmod 755` (sahibi/root değilse uyarı). (4) `cp` artık `su - sidadm` ile değil
   mevcut kullanıcı (root) olarak çalışır — `/home/<user>` 700 olsa da okunur; ardından `chown -R sidadm:sapsys`.
+- 2026-09-28 · Kullanıcı: "Java stack'te SAPCAR permission denied; SAPCAR'ı gömmedin mi? / sistemde büyük-küçük harf
+  fark etmeden bul ve çalıştır". SAPCAR depoya **konmaz** (SAP dağıtımı, S-user arkasında; elimizde de yok). Bunun yerine
+  `ops.FindSAPCAR`: sıra `bin/` (KernelMan'ın yanı) → `~/.kernelman/bin` → indirme dizini → kernel dizinleri → hostctrl
+  → PATH → arşiv taramasında görülenler → **tüm sunucu** (`sapcar`, `SAPCAR.exe`, `SAPCAR_1115-70006178.EXE`… ad
+  büyük/küçük harf duyarsız; addaki en yüksek patch, sonra en yeni). Çalıştırılabilir değilse `chmod 755`; SAP/program
+  dizini dışında bulunduysa `~/.kernelman/bin/SAPCAR` ve `bin/SAPCAR`'a kopya → "Send to Other Servers" `bin/SAPCAR`'ı
+  da taşır. Çıkarma (SAPCAR -xvf) ve rollback `cp` artık root iken **root olarak** yapılır (saproot.sh'ın bıraktığı root
+  sahipli setuid dosyalar — icmbnd, sapuxuserchk, saposcol — sidadm'in SAPCAR'ını "permission denied" ile durduruyordu);
+  ardından `chown -R` + `saproot.sh` zaten çalışır. Root değilse root sahipli dosyalar için önceden uyarı yazılır.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

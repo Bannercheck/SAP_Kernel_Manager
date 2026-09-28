@@ -38,30 +38,6 @@ func (e *Env) kernelDirs() []string {
 	return []string{e.T.KernelDir}
 }
 
-// FindSAPCAR looks for SAPCAR in the kernel directory, PATH and extra dirs
-// (the download directory often holds SAPCAR_<n>-<n>.EXE).
-func FindSAPCAR(e *Env, extraDirs ...string) (string, error) {
-	cands := []string{filepath.Join(e.T.KernelDir, "SAPCAR")}
-	if p, err := e.R.LookPath("SAPCAR"); err == nil {
-		cands = append(cands, p)
-	}
-	for _, d := range extraDirs {
-		if d == "" {
-			continue
-		}
-		cands = append(cands, filepath.Join(d, "SAPCAR"))
-		if m, _ := filepath.Glob(filepath.Join(d, "SAPCAR*")); len(m) > 0 {
-			cands = append(cands, m...)
-		}
-	}
-	for _, c := range cands {
-		if st, err := os.Stat(c); err == nil && !st.IsDir() && st.Mode()&0o111 != 0 {
-			return c, nil
-		}
-	}
-	return "", errors.New("SAPCAR not found (kernel directory, PATH, download directory)")
-}
-
 // Extract applies the archives in order into every kernel directory
 // (central first, then each instance directory), then fixes ownership,
 // runs saproot.sh when possible and reads the new level.
@@ -77,6 +53,13 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 	if res.Before.Release > 0 {
 		e.Pr.Info("current kernel: " + res.Before.String())
 	}
+	if !e.IsRoot { // SAPCAR as <sid>adm cannot overwrite the root-owned setuid files saproot.sh leaves behind
+		for _, dir := range dirs {
+			if n, ex := rootOwnedFiles(dir); n > 0 {
+				e.Pr.Info(fmt.Sprintf("! %d file(s) in %s belong to root (%s): SAPCAR as %s will fail on them — run KernelMan as root", n, dir, strings.Join(ex, ", "), e.User))
+			}
+		}
+	}
 	step := 0
 	for _, dir := range dirs {
 		for _, f := range files {
@@ -87,7 +70,8 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 				if _, err := os.Stat(src); err != nil {
 					src = f.Path
 				}
-				out, err := e.run(ctx, exec.Cmd{Path: sapcar, Args: []string{"-xvf", src}, Dir: dir, RunAs: e.asAdm(), Timeout: time.Hour})
+				// as the current user: root overwrites the root-owned setuid files too; chown -R and saproot.sh follow
+				out, err := e.run(ctx, exec.Cmd{Path: sapcar, Args: []string{"-xvf", src}, Dir: dir, Timeout: time.Hour})
 				st.Files = countExtracted(out.Stdout)
 				st.Err = err
 				return fmt.Sprintf("%d files", st.Files), err
@@ -118,7 +102,7 @@ func Restore(ctx context.Context, e *Env, backups map[string]string) (*UpdateRes
 	for _, dir := range dirs {
 		step++
 		if err := e.step(step, n, "Copy "+backups[dir]+" over "+dir, func() (string, error) {
-			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: []string{"-pR", backups[dir] + "/.", dir + "/"}, RunAs: e.asAdm(), Timeout: 2 * time.Hour})
+			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: []string{"-pR", backups[dir] + "/.", dir + "/"}, Timeout: 2 * time.Hour})
 			return "cp -pR", err
 		}); err != nil {
 			return res, err
@@ -166,6 +150,29 @@ func finishKernelChange(ctx context.Context, e *Env, res *UpdateResult, step, n 
 		_ = e.T.SaveSnapshot(func(s *system.Snapshot) { s.LastUpdateAt = e.now() })
 	}
 	return res, err
+}
+
+// rootOwnedFiles counts regular files in dir owned by uid 0 and names a few.
+func rootOwnedFiles(dir string) (int, []string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, nil
+	}
+	n := 0
+	var ex []string
+	for _, de := range entries {
+		info, err := de.Info()
+		if err != nil || !info.Mode().IsRegular() {
+			continue
+		}
+		if uid, ok := fileUID(info); ok && uid == 0 {
+			n++
+			if len(ex) < 4 {
+				ex = append(ex, de.Name())
+			}
+		}
+	}
+	return n, ex
 }
 
 // countExtracted counts "x <file>" lines in SAPCAR output.

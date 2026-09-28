@@ -20,6 +20,10 @@ import (
 // scanRoots lists where today's archives are searched; tests and the demo narrow it.
 var scanRoots []string
 
+// lastSAPCARs are the SAPCAR files the last archive scan met, so Kernel
+// Update and Send to Other Servers need not walk the server again.
+var lastSAPCARs []string
+
 func kernelDirs(t *system.Target) []string {
 	if len(t.KernelDirs) > 0 {
 		return t.KernelDirs
@@ -130,6 +134,7 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 	if res == nil {
 		res = &ops.ScanResult{}
 	}
+	lastSAPCARs = res.SAPCARs
 	summary := fmt.Sprintf("%d directories scanned", res.Dirs)
 	if res.KernelDirs > 0 {
 		summary += fmt.Sprintf(" · %d kernel directories/backups not searched", res.KernelDirs)

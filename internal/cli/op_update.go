@@ -48,11 +48,10 @@ func UpdateOp(args []string) int {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
-	sapcar, err := ops.FindSAPCAR(e, dir)
+	sapcar, err := ops.FindSAPCAR(ctx, e, []string{dir}, lastSAPCARs)
 	if err != nil {
 		return fail(err)
 	}
-	e.Pr.Info("using " + sapcar)
 	res, err := ops.Extract(ctx, e, sapcar, files)
 	if err != nil {
 		return fail(err)

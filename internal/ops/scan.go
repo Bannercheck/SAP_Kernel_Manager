@@ -45,6 +45,7 @@ type ScanResult struct {
 	UnreadEx   []string  // a few examples of unreadable directories
 	KernelDirs int       // kernel directories and their backups met on the way (never searched)
 	InKernel   int       // archives inside them, skipped: copies that are already in place
+	SAPCARs    []string  // files named like SAPCAR (any case) met on the way, for Kernel Update
 }
 
 // FindTodaySARs walks the roots and returns the *.SAR/*.sar files placed on
@@ -128,6 +129,10 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 				if err := walk(path, level+1); err != nil {
 					return err
 				}
+				continue
+			}
+			if IsSAPCARName(de.Name()) {
+				res.SAPCARs = append(res.SAPCARs, path)
 				continue
 			}
 			if !strings.EqualFold(filepath.Ext(de.Name()), ".sar") {

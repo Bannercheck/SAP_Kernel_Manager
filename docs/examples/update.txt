@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 6 ⏎ y ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 00:55
+  Hostname [1mvm[0m · User root · 2026-09-28 01:11
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -52,16 +52,19 @@ Select an operation (number or name, q to quit): 6
 
   [36mArchives placed on this server today, in apply order (lowest patch first)[0m
     [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 00:55  /home/tcxxx/Downloads
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 00:55  /home/tcxxx/Downloads
-    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 00:55  /home/tcxxx/Downloads
-    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 00:55  /home/tcxxx/Downloads
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 01:11  /home/tcxxx/Downloads
     → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
 
   Extract these 4 archive(s) into 3 kernel directories in this order?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [90musing /sapmnt/ABC/exe/uc/linuxx86_64/SAPCAR[0m
+  [90mSAPCAR: /sapmnt/ABC/exe/uc/linuxx86_64/SAPCAR[0m
   [90mcurrent kernel: 793 Patch 200[0m
+  [90m! 13 file(s) in /sapmnt/ABC/exe/uc/linuxx86_64 belong to root (SAPCAR, SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work): SAPCAR as root will fail on them — run KernelMan as root[0m
+  [90m! 7 file(s) in /usr/sap/ABC/D00/exe belong to root (SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work, dw_421-80007541.sar): SAPCAR as root will fail on them — run KernelMan as root[0m
+  [90m! 7 file(s) in /usr/sap/ABC/ASCS01/exe belong to root (SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work, dw_421-80007541.sar): SAPCAR as root will fail on them — run KernelMan as root[0m
   [1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
   [2/17] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
   [3/17] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m1 files[0m
@@ -98,7 +101,7 @@ Select an operation (number or name, q to quit): 6
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 00:55
+  Hostname [1mvm[0m · User root · 2026-09-28 01:11
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m

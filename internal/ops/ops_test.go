@@ -387,3 +387,64 @@ func TestHomeDirs(t *testing.T) {
 		t.Errorf("HomeDirs = %v\nwant %v", got, want)
 	}
 }
+
+func TestIsSAPCARName(t *testing.T) {
+	for name, want := range map[string]bool{"SAPCAR": true, "sapcar": true, "SAPCAR.exe": true, "SAPCAR_1115-70006178.EXE": true,
+		"sapcar-1010.exe": true, "SAPCAR_721.EXE": true, "SAPCARS": false, "sapcar.txt": false, "SAPEXE_403.SAR": false, "mysapcar": false} {
+		if IsSAPCARName(name) != want {
+			t.Errorf("IsSAPCARName(%q) = %v", name, !want)
+		}
+	}
+	if SAPCARPatch("SAPCAR_1115-70006178.EXE") != 1115 || SAPCARPatch("SAPCAR") != 0 {
+		t.Error("patch number")
+	}
+}
+
+func TestFindSAPCAR(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", filepath.Join(root, "home", "root"))
+	prevBin, prevRoots := ProgramBinDir, DefaultScanRoots
+	ProgramBinDir = func() string { return filepath.Join(root, "opt", "kernelman", "bin") }
+	DefaultScanRoots = []string{root}
+	defer func() { ProgramBinDir, DefaultScanRoots = prevBin, prevRoots }()
+	os.MkdirAll(ProgramBinDir(), 0o755)
+	kdir := filepath.Join(root, "sapmnt", "ABC", "exe", "uc", "linuxx86_64")
+	dl := filepath.Join(root, "home", "tcxxx", "Downloads")
+	os.MkdirAll(kdir, 0o755)
+	os.MkdirAll(dl, 0o755)
+	e := &Env{T: &system.Target{SID: "ABC", KernelDir: kdir, KernelDirs: []string{kdir}}, Pr: &recorder{}}
+
+	// 1. nothing anywhere → a clear error naming the places
+	if _, err := FindSAPCAR(context.Background(), e, []string{dl}, nil); err == nil || !strings.Contains(err.Error(), "SAP Software Center") {
+		t.Fatalf("err = %v", err)
+	}
+	// 2. an uploaded, lower-case, non-executable copy in the download directory: used, chmod 755, copies kept
+	up := filepath.Join(dl, "sapcar_1115-70006178.exe")
+	os.WriteFile(up, []byte("#!/bin/sh\nexit 0\n"), 0o644)
+	got, err := FindSAPCAR(context.Background(), e, []string{dl}, nil)
+	if err != nil || got != up {
+		t.Fatalf("got %q, %v", got, err)
+	}
+	if info, _ := os.Stat(up); info.Mode().Perm() != 0o755 {
+		t.Errorf("mode %v", info.Mode())
+	}
+	for _, p := range []string{filepath.Join(ProgramBinDir(), "SAPCAR"), filepath.Join(StateBinDir(), "SAPCAR")} {
+		if info, err := os.Stat(p); err != nil || info.Mode().Perm() != 0o755 {
+			t.Errorf("copy %s: %v", p, err)
+		}
+	}
+	// 3. next time the copy next to KernelMan wins, whatever the download directory holds
+	if got, _ := FindSAPCAR(context.Background(), e, []string{dl}, nil); got != filepath.Join(ProgramBinDir(), "SAPCAR") {
+		t.Errorf("got %q", got)
+	}
+	// 4. only a copy somewhere odd on the server: the whole-server walk finds it (any case)
+	os.RemoveAll(ProgramBinDir())
+	os.RemoveAll(StateBinDir())
+	os.Remove(up)
+	odd := filepath.Join(root, "opt", "tools", "SapCar")
+	os.MkdirAll(filepath.Dir(odd), 0o755)
+	os.WriteFile(odd, []byte("x"), 0o755)
+	if got, err := FindSAPCAR(context.Background(), e, nil, nil); err != nil || got != odd {
+		t.Errorf("got %q, %v", got, err)
+	}
+}

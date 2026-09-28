@@ -144,6 +144,7 @@ func (fe *flowEnv) install(t *testing.T) {
 	prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevDefault, prevCT := runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.DefaultScanRoots, ops.ChangeTime
 	runner = router{fake: fe.fake, real: exec.NewReal()}
 	isRoot = false
+	t.Setenv("HOME", fe.root) // ~/.kernelman of the test host
 	scanRoots = nil
 	ops.DefaultScanRoots = []string{fe.root}                            // the test root stands in for "/"
 	ops.ChangeTime = func(os.FileInfo) time.Time { return time.Time{} } // test files are all created now
@@ -507,7 +508,7 @@ func TestFlowShip(t *testing.T) {
 	os.WriteFile(filepath.Join(dist, "kernelman.sh"), []byte(ship.Launcher()), 0o755)
 	os.WriteFile(filepath.Join(dist, "bin", "kernelman-linux-amd64"), []byte("ELF fake"), 0o755)
 	prevLocate := locateProgram
-	locateProgram = func(string) (ship.Program, error) {
+	locateProgram = func(string, ...string) (ship.Program, error) {
 		return ship.Program{Dir: dist, Files: []string{"kernelman.sh", "bin/kernelman-linux-amd64"}}, nil
 	}
 	t.Cleanup(func() { locateProgram = prevLocate })

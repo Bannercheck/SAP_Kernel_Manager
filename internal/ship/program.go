@@ -6,6 +6,7 @@ package ship
 import (
 	_ "embed"
 	"fmt"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"io"
 	"os"
 	"path/filepath"
@@ -29,8 +30,10 @@ type Program struct {
 // Locate finds the distribution directory this binary runs from
 // (<dir>/kernelman.sh + <dir>/bin/kernelman-<os>-<arch>). When the binary
 // runs from somewhere else, a distribution is assembled under tmp from the
-// embedded launcher and the running executable.
-func Locate(tmp string) (Program, error) {
+// embedded launcher and the running executable. extras are files to carry
+// along in bin/ when they exist, such as the SAPCAR in use (stored as
+// bin/SAPCAR, so the other server finds it without any SAP directory).
+func Locate(tmp string, extras ...string) (Program, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return Program{}, err
@@ -39,9 +42,8 @@ func Locate(tmp string) (Program, error) {
 	if filepath.Base(filepath.Dir(exe)) == "bin" {
 		root := filepath.Dir(filepath.Dir(exe))
 		if _, err := os.Stat(filepath.Join(root, "kernelman.sh")); err == nil {
-			p := Program{Dir: root}
-			p.Files = listFiles(root)
-			return p, nil
+			addExtras(root, extras)
+			return Program{Dir: root, Files: listFiles(root)}, nil
 		}
 	}
 	root := filepath.Join(tmp, "kernelman")
@@ -55,7 +57,31 @@ func Locate(tmp string) (Program, error) {
 	if err := copyFile(exe, dst, 0o755); err != nil {
 		return Program{}, err
 	}
+	addExtras(root, extras)
 	return Program{Dir: root, Files: listFiles(root), Created: true}, nil
+}
+
+// addExtras copies each existing extra into <root>/bin unless a file of that
+// name is already there; SAPCAR-named files are stored as bin/SAPCAR.
+func addExtras(root string, extras []string) {
+	for _, src := range extras {
+		if src == "" {
+			continue
+		}
+		info, err := os.Stat(src)
+		if err != nil || !info.Mode().IsRegular() {
+			continue
+		}
+		name := filepath.Base(src)
+		if ops.IsSAPCARName(name) {
+			name = "SAPCAR"
+		}
+		dst := filepath.Join(root, "bin", name)
+		if _, err := os.Stat(dst); err == nil {
+			continue
+		}
+		_ = copyFile(src, dst, 0o755)
+	}
 }
 
 func listFiles(root string) []string {

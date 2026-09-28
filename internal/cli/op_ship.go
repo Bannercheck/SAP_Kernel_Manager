@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 )
 
 // locateProgram finds or assembles the KernelMan distribution to send along; tests replace it.
-var locateProgram = func(tmp string) (ship.Program, error) { return ship.Locate(tmp) }
+var locateProgram = func(tmp string, extras ...string) (ship.Program, error) { return ship.Locate(tmp, extras...) }
 
 // ShipOp implements "Send to Other Servers": today's archives plus KernelMan
 // itself go to the given hosts over scp and are verified with cksum.
@@ -71,7 +72,12 @@ func ShipOp(args []string) int {
 		return fail(err)
 	}
 	defer os.RemoveAll(tmp)
-	prog, err := locateProgram(tmp)
+	var dirs []string
+	for _, f := range files {
+		dirs = append(dirs, filepath.Dir(f.Path))
+	}
+	sapcar, _ := ops.FindSAPCAR(ctx, newEnv(t), dirs, lastSAPCARs) // travels in bin/SAPCAR when found
+	prog, err := locateProgram(tmp, sapcar)
 	if err != nil {
 		return fail(fmt.Errorf("locate KernelMan distribution: %w", err))
 	}
