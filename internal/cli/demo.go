@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/demo"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/system"
 )
 
@@ -38,6 +40,7 @@ func EnableDemo(root string) error {
 	isRoot = false
 	demoRoot = root
 	defaultDownloadDir = layout.Download
+	ops.ChangeTime = func(os.FileInfo) time.Time { return time.Time{} } // demo archives were all created just now
 	scanRoots = []string{root}
 	if home, err := os.UserHomeDir(); err == nil && home != "" { // the demo also finds files you put in your home
 		scanRoots = append(scanRoots, home)

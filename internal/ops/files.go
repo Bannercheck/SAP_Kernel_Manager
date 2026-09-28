@@ -21,11 +21,12 @@ type SARFile struct {
 	Name      string
 	Size      int64
 	ModTime   time.Time
-	Component string // upper-cased for logic: SAPEXE, SAPEXEDB, DW, IGSEXE, LIB_DBSL ...
-	Label     string // component as written in the file name: SAPEXE, dw, igsexe ...
-	Patch     int    // 402, 403, 421 ...
-	Number    string // SAP's archive number, informational
-	Full      bool   // complete kernel archive (SAPEXE / SAPEXEDB)
+	Placed    time.Time // when the file appeared on this host: the later of modification and change time
+	Component string    // upper-cased for logic: SAPEXE, SAPEXEDB, DW, IGSEXE, LIB_DBSL ...
+	Label     string    // component as written in the file name: SAPEXE, dw, igsexe ...
+	Patch     int       // 402, 403, 421 ...
+	Number    string    // SAP's archive number, informational
+	Full      bool      // complete kernel archive (SAPEXE / SAPEXEDB)
 }
 
 // sarNameRe accepts SAPEXE_403-80007807.SAR, SAPEXE.402_7805.SAR,
@@ -43,7 +44,22 @@ func ParseSARName(name string) (SARFile, bool) {
 	return SARFile{Name: name, Component: comp, Label: m[1], Patch: patch, Number: m[3], Full: comp == "SAPEXE" || comp == "SAPEXEDB"}, true
 }
 
-// ScanSARs lists *.SAR/*.sar files in dir. Files modified on `day` are the
+// ChangeTime returns a file's inode change time; tests and the demo replace
+// it because every file they create has today's change time.
+var ChangeTime = changeTime
+
+// PlacedTime is when a file appeared on this host: its modification time,
+// or its change time when that is later (scp -p, WinSCP and sftp keep the
+// original modification time, but the change time is always set locally).
+func PlacedTime(info os.FileInfo) time.Time {
+	t := info.ModTime()
+	if ct := ChangeTime(info); ct.After(t) {
+		t = ct
+	}
+	return t
+}
+
+// ScanSARs lists *.SAR/*.sar files in dir. Files placed there on `day` are the
 // ones to apply; older ones are returned separately so they can be shown as skipped.
 func ScanSARs(dir string, day time.Time) (today, older []SARFile, err error) {
 	entries, err := os.ReadDir(dir)
@@ -63,8 +79,8 @@ func ScanSARs(dir string, day time.Time) (today, older []SARFile, err error) {
 		if !ok {
 			f = SARFile{Name: en.Name(), Component: "?"}
 		}
-		f.Path, f.Size, f.ModTime = filepath.Join(dir, en.Name()), info.Size(), info.ModTime()
-		fy, fm, fd := f.ModTime.Date()
+		f.Path, f.Size, f.ModTime, f.Placed = filepath.Join(dir, en.Name()), info.Size(), info.ModTime(), PlacedTime(info)
+		fy, fm, fd := f.Placed.Date()
 		if fy == y && fm == m && fd == d {
 			today = append(today, f)
 		} else {

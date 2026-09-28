@@ -152,6 +152,9 @@ func TestBackup(t *testing.T) {
 }
 
 func TestFindTodaySARs(t *testing.T) {
+	prevCT := ChangeTime
+	ChangeTime = func(os.FileInfo) time.Time { return time.Time{} } // files below are all created now
+	defer func() { ChangeTime = prevCT }()
 	root := t.TempDir()
 	now := time.Now()
 	old := now.Add(-72 * time.Hour)
@@ -187,6 +190,20 @@ func TestFindTodaySARs(t *testing.T) {
 	if res.Older != 1 || len(res.Duplicates) != 0 || res.Dirs == 0 || res.Today[0].Label != "SAPEXE" || res.Today[2].Label != "dw" || res.Unreadable != 0 {
 		t.Errorf("res = %+v", res)
 	}
+	// A file uploaded today with scp -p / WinSCP keeps its old modification
+	// time but gets today's change time: it counts as placed today.
+	ChangeTime = func(info os.FileInfo) time.Time {
+		if info.Name() == "SAPEXE_390-80007000.SAR" {
+			return now
+		}
+		return time.Time{}
+	}
+	res, _ = FindTodaySARs(context.Background(), ScanOptions{Roots: []string{root}, Day: now,
+		Exclude: []string{filepath.Join(root, "usr/sap/ABC/SYS/exe/uc/linuxx86_64")}})
+	if len(res.Today) != 5 || res.Older != 0 || res.Today[0].Name != "SAPEXE_390-80007000.SAR" || !res.Today[0].Placed.Equal(now) {
+		t.Errorf("copied-today archive: %+v", res)
+	}
+	ChangeTime = func(os.FileInfo) time.Time { return time.Time{} }
 	if os.Geteuid() != 0 { // an unreadable directory is counted, not fatal
 		locked := filepath.Join(root, "home", "locked")
 		os.MkdirAll(locked, 0o000)
@@ -212,6 +229,9 @@ func TestScanAndCopySARs(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	prevCT := ChangeTime
+	ChangeTime = func(os.FileInfo) time.Time { return time.Time{} }
+	defer func() { ChangeTime = prevCT }()
 	today, older, err := ScanSARs(dl, now)
 	if err != nil || len(today) != 2 || len(older) != 1 || today[0].Name != "SAPEXE_403-80007807.SAR" || today[1].Name != "dw_421-80007541.sar" {
 		t.Fatalf("scan: %v today=%v older=%v", err, today, older)
@@ -324,5 +344,32 @@ func TestStopAndStart(t *testing.T) {
 	fake.On(sc+"00 -function GetProcessList", connRefused, 1).On(sc+"01 -function GetProcessList", procsGray, 4)
 	if !IsStopped(Probe(context.Background(), e)) {
 		t.Error("down/GRAY instances reported as running")
+	}
+}
+
+func TestHomeDirs(t *testing.T) {
+	root := t.TempDir()
+	for _, d := range []string{"home/tcxxx", "export/home/basis", "home/abcadm"} {
+		os.MkdirAll(filepath.Join(root, d), 0o755)
+	}
+	passwd := filepath.Join(root, "passwd")
+	os.WriteFile(passwd, []byte(strings.Join([]string{
+		"root:x:0:0:root:/:/bin/sh",
+		"daemon:x:1:1::/usr/sbin:/usr/sbin/nologin",
+		"tcxxx:x:1001:100:Basis:" + filepath.Join(root, "home/tcxxx") + ":/bin/bash",
+		"basis:x:1002:100::" + filepath.Join(root, "export/home/basis") + ":/bin/ksh",
+		"abcadm:x:1003:79::" + filepath.Join(root, "home/abcadm") + ":/bin/csh",
+		"gone:x:1004:100::" + filepath.Join(root, "home/gone") + ":/bin/sh", // does not exist
+		"dup:x:1005:100::" + filepath.Join(root, "home/tcxxx") + ":/bin/sh", // same home twice
+		"broken line",
+	}, "\n")), 0o644)
+	prevPW, prevHome := PasswdFile, os.Getenv("HOME")
+	PasswdFile = passwd
+	os.Setenv("HOME", filepath.Join(root, "home/abcadm"))
+	defer func() { PasswdFile = prevPW; os.Setenv("HOME", prevHome) }()
+	got := HomeDirs()
+	want := []string{filepath.Join(root, "home/tcxxx"), filepath.Join(root, "export/home/basis"), filepath.Join(root, "home/abcadm")}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("HomeDirs = %v\nwant %v", got, want)
 	}
 }

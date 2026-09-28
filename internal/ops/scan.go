@@ -35,20 +35,23 @@ type ScanOptions struct {
 
 // ScanResult is what the search found.
 type ScanResult struct {
-	Today      []SARFile // archives whose modification date is Day, apply order, one per file name
-	Older      int       // archives with another date (ignored, reported as a count)
+	Today      []SARFile // archives placed on Day, apply order, one per file name
+	Older      int       // archives placed on another day (ignored, reported as a count)
 	Duplicates []string  // names found in more than one place (the newest copy is kept)
 	Dirs       int       // directories visited
 	Roots      []string  // roots that existed and were searched
+	Homes      int       // home directories from PasswdFile searched in addition (whole-server scans)
 	Unreadable int       // directories that could not be read (permissions)
 	UnreadEx   []string  // a few examples of unreadable directories
 }
 
-// FindTodaySARs walks the roots and returns the *.SAR/*.sar files whose
-// modification date is opts.Day — exactly "today's files", nothing older.
-// Directory symlinks are followed once, pseudo file systems and excluded
-// subtrees are skipped, unreadable directories are counted instead of
-// aborting the scan.
+// FindTodaySARs walks the roots and returns the *.SAR/*.sar files placed on
+// the server on opts.Day (see PlacedTime); anything older is only counted.
+// A whole-server scan (root "/") also visits every account's home directory
+// from PasswdFile, so uploads under /home/<user> are found even when /home
+// is automounted. Directory symlinks are followed once, pseudo file systems
+// and excluded subtrees are skipped, unreadable directories are counted
+// instead of aborting the scan.
 func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 	roots := opts.Roots
 	if len(roots) == 0 {
@@ -123,14 +126,14 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 			if !ok {
 				f = SARFile{Name: de.Name(), Component: "?", Label: "?"}
 			}
-			f.Path, f.Size, f.ModTime = path, info.Size(), info.ModTime()
-			if !sameDay(f.ModTime) {
+			f.Path, f.Size, f.ModTime, f.Placed = path, info.Size(), info.ModTime(), PlacedTime(info)
+			if !sameDay(f.Placed) {
 				res.Older++
 				continue
 			}
 			if prev, dup := byName[f.Name]; dup {
 				res.Duplicates = append(res.Duplicates, f.Name)
-				if !f.ModTime.After(prev.ModTime) {
+				if !f.Placed.After(prev.Placed) {
 					continue
 				}
 			}
@@ -139,7 +142,14 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		return nil
 	}
 
+	var homes []string
 	for _, root := range roots {
+		if filepath.Clean(root) == "/" {
+			homes = HomeDirs()
+			break
+		}
+	}
+	for i, root := range append(append([]string{}, roots...), homes...) {
 		root = filepath.Clean(root)
 		if seenRoot[root] {
 			continue
@@ -149,7 +159,11 @@ func FindTodaySARs(ctx context.Context, opts ScanOptions) (*ScanResult, error) {
 		if err != nil || !st.IsDir() {
 			continue
 		}
-		res.Roots = append(res.Roots, root)
+		if i < len(roots) {
+			res.Roots = append(res.Roots, root)
+		} else {
+			res.Homes++
+		}
 		if err := walk(root, 0); err != nil {
 			return res, err
 		}

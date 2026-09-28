@@ -45,6 +45,12 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   birlikte okunup ekrana **ham** geri yazılıyordu; `ESC n` terminalin karakter setini değiştirir (LS2). Çözüm: `ui.CleanInput`
   (kaçış/kontrol baytları atılır, Esc = iptal → N / M), TTY'de girdi tekrar yazdırılmaz (`echoInput`), UTF-8 olmayan
   terminallerde süs karakterleri (`· → … › —` ve ağaç/ışık glifleri) `ui.ASCIIWriter` ile ASCII'ye çevrilir.
+- 2026-09-27 · Kullanıcı: "/home/tcxxx altındaki dosyayı yine bulamıyor, herhangi bir kullanıcının altında arasın".
+  (1) Tüm sunucu taramasında `/etc/passwd`'deki **her hesabın ev dizini** ayrıca kök olarak eklenir (`ops.HomeDirs`); stat
+  automount'lu (autofs/NFS) ev dizinlerini de bağlar. (2) "Bugün konulan" kuralı geri geldi: mtime **veya** ctime bugün
+  (`ops.PlacedTime`; WinSCP/scp -p eski mtime'ı korur) — tabloda artık **PLACED** sütunu gösterilir, eskiler yalnızca sayı.
+  (3) AIX'te `TZ=TRT-3` gibi POSIX değerlerini Go UTC'ye düşürüyordu → `platform.FixLocalTime`. (4) Örnek transkriptte
+  arşivler `/home/tcxxx/Downloads` altında bulunur.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

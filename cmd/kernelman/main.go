@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/cli"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/platform"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ui"
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
@@ -15,6 +16,7 @@ func main() {
 }
 
 func run(args []string) int {
+	platform.FixLocalTime()
 	pal := ui.Detect(os.Stdout)
 	args, demoMode := stripDemoFlag(args)
 	if demoMode || os.Getenv(version.EnvPrefix+"DEMO") == "1" {

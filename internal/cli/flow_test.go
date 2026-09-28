@@ -54,6 +54,7 @@ type flowEnv struct {
 	target    *system.Target
 	kernelDir string
 	download  string
+	root      string
 	sc        string
 }
 
@@ -76,7 +77,7 @@ func newFlow(t *testing.T) *flowEnv {
 	kdir := filepath.Join(root, "sapmnt", "ABC", "exe", "uc", "linuxx86_64")
 	d00 := filepath.Join(root, "usr", "sap", "ABC", "D00", "exe")
 	ascs := filepath.Join(root, "usr", "sap", "ABC", "ASCS01", "exe")
-	dl := filepath.Join(root, "download")
+	dl := filepath.Join(root, "home", "tcxxx", "Downloads") // uploaded into a personal home directory
 	for _, d := range []string{kdir, d00, ascs, dl} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			t.Fatal(err)
@@ -134,25 +135,32 @@ func newFlow(t *testing.T) *flowEnv {
 		StateDir: filepath.Join(root, "state"), Sapcontrol: "/usr/sap/hostctrl/exe/sapcontrol", Source: "sapcontrol ParameterValue DIR_CT_RUN (instance 00)",
 		Instances: []discovery.Instance{{SID: "ABC", Nr: "00", Name: "D00", Type: "D", Host: "sapci", ExeDir: d00}, {SID: "ABC", Nr: "01", Name: "ASCS01", Type: "ASCS", Host: "sapci", ExeDir: ascs}}}
 	os.MkdirAll(tgt.StateDir, 0o755)
-	return &flowEnv{fake: f, target: tgt, kernelDir: kdir, download: dl, sc: sc}
+	return &flowEnv{fake: f, target: tgt, kernelDir: kdir, download: dl, root: root, sc: sc}
 }
 
 // install wires the flow environment into the CLI for one test.
 func (fe *flowEnv) install(t *testing.T) {
 	t.Helper()
-	prevRunner, prevResolve, prevCollect, prevRoot, prevScan := runner, resolveTarget, collectStatus, isRoot, scanRoots
+	prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevDefault, prevCT := runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.DefaultScanRoots, ops.ChangeTime
 	runner = router{fake: fe.fake, real: exec.NewReal()}
 	isRoot = false
-	scanRoots = []string{filepath.Dir(fe.download)}
+	scanRoots = nil
+	ops.DefaultScanRoots = []string{fe.root}                            // the test root stands in for "/"
+	ops.ChangeTime = func(os.FileInfo) time.Time { return time.Time{} } // test files are all created now
+	transcriptRoot = fe.root
 	resolveTarget = func(context.Context, string) (*system.Target, []string, error) {
 		fe.target.Snapshot, _ = system.LoadSnapshot(fe.target.StateDir)
 		return fe.target, nil, nil
 	}
 	collectStatus = func(context.Context, status.Options) *status.Report { return exampleReport() }
 	t.Cleanup(func() {
-		runner, resolveTarget, collectStatus, isRoot, scanRoots = prevRunner, prevResolve, prevCollect, prevRoot, prevScan
+		runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.DefaultScanRoots, ops.ChangeTime = prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevDefault, prevCT
+		transcriptRoot = ""
 	})
 }
+
+// transcriptRoot is the flow environment's root; transcripts show it as "/".
+var transcriptRoot string
 
 // runMenu drives one menu session and optionally records the transcript.
 func runMenu(t *testing.T, name, input string) string {
@@ -161,7 +169,11 @@ func runMenu(t *testing.T, name, input string) string {
 	var out bytes.Buffer
 	Menu(strings.NewReader(input), &out, pal)
 	if os.Getenv("KERNELMAN_WRITE_EXAMPLE") == "1" && name != "" {
-		content := "$ ./kernelman.sh              # menü · " + strings.ReplaceAll(strings.TrimSpace(input), "\n", " ⏎ ") + "\n" + out.String()
+		screen := out.String()
+		if transcriptRoot != "" {
+			screen = strings.ReplaceAll(strings.ReplaceAll(screen, transcriptRoot+"/", "/"), transcriptRoot, "/")
+		}
+		content := "$ ./kernelman.sh              # menü · " + strings.ReplaceAll(strings.TrimSpace(input), "\n", " ⏎ ") + "\n" + screen
 		if err := os.WriteFile("../../docs/examples/"+name+".txt", []byte(content), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -201,7 +213,7 @@ func TestFlowFiles(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
 	out := runMenu(t, "files", "4\ny\nm\nq\n") // 3, Y = yes, M = main menu, quit (no directory question: the server is scanned)
-	mustContain(t, out, "=== Kernel File Transfer ===", "scanning "+filepath.Dir(fe.download)+" for .SAR files dated today", "Archives dated today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
+	mustContain(t, out, "=== Kernel File Transfer ===", "scanning the whole server ("+fe.root+") including every user's home directory for .SAR files placed today", "Archives placed on this server today, in apply order", "1  SAPEXE_403-80007807.SAR", "4  dw_423-80007541.sar",
 		"target level after apply: patch 423", "2 older archive(s) ignored", "[1/7] Copy 4 archive(s)", "[5/7] Copy 4 archive(s)",
 		"4 archive(s) copied into 3 kernel directories", "4) ✔ Kernel File Transfer")
 	for _, dir := range fe.target.KernelDirs {
@@ -246,7 +258,7 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
 	out := runMenu(t, "update", "6\ny\ny\nm\nq\n") // 6, Y = confirm order, Y = start afterwards, M = main menu, quit
-	mustContain(t, out, "backup from today", "scanning "+filepath.Dir(fe.download), "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
+	mustContain(t, out, "backup from today", "scanning the whole server ("+fe.root+")", "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
 		"[4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
 		"[17/17] Read kernel version (disp+work -V) ... ok  793 Patch 423",
 		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "6) ✔ Kernel Update")

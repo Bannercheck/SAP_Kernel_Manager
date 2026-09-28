@@ -7,27 +7,28 @@ $ make cross
 
 $ ls -la dist dist/bin
   dist:
-  total 22332
-  drwxr-xr-x 5 root root    4096 Sep 27 23:33 .
+  total 30684
+  drwxr-xr-x 5 root root    4096 Sep 27 23:38 .
   drwxr-xr-x 9 root root    4096 Sep 27 21:15 ..
-  -rw-r--r-- 1 root root     541 Sep 27 23:38 SHA256SUMS
-  drwxr-xr-x 2 root root    4096 Sep 27 23:38 bin
-  drwxr-xr-x 3 root root    4096 Sep 27 23:32 kernelman
+  -rw-r--r-- 1 root root     541 Sep 27 23:59 SHA256SUMS
+  drwxr-xr-x 2 root root    4096 Sep 27 23:59 bin
+  drwxr-xr-x 3 root root    4096 Sep 27 23:38 kernelman
   -rw-r--r-- 1 root root 8534522 Sep 27 23:32 kernelman-ac9d5b7-dirty.tar.gz
-  -rw-r--r-- 1 root root 8534522 Sep 27 23:33 kernelman-linux-aix.tar.gz
-  -rw-r--r-- 1 root root 5763750 Sep 27 23:33 kernelman-macos-demo.zip
-  -rwxr-xr-x 1 root root    1081 Sep 27 23:38 kernelman.sh
-  drwxr-xr-x 3 root root    4096 Sep 27 23:33 macos
+  -rw-r--r-- 1 root root 8542599 Sep 27 23:38 kernelman-d238c05-dirty.tar.gz
+  -rw-r--r-- 1 root root 8542599 Sep 27 23:38 kernelman-linux-aix.tar.gz
+  -rw-r--r-- 1 root root 5766067 Sep 27 23:38 kernelman-macos-demo.zip
+  -rwxr-xr-x 1 root root    1081 Sep 27 23:59 kernelman.sh
+  drwxr-xr-x 3 root root    4096 Sep 27 23:38 macos
   
   dist/bin:
-  total 34912
-  drwxr-xr-x 2 root root    4096 Sep 27 23:38 .
-  drwxr-xr-x 5 root root    4096 Sep 27 23:33 ..
-  -rwxr-xr-x 1 root root 7974368 Sep 27 23:38 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 7191312 Sep 27 23:38 kernelman-darwin-amd64
-  -rwxr-xr-x 1 root root 6731378 Sep 27 23:38 kernelman-darwin-arm64
-  -rwxr-xr-x 1 root root 7016632 Sep 27 23:38 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 6815928 Sep 27 23:38 kernelman-linux-ppc64le
+  total 35016
+  drwxr-xr-x 2 root root    4096 Sep 27 23:59 .
+  drwxr-xr-x 5 root root    4096 Sep 27 23:38 ..
+  -rwxr-xr-x 1 root root 7986080 Sep 27 23:59 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 7195504 Sep 27 23:59 kernelman-darwin-amd64
+  -rwxr-xr-x 1 root root 6747986 Sep 27 23:59 kernelman-darwin-arm64
+  -rwxr-xr-x 1 root root 7024824 Sep 27 23:59 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 6881464 Sep 27 23:59 kernelman-linux-ppc64le
 
 $ file dist/bin/*
   dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped

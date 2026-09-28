@@ -82,12 +82,12 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool) 
 			}
 			return res.Today, true
 		}
-		fmt.Fprintf(stdout, "  %s no .SAR files dated today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
+		fmt.Fprintf(stdout, "  %s no .SAR files placed today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
 		if res.Older > 0 {
-			fmt.Fprintf(stdout, " · %d archive(s) with another date ignored", res.Older)
+			fmt.Fprintf(stdout, " · %d archive(s) from other days ignored", res.Older)
 		}
 		fmt.Fprintln(stdout)
-		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, "only archives whose modification date is today are used; an old file can be re-dated with: touch <file>"))
+		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, "an archive counts when it was modified or copied onto this server today; to use an older file: touch <file>"))
 		if yes {
 			return nil, false
 		}
@@ -108,10 +108,10 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 		exclude = append(exclude, ops.BackupSiblings(d)...)
 	}
 	where := strings.Join(roots, " ")
-	if len(roots) == 1 && roots[0] == "/" {
-		where = "the whole server (/)"
+	if len(roots) == 1 && roots[0] == ops.DefaultScanRoots[0] {
+		where = "the whole server (" + roots[0] + ") including every user's home directory"
 	}
-	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, fmt.Sprintf("scanning %s for .SAR files dated today (%s); system directories, kernel directories and backups are skipped",
+	fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, fmt.Sprintf("scanning %s for .SAR files placed today (%s); system directories, kernel directories and backups are skipped",
 		where, time.Now().Format("2006-01-02"))))
 	var progress func(int, string)
 	if f, ok := stdout.(*os.File); ok && ui.IsTerminal(f) {
@@ -130,6 +130,9 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 		res = &ops.ScanResult{}
 	}
 	summary := fmt.Sprintf("%d directories scanned", res.Dirs)
+	if res.Homes > 0 {
+		summary += fmt.Sprintf(" · %d home directories from %s", res.Homes, ops.PasswdFile)
+	}
 	if res.Unreadable > 0 {
 		summary += fmt.Sprintf(" · %d not readable by %s (e.g. %s) — run as root to search them too", res.Unreadable, currentUser(), strings.Join(res.UnreadEx, ", "))
 	}
@@ -140,16 +143,16 @@ func scanFor(ctx context.Context, t *system.Target, roots []string) *ops.ScanRes
 // showArchives prints the archives in apply order plus the resulting level.
 func showArchives(res *ops.ScanResult) {
 	pal := currentPalette()
-	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "MODIFIED", "FOUND IN")}
+	rows := [][]string{pal.Headers("#", "ARCHIVE", "COMPONENT", "PATCH", "SIZE", "PLACED", "FOUND IN")}
 	for i, f := range res.Today {
 		kind := f.Label
 		if f.Full {
 			kind += " (full kernel)"
 		}
 		rows = append(rows, []string{fmt.Sprint(i + 1), f.Name, kind, fmt.Sprint(f.Patch), ops.HumanSize(f.Size),
-			f.ModTime.Format("2006-01-02 15:04"), filepath.Dir(f.Path)})
+			f.Placed.Format("2006-01-02 15:04"), filepath.Dir(f.Path)})
 	}
-	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Cyan, "Archives dated today, in apply order (lowest patch first)"))
+	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Cyan, "Archives placed on this server today, in apply order (lowest patch first)"))
 	for _, l := range ui.Table("    ", rows) {
 		fmt.Fprintln(stdout, l)
 	}
