@@ -265,9 +265,9 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
 	out := runMenu(t, "update", "6\ny\ny\nm\nq\n") // 6, Y = confirm order, Y = start afterwards, M = main menu, quit
-	mustContain(t, out, "backup from today", "scanning the whole server ("+fe.root+")", "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files",
-		"[4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
-		"[17/17] Read kernel version (disp+work -V) ... ok  793 Patch 423",
+	mustContain(t, out, "backup from today", "scanning the whole server ("+fe.root+")", "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files", "[18/18] Verify every instance directory matches the central kernel ... ok",
+		"[4/18] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
+		"[17/18] Read kernel version (disp+work -V) ... ok  793 Patch 423",
 		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "6) ✔ Kernel Update")
 }
 
@@ -284,7 +284,7 @@ func TestFlowRollback(t *testing.T) {
 	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(423), dispworkV(200))
 	out := runMenu(t, "rollback", "7\n\ny\nn\nm\nq\n") // 7, backup default (Enter keeps it), Y = confirm, N = no start, M = main menu, quit
-	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/8] Copy "+bk.Dirs[0].Dest, "[2/8] Copy "+bk.Dirs[1].Dest,
+	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/9] Copy "+bk.Dirs[0].Dest, "[2/9] Copy "+bk.Dirs[1].Dest,
 		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "7) ✔ Kernel Rollback")
 	b, _ := os.ReadFile(filepath.Join(fe.kernelDir, "gwrd"))
 	if string(b) == "broken" {
@@ -426,9 +426,10 @@ func TestDownloadOffline(t *testing.T) {
 
 // TestFlowShip sends today's archives and a KernelMan distribution to two
 // hosts; ssh/scp are faked, cksum runs for real on the local files.
-// A distributed system (application servers on other hosts): the scope
-// question appears and C copies only into the central directory.
-func TestFlowFilesCentral(t *testing.T) {
+// A distributed system (application servers on other hosts): the other hosts
+// are named, a profile without sapcpe is pointed out, and every kernel
+// directory on this host is still handled — no extra question.
+func TestFlowFilesDistributed(t *testing.T) {
 	fe := newFlow(t)
 	fe.install(t)
 	fe.fake.On(fe.sc+"00 -function GetSystemInstanceList", "\n28.09.2026 10:00:00\nGetSystemInstanceList\nOK\n"+
@@ -443,17 +444,17 @@ func TestFlowFilesCentral(t *testing.T) {
 	}
 	os.WriteFile(filepath.Join(prof, "ABC_D05_app3"), []byte("SAPSYSTEMNAME = ABC\n"), 0o644) // no sapcpe
 	fe.target.Instances[0].Profile = filepath.Join(prof, "ABC_D00_sapci")
-	out := runMenu(t, "files-central", "4\nc\ny\nm\nq\n") // 4, C = central only, Y = all archives, M, quit
-	mustContain(t, out, "Scope", "this host    central "+fe.kernelDir+" + 2 local instance directories (D00, ASCS01)",
-		"other hosts  3 instance(s): app1/03  app2/04  app3/05", "! app3/05: profile without sapcpe",
-		"[C] Central only (recommended)  [A] All kernel directories on this host", "central only: one copy in "+fe.kernelDir,
-		"Copy these 4 archive(s) into 1 kernel directory?", "[2/4] Copy 4 archive(s) to "+fe.kernelDir, "[4/4] List archives",
-		"4 archive(s) copied into 1 kernel directories")
-	if _, err := os.Stat(filepath.Join(fe.target.KernelDirs[1], "SAPEXE_403-80007807.SAR")); err == nil {
-		t.Error("central only, yet an archive landed in a local instance directory")
+	out := runMenu(t, "files-distributed", "4\ny\nm\nq\n") // 4, Y = all archives, M, quit — same keys as on a single host
+	mustContain(t, out, "other hosts 3 instance(s) on other hosts: app1/03  app2/04  app3/05 — they take the central kernel ("+fe.kernelDir+") via sapcpe when they start",
+		"! app3/05: profile without sapcpe", "Copy these 4 archive(s) into 3 kernel directories?", "[2/8] Copy 4 archive(s) to "+fe.kernelDir,
+		"[4/8] Copy 4 archive(s) to "+fe.target.KernelDirs[1], "4 archive(s) copied into 3 kernel directories")
+	if strings.Contains(out, "Central only") {
+		t.Error("the scope question must not exist any more")
 	}
-	if _, err := os.Stat(filepath.Join(fe.kernelDir, "SAPEXE_403-80007807.SAR")); err != nil {
-		t.Error("archive missing in the central directory")
+	for _, dir := range fe.target.KernelDirs {
+		if _, err := os.Stat(filepath.Join(dir, "SAPEXE_403-80007807.SAR")); err != nil {
+			t.Errorf("archive missing in %s", dir)
+		}
 	}
 }
 
@@ -507,11 +508,11 @@ func TestFlowServices(t *testing.T) {
 	fe.fake.On(fe.sc+"01 -function StartService ABC", "\n28.09.2026 10:00:00\nStartService\nFAIL: NIECONN_REFUSED (Connection refused)\n", 1)
 	ascs := fe.target.Instances[1].ExeDir
 	fe.fake.On(ascs+"/sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D -u abcadm", "", 0)
-	out := runMenu(t, "services", "5\na\nm\nq\n") // 5, A = start Host Agent and sapstartsrv, M, quit
+	out := runMenu(t, "services", "5\nf\nm\nq\n") // 5, F = start the stopped services (Host Agent and sapstartsrv), M, quit
 	mustContain(t, out, "=== SAP Stop / Start ===", "ASCS01 (sapstartsrv down)", "SAP Host Agent   ⬤ STOPPED",
 		"● saphostexec not running   ● sapstartsrv not running   ● saposcol not running",
 		"ASCS01 (01)  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
-		"[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [H] Start SAP Host Agent  [V] Start sapstartsrv (1)  [A] Start both  [M] Main menu",
+		"[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [F] Start stopped services (Host Agent, 1 sapstartsrv)  [M] Main menu",
 		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · saphostexec, sapstartsrv, saposcol running",
 		"[2/2] Start sapstartsrv ASCS01 (01) ... ok  StartService failed", "→ sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D · answers",
 		"SAP Host Agent   ⬤ RUNNING", "● saphostexec running (pid = 4242)   ● sapstartsrv running (pid = 4243)   ● saposcol running (pid = 4244)",
@@ -537,7 +538,7 @@ func TestFlowInstance(t *testing.T) {
 	out := runMenu(t, "instance", "5\ni\n2\ns\nm\nq\n")
 	mustContain(t, out, "⬤ PARTIAL", "Instance  [1] D00  [2] ASCS01  [M] Main menu", "ASCS01 (01)  [S] Start  [K] Stop (Kapat)  [M] Main menu",
 		"[1/3] sapstartsrv ASCS01 (01) ... ok  already running", "[2/3] Start ASCS01 (01) ... ok  sapcontrol Start",
-		"[3/3] WaitforStarted ASCS01 (01) ... ok  all processes GREEN", "instance ASCS01 started", "⬤ RUNNING")
+		"[3/3] Wait until ASCS01 (01) is running ... ok  all processes GREEN", "instance ASCS01 started", "⬤ RUNNING")
 	if strings.Contains(out, "StartSystem ALL") {
 		t.Error("one instance asked, whole system started")
 	}

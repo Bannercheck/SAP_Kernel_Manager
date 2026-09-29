@@ -50,8 +50,7 @@ func RemoteInstances(ctx context.Context, e *Env) []RemoteInstance {
 }
 
 // KernelDirs returns the directories an operation touches: every kernel
-// directory on this host, or only the central one (DIR_CT_RUN) when
-// CentralOnly is set — the shared /sapmnt copy every host's sapcpe reads.
+// directory on this host (central first, then each instance's exe).
 func (e *Env) KernelDirs() []string { return e.kernelDirs() }
 
 // ProfileDir is the system's profile directory: the directory of a known

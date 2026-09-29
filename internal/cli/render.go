@@ -130,6 +130,9 @@ func RenderStatus(w io.Writer, rep *status.Report, pal ui.Palette) {
 				fmt.Fprintf(w, "    %s instance %s: %s\n", pal.Cross(), in.Nr, in.Error)
 			}
 		}
+		for _, line := range syncWarnings(&status.Report{Systems: []status.System{sys}}, pal) {
+			fmt.Fprintf(w, "    %s\n", line)
+		}
 		for _, e := range sys.Errors {
 			fmt.Fprintf(w, "    %s %s\n", pal.Cross(), e)
 		}

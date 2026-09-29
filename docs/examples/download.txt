@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 3 ⏎ S0001234567 ⏎ secret ⏎ n ⏎  ⏎ y ⏎ m ⏎ q
-[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload3512622587/002[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 22:07
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload2053049972/002[0m
+  Hostname [1mvm[0m · User root · 2026-09-29 06:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -29,7 +29,7 @@ $ ./kernelman.sh              # menü · 3 ⏎ S0001234567 ⏎ secret ⏎ n ⏎ 
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5)   SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
+   5)   SAP Stop / Start      [90mS = start, K = stop the system, I = one instance, F = start stopped services (Host Agent, sapstartsrv)[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
@@ -42,7 +42,7 @@ Select an operation (number or name, q to quit): 3
 S-user: S0001234567
 Password for S0001234567: ******
 
-  Remember the password too? (stored in /tmp/TestFlowDownload3512622587/002/.kernelman/suser.json, mode 0600)  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m n
+  Remember the password too? (stored in /tmp/TestFlowDownload2053049972/002/.kernelman/suser.json, mode 0600)  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m n
   System [1mABC[0m · running as root · demo: acting as abcadm
   Kernel directories:
     /sapmnt/ABC/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
@@ -62,8 +62,8 @@ Password for S0001234567: ******
     3  dw_421-80007541.sar        DW                      421    44.6 MB   20260915  SAP KERNEL 7.93 64-BIT UNICODE
     4  dw_423-80007541.sar        DW                      423    44.6 MB   20260915  SAP KERNEL 7.93 64-BIT UNICODE
 
-Download into [/tmp/TestFlowDownload3512622587/002/download]: 
-  target directory: /tmp/TestFlowDownload3512622587/002/download
+Download into [/tmp/TestFlowDownload2053049972/002/download]: 
+  target directory: /tmp/TestFlowDownload2053049972/002/download
 
   Download these 4 file(s) as S0001234567?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
   [1/4] SAPEXE_403-80007807.SAR ... 100% [32mok[0m SAPEXE_403-80007807.SAR (102 B, 0s)
@@ -75,13 +75,13 @@ Download into [/tmp/TestFlowDownload3512622587/002/download]:
   [4/4] dw_423-80007541.sar ... 100% [32mok[0m dw_423-80007541.sar (102 B, 0s)
       sha256 [90m3524c91c4000e5a7ed90ce6b1a4d84d8a6ae70fb299bd6dc3148f6d5050217dc[0m
 
-  [32m✔[0m 4 file(s), 408 B in /tmp/TestFlowDownload3512622587/002/download · dated today, so Kernel File Transfer will find them
+  [32m✔[0m 4 file(s), 408 B in /tmp/TestFlowDownload2053049972/002/download · dated today, so Kernel File Transfer will find them
 
 --- Kernel Download: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload3512622587/002[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 22:07
+[1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m  [33mDEMO · simulated SAP host in /tmp/TestFlowDownload2053049972/002[0m
+  Hostname [1mvm[0m · User root · 2026-09-29 06:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -110,7 +110,7 @@ Download into [/tmp/TestFlowDownload3512622587/002/download]:
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3) [32m✔[0m Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5)   SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
+   5)   SAP Stop / Start      [90mS = start, K = stop the system, I = one instance, F = start stopped services (Host Agent, sapstartsrv)[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m

@@ -330,32 +330,36 @@ func TestRestore(t *testing.T) {
 func TestStopAndStart(t *testing.T) {
 	e, fake, rec := newEnv(t)
 	sc := "/hc/sapcontrol -nr "
-	fake.On(sc+"00 -function GetProcessList", procsGreen, 3).On(sc+"01 -function GetProcessList", procsGreen, 3).
-		On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0).
-		On(sc+"00 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).On(sc+"01 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).
+	green, gray := exec.Result{Stdout: procsGreen, ExitCode: 3}, exec.Result{Stdout: procsGray, ExitCode: 4}
+	// per instance: probe (GREEN) → wait after StopSystem (GRAY) → sapstartsrv check after StartService (GRAY) → wait after StartSystem (GREEN)
+	fake.OnSeq(sc+"00 -function GetProcessList", green, gray, gray, green)
+	fake.OnSeq(sc+"01 -function GetProcessList", green, gray, gray, green)
+	fake.On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0).
 		On(sc+"00 -function StopService", okBody("StopService"), 0).On(sc+"01 -function StopService", okBody("StopService"), 0)
 	if err := Stop(context.Background(), e); err != nil {
 		t.Fatalf("stop: %v\n%s", err, rec)
 	}
-	if !strings.Contains(rec.String(), "[1/5] StopSystem ALL") || !strings.Contains(rec.String(), "[5/5] StopService ASCS01 (01)") {
+	if !strings.Contains(rec.String(), "[1/5] StopSystem ALL") || !strings.Contains(rec.String(), "[2/5] Wait until D00 (00) is stopped") ||
+		!strings.Contains(rec.String(), "ok all processes GRAY") || !strings.Contains(rec.String(), "[5/5] StopService ASCS01 (01)") {
 		t.Errorf("progress:\n%s", rec)
 	}
 
 	rec.lines = nil
 	fake.On(sc+"00 -function StartService ABC", okBody("StartService"), 0).On(sc+"01 -function StartService ABC", okBody("StartService"), 0).
-		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0).
-		On(sc+"00 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).On(sc+"01 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0)
+		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0)
 	if err := Start(context.Background(), e); err != nil {
 		t.Fatalf("start: %v\n%s", err, rec)
 	}
-	if !strings.Contains(rec.String(), "[3/5] StartSystem ALL") {
+	if !strings.Contains(rec.String(), "[3/5] StartSystem ALL") || !strings.Contains(rec.String(), "[5/5] Wait until ASCS01 (01) is running") ||
+		!strings.Contains(rec.String(), "ok all processes GREEN") {
 		t.Errorf("progress:\n%s", rec)
 	}
 	states := Probe(context.Background(), e)
 	if IsStopped(states) {
 		t.Error("GREEN instances reported as stopped")
 	}
-	fake.On(sc+"00 -function GetProcessList", connRefused, 1).On(sc+"01 -function GetProcessList", procsGray, 4)
+	fake.OnSeq(sc+"00 -function GetProcessList", exec.Result{Stdout: connRefused, ExitCode: 1})
+	fake.OnSeq(sc+"01 -function GetProcessList", gray)
 	if !IsStopped(Probe(context.Background(), e)) {
 		t.Error("down/GRAY instances reported as running")
 	}

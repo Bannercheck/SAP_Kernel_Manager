@@ -42,18 +42,15 @@ func ControlOp(args []string) int {
 	}
 	haDown := ha.Installed && !ha.Healthy()
 	opts := []choice{{"S", "Start SAP", []string{"start"}}, {"K", "Stop SAP (Kapat)", []string{"stop", "kapat"}}, {"I", "One instance", []string{"instance"}}}
-	if haDown {
-		label := "Start SAP Host Agent"
-		if ha.Running {
-			label = "Restart SAP Host Agent"
+	if haDown || len(down) > 0 { // one key for everything that must run before sapcontrol works
+		var what []string
+		if haDown {
+			what = append(what, "Host Agent")
 		}
-		opts = append(opts, choice{"H", label, []string{"hostagent", "host"}})
-	}
-	if len(down) > 0 {
-		opts = append(opts, choice{"V", fmt.Sprintf("Start sapstartsrv (%d)", len(down)), []string{"sapstartsrv", "service"}})
-	}
-	if haDown && len(down) > 0 {
-		opts = append(opts, choice{"A", "Start both", []string{"all", "hepsi"}})
+		if len(down) > 0 {
+			what = append(what, fmt.Sprintf("%d sapstartsrv", len(down)))
+		}
+		opts = append(opts, choice{"F", "Start stopped services (" + strings.Join(what, ", ") + ")", []string{"fix", "services"}})
 	}
 	switch choose("", append(opts, mainMenu)...) {
 	case "S":
@@ -62,12 +59,8 @@ func ControlOp(args []string) int {
 		return runStop(ctx, e)
 	case "I":
 		return instanceMenu(ctx, e, states)
-	case "H":
-		return runServices(ctx, e, true, nil)
-	case "V":
-		return runServices(ctx, e, false, down)
-	case "A":
-		return runServices(ctx, e, true, down)
+	case "F":
+		return runServices(ctx, e, haDown, down)
 	}
 	return ExitOK
 }

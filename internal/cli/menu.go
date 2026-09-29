@@ -141,6 +141,7 @@ func SummaryLines(rep *status.Report, pal ui.Palette) []string {
 		rows = append(rows, []string{hostAgentBadge(pal, ha), "SAP Host Agent", "", rep.Host.Hostname, "Kernel " + ha.Version.String(), strings.Join(procs, "  ")})
 	}
 	lines := ui.Table("", rows)
+	lines = append(lines, syncWarnings(rep, pal)...)
 	if sl := ServiceLines(rep, pal); len(sl) > 0 {
 		lines = append(lines, "")
 		lines = append(lines, sl...)

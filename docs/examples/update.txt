@@ -1,6 +1,6 @@
 $ ./kernelman.sh              # menü · 6 ⏎ y ⏎ y ⏎ m ⏎ q
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 22:07
+  Hostname [1mvm[0m · User root · 2026-09-29 06:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -29,7 +29,7 @@ $ ./kernelman.sh              # menü · 6 ⏎ y ⏎ y ⏎ m ⏎ q
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5)   SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
+   5)   SAP Stop / Start      [90mS = start, K = stop the system, I = one instance, F = start stopped services (Host Agent, sapstartsrv)[0m
    6)   Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m
@@ -45,16 +45,16 @@ Select an operation (number or name, q to quit): 6
     /usr/sap/ABC/ASCS01/exe
 
   [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 (sapstartsrv down)   [31m●[0m ASCS01 (sapstartsrv down)
-  [32m✔[0m backup from today: /sapmnt/ABC/exe/uc/linuxx86_64_20260928
-  [90mscanning the whole server (/) including every user's home directory for .SAR files placed today (2026-09-28); system directories, kernel directories and backups are skipped[0m
+  [32m✔[0m backup from today: /sapmnt/ABC/exe/uc/linuxx86_64_20260929
+  [90mscanning the whole server (/) including every user's home directory for .SAR files placed today (2026-09-29); system directories, kernel directories and backups are skipped[0m
   [90m14 directories scanned[0m
 
   [36mArchives placed on this server today, in apply order (lowest patch first)[0m
     [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m    [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
-    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
-    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-28 22:07  /home/tcxxx/Downloads
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    4.0 KB  2026-09-29 06:37  /home/tcxxx/Downloads
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    4.0 KB  2026-09-29 06:37  /home/tcxxx/Downloads
+    3  dw_421-80007541.sar        dw                      421    4.0 KB  2026-09-29 06:37  /home/tcxxx/Downloads
+    4  dw_423-80007541.sar        dw                      423    4.0 KB  2026-09-29 06:37  /home/tcxxx/Downloads
     → target level after apply: [1mpatch 423[0m   · [90m2 older archive(s) ignored[0m
 
 
@@ -64,23 +64,24 @@ Select an operation (number or name, q to quit): 6
   [90m! 13 file(s) in /sapmnt/ABC/exe/uc/linuxx86_64 belong to root (SAPCAR, SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work): SAPCAR as root will fail on them — run KernelMan as root[0m
   [90m! 7 file(s) in /usr/sap/ABC/D00/exe belong to root (SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work, dw_421-80007541.sar): SAPCAR as root will fail on them — run KernelMan as root[0m
   [90m! 7 file(s) in /usr/sap/ABC/ASCS01/exe belong to root (SAPEXEDB_403-80007808.SAR, SAPEXE_403-80007807.SAR, disp+work, dw_421-80007541.sar): SAPCAR as root will fail on them — run KernelMan as root[0m
-  [1/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
-  [2/17] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
-  [3/17] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m1 files[0m
-  [4/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m1 files[0m
-  [5/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m6 files[0m
-  [6/17] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m6 files[0m
-  [7/17] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m1 files[0m
-  [8/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m1 files[0m
-  [9/17] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m6 files[0m
-  [10/17] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m6 files[0m
-  [11/17] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m1 files[0m
-  [12/17] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m1 files[0m
-  [13/17] chown -R abcadm:sapsys /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
-  [14/17] chown -R abcadm:sapsys /usr/sap/ABC/D00/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
-  [15/17] chown -R abcadm:sapsys /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
-  [16/17] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
-  [17/17] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 Patch 423[0m
+  [1/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
+  [2/18] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m6 files[0m
+  [3/18] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m1 files[0m
+  [4/18] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90m1 files[0m
+  [5/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m6 files[0m
+  [6/18] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m6 files[0m
+  [7/18] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m1 files[0m
+  [8/18] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /usr/sap/ABC/D00/exe ... [32mok[0m  [90m1 files[0m
+  [9/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m6 files[0m
+  [10/18] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m6 files[0m
+  [11/18] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m1 files[0m
+  [12/18] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90m1 files[0m
+  [13/18] chown -R abcadm:sapsys /sapmnt/ABC/exe/uc/linuxx86_64 ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [14/18] chown -R abcadm:sapsys /usr/sap/ABC/D00/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [15/18] chown -R abcadm:sapsys /usr/sap/ABC/ASCS01/exe ... [32mok[0m  [90mskipped: run as root later (running as root)[0m
+  [16/18] saproot.sh ABC ... [32mok[0m  [90mskipped: needs root (later: /sapmnt/ABC/exe/uc/linuxx86_64/saproot.sh ABC)[0m
+  [17/18] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 Patch 423[0m
+  [18/18] Verify every instance directory matches the central kernel ... [32mok[0m  [90mD00/exe, ASCS01/exe = central[0m
 
   [32m✔[0m Kernel ABC: 793 Patch 200 → [1m793 Patch 423[0m
   [33m![0m not root: run chown -R abcadm:sapsys and saproot.sh ABC as root before starting
@@ -91,8 +92,8 @@ Select an operation (number or name, q to quit): 6
   [1/5] StartService D00 (00) ... [32mok[0m  [90msapstartsrv up[0m
   [2/5] StartService ASCS01 (01) ... [32mok[0m  [90msapstartsrv up[0m
   [3/5] StartSystem ALL ... [32mok[0m  [90minstance 00[0m
-  [4/5] WaitforStarted D00 (00) ... [32mok[0m  [90mall processes GREEN[0m
-  [5/5] WaitforStarted ASCS01 (01) ... [32mok[0m  [90mall processes GREEN[0m
+  [4/5] Wait until D00 (00) is running ... [32mok[0m  [90mall processes GREEN[0m
+  [5/5] Wait until ASCS01 (01) is running ... [32mok[0m  [90mall processes GREEN[0m
   [32m✔[0m system ABC started
   [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
 
@@ -100,7 +101,7 @@ Select an operation (number or name, q to quit): 6
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
 [1mKernelMan — SAP Kernel Manager[0m   [90mdev[0m
-  Hostname [1mvm[0m · User root · 2026-09-28 22:07
+  Hostname [1mvm[0m · User root · 2026-09-29 06:37
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [33m⬤[0m [33m[1mPARTIAL[0m[0m  ABC             AS ABAP  sapci     Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m  sapapp2/02 [31m●[0m
@@ -129,7 +130,7 @@ Select an operation (number or name, q to quit): 6
    2)   Kernel Backup         [90mcopy every kernel directory next to itself as <name>_<date>, list them[0m
    3)   Kernel Download       [90moptional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download[0m
    4)   Kernel File Transfer  [90mfind today's *.SAR anywhere on this server, copy into every kernel directory, chown[0m
-   5)   SAP Stop / Start      [90mS = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles[0m
+   5)   SAP Stop / Start      [90mS = start, K = stop the system, I = one instance, F = start stopped services (Host Agent, sapstartsrv)[0m
    6) [32m✔[0m Kernel Update         [90mextract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start[0m
    7)   Kernel Rollback       [90mcopy each directory's latest <name>_<date> backup back[0m
    8)   Send to Other Servers [90mscp today's archives and KernelMan itself to other hosts, verify with cksum[0m

@@ -38,7 +38,6 @@ func FilesOp(args []string) int {
 	sid := fs.String("sid", "", "SAP system")
 	from := fs.String("from", "", "search only this directory instead of the whole server")
 	yes := fs.Bool("yes", false, "do not ask for confirmation")
-	central := fs.Bool("central", false, "copy only into the central kernel directory (DIR_CT_RUN)")
 	if err := fs.Parse(args); err != nil {
 		return ExitUsage
 	}
@@ -49,8 +48,8 @@ func FilesOp(args []string) int {
 		return fail(err)
 	}
 	e := newEnv(t)
-	chooseScope(ctx, e, *central, *yes)
-	files, ok := pickArchives(ctx, t, *from, *yes, len(e.KernelDirs()))
+	noteRemote(ctx, e)
+	files, ok := pickArchives(ctx, t, *from, *yes, len(kernelDirs(t)))
 	if !ok {
 		return ExitError
 	}

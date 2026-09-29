@@ -21,7 +21,6 @@ func UpdateOp(args []string) int {
 	from := fs.String("from", "", "download directory (when the archives were not copied with Kernel Files)")
 	yes := fs.Bool("yes", false, "do not ask for confirmation")
 	start := fs.Bool("start", false, "start the system afterwards without asking")
-	central := fs.Bool("central", false, "extract only into the central kernel directory (DIR_CT_RUN)")
 	if err := fs.Parse(args); err != nil {
 		return ExitUsage
 	}
@@ -41,7 +40,7 @@ func UpdateOp(args []string) int {
 		return ExitError
 	}
 
-	remote := chooseScope(ctx, e, *central, *yes)
+	remote := noteRemote(ctx, e)
 	if run := runningRemote(remote); len(run) > 0 {
 		fmt.Fprintf(stdout, "  %s instances on other hosts still run (%s): stop the whole system first (5 → K stops every host)\n", pal.Paint(ui.Yellow, "!"), strings.Join(run, ", "))
 		if !*yes && !confirm("Continue anyway?") {
@@ -49,12 +48,12 @@ func UpdateOp(args []string) int {
 			return ExitError
 		}
 	}
-	files, ok := pickArchives(ctx, t, *from, true, len(e.KernelDirs()))
+	files, ok := pickArchives(ctx, t, *from, true, len(kernelDirs(t)))
 	if !ok {
 		return ExitError
 	}
 	dir := filepath.Dir(files[0].Path)
-	if !*yes && !confirm(fmt.Sprintf("Extract these %d archive(s) into %d kernel director%s in this order?", len(files), len(e.KernelDirs()), plural(len(e.KernelDirs()), "y", "ies"))) {
+	if !*yes && !confirm(fmt.Sprintf("Extract these %d archive(s) into %d kernel director%s in this order?", len(files), len(kernelDirs(t)), plural(len(kernelDirs(t)), "y", "ies"))) {
 		fmt.Fprintln(stdout, "  cancelled")
 		return ExitError
 	}
@@ -67,12 +66,12 @@ func UpdateOp(args []string) int {
 		return fail(err)
 	}
 	fmt.Fprintf(stdout, "\n  %s Kernel %s: %s → %s\n", pal.Check(), t.SID, res.Before, pal.Paint(ui.Bold, res.After.Long()))
-	if e.CentralOnly && len(remote) > 0 {
+	if len(remote) > 0 {
 		var hosts []string
 		for _, r := range remote {
 			hosts = append(hosts, r.Label())
 		}
-		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, "central copy done: "+strings.Join(hosts, ", ")+" take the new kernel from "+t.KernelDir+" via sapcpe when the system starts (5 → S); check with 1) SAP Status"))
+		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, strings.Join(hosts, ", ")+" take the new kernel from "+t.KernelDir+" via sapcpe when the system starts (5 → S); check with 1) SAP Status"))
 	}
 	if res.SaprootNote != "done" || res.ChownNote != "done" {
 		fmt.Fprintf(stdout, "  %s not root: run chown -R %s:%s and saproot.sh %s as root before starting\n", pal.Paint(ui.Yellow, "!"), t.SIDAdm, t.Group, t.SID)

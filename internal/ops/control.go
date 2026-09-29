@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/sap/discovery"
@@ -13,7 +14,8 @@ import (
 const (
 	defaultStopTimeout  = 10 * time.Minute
 	defaultStartTimeout = 15 * time.Minute
-	waitDelay           = 10 * time.Second
+	waitDelay           = 5 * time.Second
+	waitReport          = 30 * time.Second
 )
 
 // InstanceState is what SAP Stop/Start need to know per local instance.
@@ -67,7 +69,7 @@ func (e *Env) startTimeout() time.Duration {
 }
 
 // Stop stops the whole SAP system and then every local sapstartsrv:
-// StopSystem ALL → WaitforStopped per instance → StopService per instance.
+// StopSystem ALL → wait per instance → StopService per instance.
 func Stop(ctx context.Context, e *Env) error {
 	insts := e.T.Instances
 	n := 1 + 2*len(insts)
@@ -89,12 +91,8 @@ func Stop(ctx context.Context, e *Env) error {
 	i := 1
 	for _, in := range insts {
 		i++
-		if err := e.step(i, n, fmt.Sprintf("WaitforStopped %s (%s)", in.Name, in.Nr), func() (string, error) {
-			err := e.T.Client(e.R, in.Nr, time.Minute).WaitforStopped(ctx, e.stopTimeout(), waitDelay)
-			if sapcontrol.IsConnRefused(err) {
-				return "sapstartsrv already down", nil
-			}
-			return "all processes GRAY", err
+		if err := e.step(i, n, fmt.Sprintf("Wait until %s (%s) is stopped", in.Name, in.Nr), func() (string, error) {
+			return waitProcesses(ctx, e, in.Name, in.Nr, "GRAY", e.stopTimeout())
 		}); err != nil {
 			return err
 		}
@@ -115,10 +113,15 @@ func Stop(ctx context.Context, e *Env) error {
 }
 
 // Start starts every local sapstartsrv as <sid>adm, then the whole system:
-// StartService per instance → StartSystem ALL → WaitforStarted per instance.
+// StartService per instance → StartSystem ALL → wait per instance.
 func Start(ctx context.Context, e *Env) error {
 	insts := e.T.Instances
 	n := 1 + 2*len(insts)
+	for _, s := range KernelSync(e) { // an instance directory at another level than the central kernel will not start
+		if s.Checked > 0 && !s.InSync() {
+			e.Pr.Info(fmt.Sprintf("! %s is not at the central kernel level (%s differ): run 6) Kernel Update so every directory is extracted", s.Dir, strings.Join(s.Differs, ", ")))
+		}
+	}
 	i := 0
 	for _, in := range insts {
 		i++
@@ -134,10 +137,10 @@ func Start(ctx context.Context, e *Env) error {
 		}
 	}
 	for _, r := range RemoteInstances(ctx, e) { // StartSystem ALL only reaches a running sapstartsrv
-		c := e.T.Client(e.R, r.Nr, 30*time.Second)
+		c := e.T.Client(e.R, r.Nr, 15*time.Second)
 		c.Host = r.Host
 		if _, err := c.GetProcessList(ctx); sapcontrol.IsConnRefused(err) {
-			e.Pr.Info(fmt.Sprintf("! %s: sapstartsrv not running there, StartSystem ALL cannot start that instance — on %s run KernelMan 5 → V (or sapcontrol -nr %s -function StartService %s)", r.Label(), r.Host, r.Nr, e.T.SID))
+			e.Pr.Info(fmt.Sprintf("! %s: sapstartsrv not running there, StartSystem ALL cannot start that instance — on %s run KernelMan 5 → F (or sapcontrol -nr %s -function StartService %s)", r.Label(), r.Host, r.Nr, e.T.SID))
 		}
 	}
 	i++
@@ -149,8 +152,8 @@ func Start(ctx context.Context, e *Env) error {
 	}
 	for _, in := range insts {
 		i++
-		if err := e.step(i, n, fmt.Sprintf("WaitforStarted %s (%s)", in.Name, in.Nr), func() (string, error) {
-			return "all processes GREEN", e.T.Client(e.R, in.Nr, time.Minute).WaitforStarted(ctx, e.startTimeout(), waitDelay)
+		if err := e.step(i, n, fmt.Sprintf("Wait until %s (%s) is running", in.Name, in.Nr), func() (string, error) {
+			return waitProcesses(ctx, e, in.Name, in.Nr, "GREEN", e.startTimeout())
 		}); err != nil {
 			return err
 		}
@@ -158,16 +161,61 @@ func Start(ctx context.Context, e *Env) error {
 	return nil
 }
 
+// waitProcesses polls GetProcessList every few seconds until every process
+// of the instance shows want (GREEN or GRAY) or timeout passes, reporting
+// every half minute so a long stop or start never looks stuck. sapcontrol's
+// own WaitforStopped/WaitforStarted would block silently for the whole time.
+func waitProcesses(ctx context.Context, e *Env, name, nr, want string, timeout time.Duration) (string, error) {
+	start := e.now()
+	deadline := start.Add(timeout)
+	lastReport := start
+	for {
+		procs, err := e.T.Client(e.R, nr, 30*time.Second).GetProcessList(ctx)
+		switch {
+		case sapcontrol.IsConnRefused(err) && want == "GRAY":
+			return "sapstartsrv already down", nil
+		case err != nil:
+			return "", friendly(err, name, nr)
+		}
+		pending := 0
+		var names []string
+		for _, p := range procs {
+			if p.DispStatus != want {
+				pending++
+				if len(names) < 3 {
+					names = append(names, p.Name+" "+p.DispStatus)
+				}
+			}
+		}
+		if pending == 0 {
+			return "all processes " + want, nil
+		}
+		now := e.now()
+		if !now.Before(deadline) {
+			return "", fmt.Errorf("%s (%s): %d process(es) still not %s after %s: %s", name, nr, pending, want, timeout.Round(time.Second), strings.Join(names, ", "))
+		}
+		if now.Sub(lastReport) >= waitReport {
+			lastReport = now
+			e.Pr.Info(fmt.Sprintf("  … %s: %d process(es) not yet %s (%s), waiting up to %s", now.Sub(start).Round(time.Second), pending, want, strings.Join(names, ", "), timeout.Round(time.Second)))
+		}
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case <-time.After(waitDelay):
+		}
+	}
+}
+
 // friendly turns sapcontrol's "NIECONN_REFUSED ... plugin_fopen" into words.
 func friendly(err error, name, nr string) error {
 	if sapcontrol.IsConnRefused(err) {
-		return fmt.Errorf("sapstartsrv of %s (%s) is not running, sapcontrol cannot connect (plugin_fopen / connection refused): start it first — 5 → V", name, nr)
+		return fmt.Errorf("sapstartsrv of %s (%s) is not running, sapcontrol cannot connect (plugin_fopen / connection refused): start it first — 5 → F", name, nr)
 	}
 	return err
 }
 
 // StartInstance starts one local instance: its sapstartsrv when needed,
-// then Start and WaitforStarted. The rest of the system is left alone.
+// then Start and a wait. The rest of the system is left alone.
 func StartInstance(ctx context.Context, e *Env, nr string) error {
 	in, ok := e.instance(nr)
 	if !ok {
@@ -186,13 +234,13 @@ func StartInstance(ctx context.Context, e *Env, nr string) error {
 	}); err != nil {
 		return err
 	}
-	return e.step(3, n, fmt.Sprintf("WaitforStarted %s (%s)", in.Name, nr), func() (string, error) {
-		return "all processes GREEN", e.T.Client(e.R, nr, time.Minute).WaitforStarted(ctx, e.startTimeout(), waitDelay)
+	return e.step(3, n, fmt.Sprintf("Wait until %s (%s) is running", in.Name, nr), func() (string, error) {
+		return waitProcesses(ctx, e, in.Name, nr, "GREEN", e.startTimeout())
 	})
 }
 
-// StopInstance stops one local instance's processes (Stop, WaitforStopped);
-// its sapstartsrv keeps running so sapcontrol still answers.
+// StopInstance stops one local instance's processes (Stop, wait); its
+// sapstartsrv keeps running so sapcontrol still answers.
 func StopInstance(ctx context.Context, e *Env, nr string) error {
 	in, ok := e.instance(nr)
 	if !ok {
@@ -204,8 +252,8 @@ func StopInstance(ctx context.Context, e *Env, nr string) error {
 	}); err != nil {
 		return err
 	}
-	return e.step(2, n, fmt.Sprintf("WaitforStopped %s (%s)", in.Name, nr), func() (string, error) {
-		return "all processes GRAY", e.T.Client(e.R, nr, time.Minute).WaitforStopped(ctx, e.stopTimeout(), waitDelay)
+	return e.step(2, n, fmt.Sprintf("Wait until %s (%s) is stopped", in.Name, nr), func() (string, error) {
+		return waitProcesses(ctx, e, in.Name, nr, "GRAY", e.stopTimeout())
 	})
 }
 

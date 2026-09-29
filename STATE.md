@@ -1,6 +1,6 @@
 # STATE — kernelman ilerleme durumu
 
-Son güncelleme: 2026-09-27 · Branch: `claude/great-turing-8e8v0c` · Faz: konsol akışı v1 (1–6) yazıldı → gerçek hostta doğrulama
+Son güncelleme: 2026-09-29 · Branch: `claude/great-turing-8e8v0c` · Faz: konsol akışı v1 (1–8) yazıldı → gerçek hostta doğrulama (dağıtık sistem)
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
@@ -102,6 +102,16 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   başlatılır → `sapcontrol Start`/`Stop` + `Waitfor*`. CLI: `start/stop --nr NN`. (3) "plugin_fopen / NIECONN_REFUSED" =
   o instance'ın sapstartsrv'si kapalı: mesaj anlaşılır hale getirildi ("start it first — 5 → V"); `Start` öncesi uzak
   instance'ların sapstartsrv'si `sapcontrol -host` ile yoklanır, kapalıysa uyarı (StartSystem ALL onlara ulaşamaz).
+- 2026-09-29 · Kullanıcı: "programı beğenmedim, menüler karıştı; 'sadece merkezi' seçimi ASCS01/exe'yi güncellemedi, fark
+  etmeden sistemi açmaya uğraştım — kontrol mekanizması; start/stop takılıyor". (1) **Sadeleştirme:** `[C]/[A]` Scope sorusu
+  ve `--central` kaldırıldı — her zaman bu hosttaki tüm kernel dizinleri (eski davranış); dağıtık sistemde yalnızca bilgi
+  satırı ("other hosts … sapcpe") + sapcpe uyarısı. 5) ekranında `H/V/A` yerine tek `[F] Start stopped services`.
+  (2) **Kontrol:** `kernel.CompareDirs` her instance `exe`'sini merkezi kernel ile dosya bazında (sha256: sapstartsrv,
+  sapcontrol, disp+work, msg_server, enserver…) karşılaştırır. Update/Rollback'in son adımı "Verify every instance directory
+  matches the central kernel" — fark varsa **✘** ve tekrar Update talimatı; ana sayfa ve SAP Status'ta kırmızı uyarı satırı;
+  5 → S öncesi uyarı. (3) **Takılma:** `WaitforStopped/Started` (sessiz 10–15 dk bloklama) yerine 5 sn'de bir
+  `GetProcessList` yoklaması, 30 sn'de bir ilerleme satırı, zaman aşımında hangi süreçlerin kaldığı; uzak sapstartsrv
+  yoklaması 15 sn.
 - 2026-09-27 · Kullanıcı: indirme **isteğe bağlı** (internetsiz sunucular var). Menüde "optional, needs internet"; S-user sorulmadan önce
   SAP erişim kontrolü (HEAD launchpad, 10 s, proxy env'e saygılı); erişim yoksa açıklama + Kernel File Transfer'e yönlendirme. Diğer adımlar
   indirmeye bağımlı değil.

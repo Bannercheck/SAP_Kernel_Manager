@@ -23,7 +23,7 @@ var Ops = []Op{
 	{ID: "backup", Name: "Kernel Backup", Summary: "copy every kernel directory next to itself as <name>_<date>, list them", Menu: true, Run: BackupOp},
 	{ID: "download", Name: "Kernel Download", Summary: "optional, needs internet: S-user login, find this kernel's archives at SAP, confirm, download", Menu: true, Run: DownloadOp},
 	{ID: "files", Name: "Kernel File Transfer", Summary: "find today's *.SAR anywhere on this server, copy into every kernel directory, chown", Menu: true, Run: FilesOp},
-	{ID: "control", Name: "SAP Stop / Start", Summary: "S = start, K = stop the whole system · I = one instance · SAP Host Agent and sapstartsrv with profiles", Menu: true, Run: ControlOp},
+	{ID: "control", Name: "SAP Stop / Start", Summary: "S = start, K = stop the system, I = one instance, F = start stopped services (Host Agent, sapstartsrv)", Menu: true, Run: ControlOp},
 	{ID: "update", Name: "Kernel Update", Summary: "extract in ascending patch order in every kernel directory, chown, saproot.sh, verify, start", Menu: true, Run: UpdateOp},
 	{ID: "rollback", Name: "Kernel Rollback", Summary: "copy each directory's latest <name>_<date> backup back", Menu: true, Run: RollbackOp},
 	{ID: "ship", Name: "Send to Other Servers", Summary: "scp today's archives and KernelMan itself to other hosts, verify with cksum", Menu: true, Run: ShipOp},

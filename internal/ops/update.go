@@ -32,9 +32,6 @@ type UpdateResult struct {
 }
 
 func (e *Env) kernelDirs() []string {
-	if e.CentralOnly {
-		return []string{e.T.KernelDir}
-	}
 	if len(e.T.KernelDirs) > 0 {
 		return e.T.KernelDirs
 	}
@@ -51,7 +48,7 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 	}
 	SortForApply(files)
 	dirs := e.kernelDirs()
-	n := len(dirs)*len(files) + len(dirs) + 2 // extract per dir/file, chown per dir, saproot.sh, version
+	n := len(dirs)*len(files) + len(dirs) + 3 // extract per dir/file, chown per dir, saproot.sh, version, sync check
 	res.Before, _ = kernel.Probe(ctx, e.R, e.P, e.T.KernelDir)
 	if res.Before.Release > 0 {
 		e.Pr.Info("current kernel: " + res.Before.String())
@@ -93,7 +90,7 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 func Restore(ctx context.Context, e *Env, backups map[string]string) (*UpdateResult, error) {
 	res := &UpdateResult{}
 	dirs := e.kernelDirs()
-	n := 2*len(dirs) + 2 // copy per dir, chown per dir, saproot.sh, version
+	n := 2*len(dirs) + 3 // copy per dir, chown per dir, saproot.sh, version, sync check
 	for _, dir := range dirs {
 		b := backups[dir]
 		if st, err := os.Stat(b); b == "" || err != nil || !st.IsDir() {
@@ -144,15 +141,48 @@ func finishKernelChange(ctx context.Context, e *Env, res *UpdateResult, step, n 
 		return res, err
 	}
 	step++
-	err := e.step(step, n, "Read kernel version (disp+work -V)", func() (string, error) {
+	if err := e.step(step, n, "Read kernel version (disp+work -V)", func() (string, error) {
 		v, err := kernel.Probe(ctx, e.R, e.P, e.T.KernelDir)
 		res.After = v
 		return v.String(), err
-	})
-	if err == nil {
-		_ = e.T.SaveSnapshot(func(s *system.Snapshot) { s.LastUpdateAt = e.now() })
+	}); err != nil {
+		return res, err
 	}
-	return res, err
+	_ = e.T.SaveSnapshot(func(s *system.Snapshot) { s.LastUpdateAt = e.now() })
+	step++
+	// The control the operator asked for: no instance directory may be left
+	// at another level than the central kernel, or the system will not start.
+	return res, e.step(step, n, "Verify every instance directory matches the central kernel", func() (string, error) {
+		var ok, bad []string
+		for _, s := range KernelSync(e) {
+			switch {
+			case s.Checked == 0:
+			case s.InSync():
+				ok = append(ok, filepath.Base(filepath.Dir(s.Dir))+"/"+filepath.Base(s.Dir))
+			default:
+				bad = append(bad, fmt.Sprintf("%s differs (%s)", s.Dir, strings.Join(s.Differs, ", ")))
+			}
+		}
+		if len(bad) > 0 {
+			return "", fmt.Errorf("NOT at the central kernel level: %s — run Kernel Update again so every directory is extracted", strings.Join(bad, "; "))
+		}
+		if len(ok) == 0 {
+			return "no local instance directory to compare", nil
+		}
+		return strings.Join(ok, ", ") + " = central", nil
+	})
+}
+
+// KernelSync compares every local instance directory with the central kernel directory.
+func KernelSync(e *Env) []kernel.Sync {
+	var out []kernel.Sync
+	for _, d := range e.T.KernelDirs {
+		if d == e.T.KernelDir {
+			continue
+		}
+		out = append(out, kernel.CompareDirs(e.T.KernelDir, d))
+	}
+	return out
 }
 
 // rootOwnedFiles counts regular files in dir owned by uid 0 and names a few.

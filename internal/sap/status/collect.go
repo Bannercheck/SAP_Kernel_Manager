@@ -98,6 +98,15 @@ func collectDisk(ctx context.Context, r exec.Runner, opts Options) Disk {
 	return d
 }
 
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 func hostInfo(ctx context.Context, r exec.Runner, p platform.Platform) HostInfo {
 	h := HostInfo{OS: p.Name(), Arch: p.Arch(), KernelDirName: p.KernelDirName(), Privileged: p.IsPrivileged()}
 	h.Hostname, _ = os.Hostname()
@@ -138,6 +147,14 @@ func collectSystem(ctx context.Context, r exec.Runner, p platform.Platform, scPa
 		}
 	}
 	sys.Kernel, sys.KernelSource = kernelVersion(ctx, r, p, ref, &sys, local)
+	if central := firstNonEmpty(sys.GlobalKernelDir, sys.DirCtRun); central != "" {
+		for i := range sys.Instances {
+			if in := &sys.Instances[i]; in.Local && in.DirExecutable != "" {
+				s := kernel.CompareDirs(central, in.DirExecutable)
+				in.ExeChecked, in.ExeDiffers = s.Checked, s.Differs
+			}
+		}
+	}
 	sys.Type = systemType(sys.Instances)
 	sys.Status = sapcontrol.Aggregate(statuses)
 	return sys

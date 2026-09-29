@@ -74,7 +74,9 @@ type Instance struct {
 	Profile       string               `json:"profile,omitempty"`
 	DirExecutable string               `json:"dir_executable,omitempty"` // local kernel directory
 	Features      []string             `json:"features,omitempty"`
-	Sapstartsrv   string               `json:"sapstartsrv"` // running | not running | remote | unknown
+	Sapstartsrv   string               `json:"sapstartsrv"`           // running | not running | remote | unknown
+	ExeDiffers    []string             `json:"exe_differs,omitempty"` // executables that differ from the central kernel directory
+	ExeChecked    int                  `json:"exe_checked,omitempty"` // executables compared with the central kernel directory
 	Status        string               `json:"status"`
 	Processes     []sapcontrol.Process `json:"processes,omitempty"`
 	Error         string               `json:"error,omitempty"`
