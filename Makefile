@@ -13,7 +13,7 @@ TARGETS := linux/amd64 linux/ppc64le aix/ppc64
 # developer/demo targets (no SAP, `kernelman demo` only)
 DEV_TARGETS := darwin/arm64 darwin/amd64
 
-.PHONY: build check test vet fmt cross clean examples macos package
+.PHONY: build check test vet fmt cross clean examples macos package hub hub-agents hub-dist hub-examples vuln
 
 build:
 	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/kernelman
@@ -66,6 +66,44 @@ macos: cross
 	@rm -rf dist/macos && mkdir -p dist/macos/bin
 	@cp dist/bin/$(BIN)-darwin-* dist/macos/bin/ && cp internal/ship/kernelman.sh dist/macos/ && cp docs/MACOS-DEMO.md dist/macos/README.md
 	@cd dist && rm -f kernelman-macos-demo.zip && zip -qr kernelman-macos-demo.zip macos && ls -la kernelman-macos-demo.zip
+
+# ---------------------------------------------------------------- KernelMan Hub
+# The hub embeds the agent builds for every SAP platform (internal/hub/agents/).
+HUB_TARGETS := linux/amd64 linux/ppc64le windows/amd64 darwin/arm64
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.9.0
+
+hub-agents:
+	@for t in $(TARGETS); do \
+	  os=$${t%/*}; arch=$${t#*/}; out=internal/hub/agents/$(BIN)-$$os-$$arch; echo "  agent $$out"; \
+	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/kernelman || exit 1; \
+	done
+
+hub: hub-agents
+	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/kernelman-hub ./cmd/kernelman-hub
+
+# dist/hub/kernelman-hub-linux-amd64.tar.gz (RHEL/SLES: binary + systemd unit + quick start)
+# dist/hub/kernelman-hub-windows-amd64.zip  (kernelman-hub.exe + quick start)
+hub-dist: hub-agents
+	@mkdir -p dist/hub
+	@for t in $(HUB_TARGETS); do \
+	  os=$${t%/*}; arch=$${t#*/}; ext=""; [ $$os = windows ] && ext=.exe; \
+	  d=dist/hub/kernelman-hub-$$os-$$arch; mkdir -p $$d; echo "  $$d/kernelman-hub$$ext"; \
+	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$d/kernelman-hub$$ext ./cmd/kernelman-hub || exit 1; \
+	  cp docs/HUB.md $$d/README.md; \
+	  if [ $$os = linux ]; then cp scripts/kernelman-hub.service $$d/; (cd dist/hub && tar czf kernelman-hub-$$os-$$arch.tar.gz kernelman-hub-$$os-$$arch); \
+	  else (cd dist/hub && zip -qr kernelman-hub-$$os-$$arch.zip kernelman-hub-$$os-$$arch); fi; \
+	done
+	@cd dist/hub && sha256sum *.tar.gz *.zip > SHA256SUMS && ls -la *.tar.gz *.zip
+
+# Screenshots of the dashboard (demo mode, headless Chromium through Playwright)
+hub-examples:
+	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/kernelman-hub ./cmd/kernelman-hub
+	@./bin/kernelman-hub --demo --listen 127.0.0.1:18090 --no-browser >/dev/null 2>&1 & pid=$$!; sleep 4; \
+	  NODE_PATH=$$(npm root -g) node scripts/hub-screens.cjs http://127.0.0.1:18090 docs/examples; rc=$$?; kill $$pid; exit $$rc
+
+# Known vulnerabilities in the code and its dependencies (Go vulnerability database)
+vuln:
+	GOTOOLCHAIN=$$(go env GOVERSION) go run $(GOVULNCHECK) ./...
 
 clean:
 	rm -rf bin dist

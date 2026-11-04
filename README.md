@@ -7,7 +7,11 @@ arşivlerini bulur, onayınızla `/usr/sap/download`'a indirir; MFA kodu termina
 **8** Send to Other Servers (bugünkü SAR'lar + KernelMan'in kendisi `scp` ile diğer hostlara, `cksum` doğrulamalı).
 Sorular tuşla cevaplanır: `Y`/`N`, `S`/`K`, `M` ana menü.
 
-- Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+**KernelMan Hub:** aynı işlemleri tek bir sunucudan (RHEL veya Windows) bütün SAP sunucularında web panosuyla yapar —
+SSH ile bağlanır (root, `<sid>adm` ya da domain kullanıcısı + sudo), ajanı kendisi kopyalar, her sistem varsayılan salt-okunurdur.
+Hızlı başlangıç: [`docs/HUB.md`](docs/HUB.md) · ekranlar: `docs/examples/hub-*.png` · deneme: `kernelman-hub --demo`.
+
+- Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (hub: §11)
 - İlerleme / yol haritası: [`STATE.md`](STATE.md)
 - Geliştirme kuralları: [`CLAUDE.md`](CLAUDE.md)
 

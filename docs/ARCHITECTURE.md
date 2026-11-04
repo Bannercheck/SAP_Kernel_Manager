@@ -321,3 +321,33 @@ en son açılır ve kernel `793 patch 423` olur. Kernel dizini sapstartsrv kapal
 3. Paket deposu paylaşımlı NFS'te mi tutulacak? Varsayılan: evet, `repo_dir` yapılandırılabilir.
 4. Windows için hedef: sadece tek host (global host) mı? Varsayılan: evet.
 5. Binary adı `kernelman` uygun mu?
+
+## 11. KernelMan Hub — tek sunucudan web panosu (2026-11-04)
+
+```
+ Tarayıcı ──HTTPS(8443)/HTTP(127.0.0.1:8090)──▶ kernelman-hub (RHEL veya Windows)
+                                                 ├─ Store     hub.json (0600): envanter, pinlenmiş host anahtarları, ayarlar, kilitler
+                                                 ├─ Vault     admin parolası → PBKDF2-SHA256 600k → AES-256-GCM (SSH parolaları)
+                                                 ├─ Library   tarayıcıdan yüklenen SAR/SAPCAR (sha256 + POSIX cksum)
+                                                 ├─ Jobs      tek işçi kuyruğu, adımlar, satır satır konsol (SSE), jobs/<id>.json
+                                                 └─ Remote    SSH (golang.org/x/crypto/ssh) │ demo landscape
+                                                        │
+             ┌──────────────────────────────────────────┼──────────────────────────────┐
+         prdascs (ASCS01)                        prdapp1 (D00)  …                 prdappN
+         ~/.kernelman/agent/kernelman  veya  /var/tmp/kernelman-<user>/kernelman  (sudo modlarında)
+         kernelman status --output json · backup --yes · files --yes --from <push dir> · stop · update --yes · start · rollback --yes
+```
+
+* **Ajan modeli:** iş mantığı yeniden yazılmaz. Hub, hostun `uname -s/-m` bilgisine göre gömülü ajanı (`kernelman-linux-amd64`,
+  `-linux-ppc64le`, `-aix-ppc64`) kopyalar (`BUILD` dosyasındaki özet farklıysa), alt komutlarını `env KERNELMAN_COLOR=never` ile çalıştırır.
+  Komutlar her oturum kabuğunda (sh, ksh, bash, **csh**) aynı çalışsın diye `/bin/sh -c '<tek satır betik>' km <tırnaklı argümanlar>` biçimindedir.
+* **Kimlik:** giriş kullanıcısı (root / `<sid>adm` / domain `user@domain`) + "Run operations as": giriş kullanıcısı, `sudo -u <sid>adm`, `sudo`.
+  sudo parolası stdin'den (`sudo -S -p ''`). Durum okuma giriş kullanıcısıyla (root modunda root ile).
+* **Planlayıcı (`hub.Plan`):** hostlar merkezi servisler (ASCS/SCS) önce sıralanır. Kernel Update = ön kontrol (her host) → arşivleri gönder
+  + `cksum` → stop (her host) → update (her host; yedek + `SAPCAR` + chown + saproot + `disp+work -V` + exe senkron doğrulaması) →
+  **sistem geneli doğrulama** (her instance exe = merkezi kernel, hedef patch) → start (her host). İlk hatada iş durur.
+* **Güvenlik:** STATE.md karar günlüğü 2026-11-04 (kilit, SID onayı, ön kontrol, doğrulama, cksum, host key pinleme, CSRF, CSP, TLS, oturum).
+* **Pano:** `internal/hub/static` (gömülü, harici kaynak yok). Genel bakış: KPI'lar, arama + filtreler, eşit boy sistem kartları
+  (SID · durum · kernel), karta tıklayınca detay penceresi (hostname, instance no, OS, DB, disk, exe senkronu, işlemler). İş sayfası: adımlar + canlı konsol.
+* **Paketler:** `make hub-dist` → `kernelman-hub-linux-amd64.tar.gz` (binary + systemd unit + `docs/HUB.md`), `…-windows-amd64.zip`.
+  Ekran görüntüleri: `make hub-examples` (demo + Playwright). Zafiyet taraması: `make vuln`.

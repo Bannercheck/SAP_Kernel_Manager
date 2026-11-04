@@ -18,9 +18,13 @@
 7. If a step turns out too big for one session, split it in `STATE.md` and finish the first part cleanly.
 
 ## Code rules
-- Go, stdlib-first. Allowed deps: `gopkg.in/yaml.v3`, `golang.org/x/sys`, `golang.org/x/term`.
-  Any new dependency needs a line in `STATE.md` → "Karar günlüğü" with the reason.
-- `CGO_ENABLED=0`. Unix only: must cross-compile for linux/amd64, linux/ppc64le, aix/ppc64 (`make cross`). Windows is out of scope.
+- Go 1.27.x (latest patch, `toolchain` line in go.mod), stdlib-first. Allowed deps: `gopkg.in/yaml.v3`, `golang.org/x/sys`,
+  `golang.org/x/term`, `golang.org/x/crypto` (hub SSH only). Keep them at the latest release; `make vuln` (govulncheck) must report
+  no vulnerability the code is affected by. Any new dependency needs a line in `STATE.md` → "Karar günlüğü" with the reason.
+- `CGO_ENABLED=0`. The agent (`cmd/kernelman`) is Unix only: linux/amd64, linux/ppc64le, aix/ppc64 (`make cross`).
+  The hub (`cmd/kernelman-hub`, `internal/hub`) also runs on Windows; it reaches SAP hosts only over SSH and runs the agent there.
+- Hub UI (`internal/hub/static`): no third-party JS/CSS/fonts, every interpolated value goes through the escaping `html` template,
+  no inline styles (CSP). Every state-changing API needs the `X-KernelMan` header; host secrets never leave the hub unsealed.
 - OS-specific code lives only in `internal/platform` behind build tags. Everything else is OS-agnostic.
 - Never call SAP binaries (sapcontrol, SAPCAR, disp+work, …) directly from business logic;
   go through `internal/exec.Runner` so it is testable with a fake.

@@ -12,3 +12,5 @@ coverage.*
 .vscode/
 *.swp
 .DS_Store
+# agent builds embedded into the hub by `make hub`
+/internal/hub/agents/kernelman-*

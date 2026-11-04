@@ -1,9 +1,15 @@
 # STATE — kernelman ilerleme durumu
 
-Son güncelleme: 2026-09-29 · Branch: `claude/great-turing-8e8v0c` · Faz: konsol akışı v1 (1–8) yazıldı → gerçek hostta doğrulama (dağıtık sistem)
+Son güncelleme: 2026-11-04 · Branch: `claude/great-turing-8e8v0c` · Faz: **H — KernelMan Hub** (tek sunucudan web panosu, H1 bitti) · konsol akışı v1 (1–8) hazır
 Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı güncelle → commit+push.
 
 ## NEXT
+- [ ] **H2 — Hub'ı gerçek DEV/TEST sistemlerinde doğrula:** kullanıcı `kernelman-hub-linux-amd64.tar.gz`'yi RHEL'e açar, `./kernelman-hub`,
+      DEV ASCS + app hostlarını (sidadm veya domain kullanıcısı + sudo) ekler; önce yalnızca okuma (kartlar, detay penceresi), sonra DEV kilidini açıp
+      Backup → Kernel Update. Hata/ekran görüntüleri ve iş loglarını ("Download log") gönderir. Bulgulara göre: gerçek `status --output json` örnekleri
+      golden test olur; sudo/`/var/tmp` noexec/AD kullanıcı farkları düzeltilir.
+- [ ] Hub sonrası (önerilen sıra): H3 iş geçmişi filtresi + tekrar çalıştır; H4 PRD için "bakım penceresi" zamanlaması; H5 rol tabanlı kullanıcılar
+      (salt-okur operatör); H6 hub üzerinden Kernel Download (SAP'ye çıkışı olan tek makine).
 - [ ] **Kernel Download'ı gerçek SAP'ye karşı doğrula:** kullanıcı 3'ü çalıştırır; takılırsa `~/.kernelman/swdc.log` gönderir (parola içermez).
 - [ ] **Gerçek hostta doğrulama.** Kullanıcı Linux/AIX SAP hostunda `./kernelman.sh` çalıştırıp (root veya `<sid>adm`) menüden 1 → 2 → 3 → 4(K) → 5 → 4(S)
       akışını dener; çıktıları ve hataları gönderir. Golden test verisi olarak gerçek `sapcontrol`, `saphostctrl`, `disp+work -V`, `SAPCAR -xvf` çıktıları eklenir.
@@ -28,7 +34,36 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - Windows: yalnızca tek host (global host).
 - Binary adı `kernelman`.
 
+## Faz H — KernelMan Hub (2026-11-04)
+- [x] H1 — `cmd/kernelman-hub` + `internal/hub`: envanter, şifreli kasa, SSH (x/crypto), ajan dağıtımı, durum toplama, iş kuyruğu + SSE konsol,
+      planlayıcı (merkezi host önce), güvenlik kilitleri, demo landscape, Liquid Glass pano (bilgi kartları, filtre, detay penceresi), paketler.
+- [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT)
+
 ## Karar günlüğü
+- 2026-11-04 · Kullanıcı: "tek sunucudan bütün sunucularda kernel güncellemesini dashboard'dan yapalım; Windows'uma ya da RHEL'e kurulabilsin".
+  **KernelMan Hub** (ARCHITECTURE §11): tek binary `kernelman-hub` (windows/amd64, linux/amd64, linux/ppc64le, darwin); SAP hostlarına
+  SSH ile bağlanır, mevcut `kernelman` ajanını (gömülü: linux-amd64, linux-ppc64le, aix-ppc64) kopyalar ve alt komutlarını çalıştırır —
+  iş mantığı tekrar yazılmadı, CLI'da test edilen kod kullanılır. Ajan çıktısı satır satır SSE ile tarayıcıya akar.
+  CLAUDE.md'deki "Windows kapsam dışı" kuralı **yalnızca ajan** için geçerli; hub Windows'ta çalışır.
+- 2026-11-04 · Kullanıcı: "her şeyi en güncel yap, zafiyetlerden etkilenmeyelim". Go **1.27.3** (`toolchain go1.27.3`), yeni bağımlılık
+  **golang.org/x/crypto v0.58.0** (SSH istemcisi; stdlib'de yok — gerekçe: parola/keyboard-interactive/anahtar ile giriş, host key pinleme, AIX dahil
+  her Unix), x/sys v0.49.0. `make vuln` = govulncheck v1.9.0: **kodumuz 0 zafiyetten etkileniyor**; tek modül bulgusu GO-2026-5932
+  (x/crypto/openpgp, kullanmıyoruz; etiketli düzeltme sürümü henüz yok). Ön yüzde üçüncü taraf JS/CSS/font yok (kapalı ağ, tedarik zinciri riski yok).
+- 2026-11-04 · Kullanıcı: "her sistem için çok ince çalışsın, yoksa büyük patlarız". Hub kuralları: (1) her SID varsayılan **salt-okunur**,
+  açma 8 saat sürer; (2) stop/update/rollback için SID yeniden yazılır, plan önizlemesi; (3) app hostu hub'da yoksa sistem güncellemesi
+  reddedilir; (4) ön kontrol (SID, DIR_CT_RUN, ≥2 GB boş); (5) start'tan önce her instance exe'si merkezi kernel ile dosya dosya
+  karşılaştırılır — fark varsa SAP başlatılmaz; (6) tek iş, iptal mevcut adımdan sonra (SAPCAR yarıda kesilmez); (7) arşivler hostta
+  `cksum` ile doğrulanır; (8) host anahtarı ilk bağlantıda pinlenir, değişirse ret; (9) SSH parolaları admin parolasından PBKDF2 (600k) ile
+  türetilen anahtarla AES-256-GCM; (10) oturum çerezi HttpOnly+SameSite=Strict, değiştiren her istekte `X-KernelMan` başlığı (CSRF),
+  CSP `'self'`, loopback dışı dinlemede zorunlu TLS (kendinden imzalı, parmak izi konsolda), 5 hatalı girişte 1 dk kilit.
+- 2026-11-04 · Kullanıcı: "sidadm ve domain kullanıcımla da yapabilsin, root şifreleri paylaşılmıyor". Host başına **Run operations as**:
+  giriş kullanıcısı (root/`<sid>adm`) · `sudo -u <sid>adm` · `sudo` (root); sudo parola isterse giriş parolası `sudo -S` ile stdin'den
+  verilir (komut satırında asla). sudo modlarında ajan `/var/tmp/kernelman-<user>` (755, sahiplik `test -O` ile doğrulanır; sidadm
+  domain kullanıcısının ev dizinine giremez). Kullanıcı adı `user@domain` olabilir; host/kullanıcı izin listesi regex'i (kabuk karakteri yok).
+- 2026-11-04 · Kullanıcı tasarım geri bildirimleri: "Liquid Glass" (aurora arka plan, `backdrop-filter` cam paneller, açık/koyu);
+  "kartlar simetrik olsun, üstü kalabalık" → sistem kartı yalnızca **SID + durum + kernel**, tüm kartlar eşit boy (`auto-fit` ızgara,
+  `grid-auto-rows: 1fr`); hostname/instance no/OS/DB/işlemler karta tıklayınca açılan **pencerede**; uzun hostname'ler kırılır.
+  Arama + durum/tür/kernel filtreleri yenilemede korunur. RHEL'de varsayılan `0.0.0.0:8443` HTTPS ve açılışta sunucu adı + IP linkleri.
 - 2026-09-27 · Kullanıcı: diğer sunuculara kopyalama + KernelMan'in kendisi de gitsin → menü 8 **Send to Other Servers** (`internal/ship`):
   bugünkü SAR'lar + KernelMan dağıtımı (`kernelman.sh` + `bin/*`; `os.Executable()` ile bulunur, dağıtım klasöründen çalışmıyorsa gömülü
   başlatıcı + çalışan binary'den geçici olarak derlenir) → `ssh mkdir -p`, `scp -pr`, `chmod`, iki tarafta `cksum` karşılaştırması, uzak `ls -la`.

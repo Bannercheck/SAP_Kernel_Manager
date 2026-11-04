@@ -1,0 +1,29 @@
+# systemd unit for KernelMan Hub on RHEL / SLES.
+#   useradd -r -m -d /var/lib/kernelman-hub kernelman
+#   install -D -m 755 kernelman-hub /opt/kernelman-hub/kernelman-hub
+#   cp kernelman-hub.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now kernelman-hub
+#   journalctl -u kernelman-hub     # shows the dashboard links and the certificate fingerprint
+[Unit]
+Description=KernelMan Hub - SAP kernel updates for every server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=kernelman
+Group=kernelman
+ExecStart=/opt/kernelman-hub/kernelman-hub --listen 0.0.0.0:8443 --no-browser --data /var/lib/kernelman-hub
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/kernelman-hub
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
