@@ -33,6 +33,7 @@ type HostView struct {
 	HasSecret bool      `json:"has_secret"`
 	Become    string    `json:"become"`
 	SudoPW    bool      `json:"sudo_pw"`
+	Elevate   string    `json:"elevate"`
 	Label     string    `json:"label,omitempty"`
 	SIDs      []string  `json:"sids"`
 	Hostname  string    `json:"hostname,omitempty"` // as the host itself reports

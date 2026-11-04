@@ -8,10 +8,15 @@ SAP hostlarına ayrıca bir şey kurulmaz; ajan ~10 MB'lık tek dosyadır.
 ## 1. RHEL sunucuda çalıştırma (deneme)
 
 ```sh
-tar xzf kernelman-hub-linux-amd64.tar.gz
+uname -m                                   # x86_64 → linux-amd64 · ppc64le → linux-ppc64le
+unzip kernelman-hub-linux-amd64.zip        # veya: tar xzf kernelman-hub-linux-amd64.tar.gz
 cd kernelman-hub-linux-amd64
+chmod +x kernelman-hub                     # zip Mac'te açılıp tekrar kopyalandıysa çalıştırma izni gider
 ./kernelman-hub
 ```
+
+`unzip` yoksa: `dnf install unzip` ya da `.tar.gz` paketini kullanın. Hub'ı root olmadan, kendi kullanıcınızla
+çalıştırabilirsiniz (8443 ayrıcalıksız porttur); yalnızca güvenlik duvarı ve kalıcı servis için root gerekir.
 
 Açılışta erişim linkleri yazılır (sunucu adı ve her IP için), örneğin:
 
@@ -44,12 +49,15 @@ Denemek için SAP'siz demo: `kernelman-hub --demo` (giriş `admin` / `kernelman1
 | Giriş | Run operations as | Ne zaman |
 |---|---|---|
 | `devadm` (sidadm) | the login user | sidadm parolası biliniyor |
-| domain kullanıcınız | `<sid>adm via sudo` | `sudo su - devadm` / `sudo -u devadm` yetkiniz var |
-| domain kullanıcınız | `root via sudo` | sudo ile root yetkiniz var |
+| domain kullanıcınız | `<sid>adm` + Become with `sudo` | `sudo -u devadm` yetkiniz var |
+| domain kullanıcınız | `root` + Become with `sudo` / `dzdo` | sudo veya Centrify dzdo ile root yetkiniz var |
+| domain kullanıcınız | `root` + Become with **`dzdo su -`** | yalnızca `dzdo su -` izinliyse (komut `dzdo su - root -c '…'` olarak gider) |
 | `root` | the login user | root parolası paylaşılıyorsa |
 
-* sudo parola istiyorsa **"sudo asks for my password"** kutusunu işaretleyin: giriş parolası sudo'ya
-  standart girişten (`sudo -S`) verilir, komut satırına asla yazılmaz.
+* **Önerilen (saproot.sh dahil her şey):** `root` + `dzdo` (olmazsa `dzdo su -`). Ajan root'tan dosya işlerini ve
+  sapcontrol'ü `su - <sid>adm` ile yapar, `chown` ve `saproot.sh`'yi kendisi çalıştırır.
+* sudo/dzdo parola istiyorsa **"sudo / dzdo asks for my password"** kutusunu işaretleyin: giriş parolası
+  standart girişten (`-S`) verilir, komut satırına asla yazılmaz.
 * sidadm olarak her SAP adımı çalışır; yalnızca root gerektirenler (chown, `saproot.sh`, SAP Host Agent restart)
   "run as root later" olarak raporlanır.
 * sudo modlarında ajan `/var/tmp/kernelman-<kullanıcı>` dizinine kurulur (sidadm sizin ev dizininizi okuyamaz);

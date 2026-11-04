@@ -43,6 +43,13 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT)
 
 ## Karar günlüğü
+- 2026-11-04 · Kullanıcı: "saproot için root yok, sudo ile root yetkimiz var, `dzdo su -` ile root'a geçiyorum; RHEL'e kuracağım, zipli gönder".
+  Hub hostuna **Become with** eklendi: `sudo` (varsayılan) · `dzdo` (Centrify, sudo ile aynı seçenekler; parola yoksa `-n` verilmez) ·
+  `dzdo su -` / `sudo su -` (yalnızca `su -` izinli politikalar: komut `<araç> [-S -p ''] su - <kullanıcı> -c '<tek satır>'`, iç komut
+  csh dahil her login kabuğunda aynı çalışır). Önerilen: `root` + `dzdo` → ajan root olarak chown ve **saproot.sh**'yi kendisi çalıştırır.
+  Sandbox'ta yalnızca `su` izinli kullanıcı + dzdo yerine geçen betik ile gerçek SSH üzerinden tam güncelleme geçti (saproot.sh root,
+  icmbnd/sapuxuserchk root+setuid). Gerçek dzdo'nun `-S`/`-p` desteği müşteri sisteminde doğrulanacak (H2). `make hub-dist` artık Linux
+  için `.zip` de üretir; HUB.md'de `unzip` + `chmod +x` adımı.
 - 2026-11-04 · Kullanıcı: "bütün adımları kendi içinde dene, en son v9 çıkarmıştık". "v9" = gönderilen 10. ajan paketi (Mac'te
   `kernelman-linux-aix (9).tar.gz`, commit 4aa33cf). Gerçek yollarla sahte SAP hostunda (`scripts/fakesap`) bulunan ve düzeltilen hatalar:
   (1) **SAP Stop sapstartsrv'yi de öldürüyordu** (kullanıcı: "sadece SAP'yi kapatsın") → Stop yalnızca StopSystem + bekleme; Start duran

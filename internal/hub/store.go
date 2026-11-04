@@ -29,6 +29,7 @@ type Host struct {
 	Secret  string    `json:"secret,omitempty"`   // password or key passphrase, sealed with the admin key
 	Become  string    `json:"become,omitempty"`   // run operations as: "" the login user, "root" or "sidadm" through sudo
 	SudoPW  bool      `json:"sudo_pw,omitempty"`  // sudo asks for a password: give it the login password (sudo -S)
+	Elevate string    `json:"elevate,omitempty"`  // how: "" sudo, "dzdo" (Centrify), "sudo-su" / "dzdo-su" (… su - <user> -c)
 	Label   string    `json:"label,omitempty"`    // free text shown next to the name
 	Added   time.Time `json:"added"`
 }
@@ -183,6 +184,14 @@ func (s *Store) PutHost(h Host) (Host, error) {
 	}
 	if h.SudoPW && (h.Become == "" || h.Auth != "password") {
 		return h, errors.New("a sudo password needs a password login and a sudo run-as mode")
+	}
+	switch h.Elevate {
+	case "", "dzdo", "sudo-su", "dzdo-su":
+	default:
+		return h, fmt.Errorf("unknown elevation %q (sudo, dzdo, sudo-su, dzdo-su)", h.Elevate)
+	}
+	if h.Become == "" {
+		h.Elevate = ""
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

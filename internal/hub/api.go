@@ -173,7 +173,7 @@ func (h *Hub) hostViews() []HostView {
 	for _, host := range h.Store.Hosts() {
 		st := h.State(host.ID)
 		v := HostView{ID: host.ID, Name: host.Name, Port: host.Port, User: host.User, Auth: host.Auth, KeyPath: host.KeyPath,
-			HasSecret: host.Secret != "", Become: host.Become, SudoPW: host.SudoPW, Label: host.Label, State: st, SIDs: []string{}}
+			HasSecret: host.Secret != "", Become: host.Become, SudoPW: host.SudoPW, Elevate: host.Elevate, Label: host.Label, State: st, SIDs: []string{}}
 		v.State.Report = nil
 		if st.Report != nil {
 			v.Hostname = st.Report.Host.Hostname
@@ -195,6 +195,7 @@ type hostForm struct {
 	Secret  string `json:"secret"` // password or passphrase in clear text; sealed before it is stored
 	Become  string `json:"become"`
 	SudoPW  bool   `json:"sudo_pw"`
+	Elevate string `json:"elevate"`
 	Label   string `json:"label"`
 }
 
@@ -205,7 +206,7 @@ func (h *Hub) apiPutHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	host := Host{ID: r.PathValue("id"), Name: f.Name, Port: f.Port, User: f.User, Auth: f.Auth, KeyPath: strings.TrimSpace(f.KeyPath),
-		Become: f.Become, SudoPW: f.SudoPW, Label: strings.TrimSpace(f.Label)}
+		Become: f.Become, SudoPW: f.SudoPW, Elevate: f.Elevate, Label: strings.TrimSpace(f.Label)}
 	if f.Secret != "" {
 		sealed, err := Seal(h.sess.vaultKey(), f.Secret)
 		if err != nil {

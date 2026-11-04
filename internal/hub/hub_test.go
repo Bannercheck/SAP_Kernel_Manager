@@ -76,12 +76,12 @@ func TestStoreValidation(t *testing.T) {
 	}
 	for _, h := range []Host{{Name: "", User: "root"}, {Name: "a b", User: "root"}, {Name: "h", User: "x;rm"}, {Name: "h;id", User: "root"}, {Name: "h", User: "$(id)"},
 		{Name: "h", User: "u", Become: "admin"},
-		{Name: "h", User: "u", SudoPW: true}} {
+		{Name: "h", User: "u", SudoPW: true}, {Name: "h", User: "u", Become: "root", Elevate: "pbrun; id"}} {
 		if _, err := s.PutHost(h); err == nil {
 			t.Errorf("accepted %+v", h)
 		}
 	}
-	if _, err := s.PutHost(Host{Name: "10.20.30.40", User: "tayfur@corp.example.com", Become: "root"}); err != nil {
+	if _, err := s.PutHost(Host{Name: "10.20.30.40", User: "tayfur@corp.example.com", Become: "root", Elevate: "dzdo-su"}); err != nil {
 		t.Errorf("domain login refused: %v", err)
 	}
 	h, err := s.PutHost(Host{Name: "sapdev01", User: "devadm", Become: "sidadm", SudoPW: true})
@@ -126,6 +126,10 @@ func TestAgentCmdRunAs(t *testing.T) {
 		{Host{User: "tayfur", Become: "sidadm", SudoPW: true}, "DEV", "km sudo -S -p '' -H -u devadm env", true},
 		{Host{User: "tayfur", Become: "root", SudoPW: true}, "", "km sudo -S -p '' env", true},
 		{Host{User: "tayfur", Become: "sidadm"}, "", "km env KERNELMAN", false}, // status reads stay with the login user
+		{Host{User: "tayfur", Become: "root", Elevate: "dzdo", SudoPW: true}, "", "km dzdo -S -p '' env", true},
+		{Host{User: "tayfur", Become: "sidadm", Elevate: "dzdo"}, "DEV", "km dzdo -H -u devadm env", false}, // dzdo: no -n
+		{Host{User: "tayfur", Become: "root", Elevate: "dzdo-su", SudoPW: true}, "", "km dzdo -S -p '' su - root -c ", true},
+		{Host{User: "tayfur", Become: "sidadm", Elevate: "sudo-su"}, "DEV", "km sudo -n su - devadm -c ", false},
 	}
 	for _, c := range cases {
 		cmd, stdin := agentCmd(Target{Host: c.host, Password: "pw"}, ri, c.sid, "stop", "--sid", "DEV")
@@ -134,6 +138,13 @@ func TestAgentCmdRunAs(t *testing.T) {
 		}
 		if strings.Contains(cmd, "pw") {
 			t.Errorf("password on the command line: %s", cmd)
+		}
+		if strings.HasSuffix(c.host.Elevate, "-su") { // the -c string is a complete, quoted command for the login shell
+			argv := splitQuoted(cmd)
+			inner := splitQuoted(argv[len(argv)-1])
+			if strings.Join(inner[4:], " ") != "env KERNELMAN_COLOR=never KERNELMAN_UNICODE=1 /var/tmp/kernelman-tayfur/kernelman stop --sid DEV" {
+				t.Errorf("su -c command: %q", inner)
+			}
 		}
 	}
 }

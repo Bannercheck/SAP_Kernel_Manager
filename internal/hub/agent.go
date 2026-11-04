@@ -155,26 +155,45 @@ func agentCmd(t Target, ri remoteInfo, sid string, args ...string) (string, io.R
 	return runAsCmd(t, sid, append([]string{"env", "KERNELMAN_COLOR=never", "KERNELMAN_UNICODE=1", ri.Agent}, args...)...)
 }
 
-// runAsCmd runs argv as the host's run-as user (sudo, sudo -u <sid>adm, or
-// the login user itself). When sudo asks for a password the login password
-// is written to its stdin (sudo -S), never put on a command line.
+// runAsCmd runs argv as the host's run-as user (root or <sid>adm), or as
+// the login user itself. The tool is sudo or Centrify's dzdo, directly or —
+// where the policy only allows "dzdo su -" — as su - <user> -c '<command>'.
+// When it asks for a password the login password is written to its stdin
+// (-S), never put on a command line.
 func runAsCmd(t Target, sid string, argv ...string) (string, io.Reader) {
-	var sudo []string
+	user := ""
 	switch {
 	case t.Host.Become == "root":
-		sudo = []string{"sudo"}
+		user = "root"
 	case t.Host.Become == "sidadm" && sid != "":
-		sudo = []string{"sudo", "-H", "-u", SIDAdm(sid)}
+		user = SIDAdm(sid)
 	}
+	if user == "" {
+		return execCmd(argv...), nil
+	}
+	tool, viaSu := "sudo", false
+	switch t.Host.Elevate {
+	case "dzdo":
+		tool = "dzdo"
+	case "sudo-su":
+		viaSu = true
+	case "dzdo-su":
+		tool, viaSu = "dzdo", true
+	}
+	pre := []string{tool}
 	var stdin io.Reader
-	if sudo != nil {
-		if t.Host.SudoPW && t.Password != "" {
-			sudo = append(sudo[:1], append([]string{"-S", "-p", ""}, sudo[1:]...)...)
-			stdin = strings.NewReader(t.Password + "\n")
-		} else {
-			sudo = append(sudo[:1], append([]string{"-n"}, sudo[1:]...)...)
-		}
-		argv = append(sudo, argv...)
+	switch {
+	case t.Host.SudoPW && t.Password != "":
+		pre = append(pre, "-S", "-p", "")
+		stdin = strings.NewReader(t.Password + "\n")
+	case tool == "sudo":
+		pre = append(pre, "-n") // never wait for a password nobody types
 	}
-	return execCmd(argv...), stdin
+	if viaSu { // the command reaches the user's login shell (csh for <sid>adm) as one quoted string
+		return execCmd(append(pre, "su", "-", user, "-c", execCmd(argv...))...), stdin
+	}
+	if user != "root" {
+		pre = append(pre, "-H", "-u", user)
+	}
+	return execCmd(append(pre, argv...)...), stdin
 }

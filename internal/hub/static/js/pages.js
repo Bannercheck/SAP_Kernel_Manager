@@ -192,7 +192,8 @@ function drawSystem(el, s, jobs) {
 }
 
 // ---------------------------------------------------------------- hosts
-const BECOME = { "": "login user", root: "root via sudo", sidadm: "<sid>adm via sudo" };
+const BECOME = { "": "login user", root: "root", sidadm: "<sid>adm" };
+const ELEVATE = { "": "sudo", dzdo: "dzdo", "sudo-su": "sudo su -", "dzdo-su": "dzdo su -" };
 
 export function hostsPage(el) {
   top("Hosts", html`<a href="#/">Overview</a>`, html`${refreshBtn}<button class="primary" data-act="add">${icon("plus")} Add host</button>`);
@@ -202,7 +203,7 @@ export function hostsPage(el) {
   mount(el, html`<div class="note">Adding a host only reads its status: the hub logs in over SSH — as root, <code>&lt;sid&gt;adm</code> or your domain user — copies the KernelMan agent and runs <code>kernelman status</code>. Host keys are pinned on first contact; passwords are stored encrypted with your hub password.</div>
   <div class="card">${hosts.length ? html`<table class="table"><thead><tr><th>Host</th><th>Login</th><th>SAP</th><th>Status</th><th>Host key</th><th></th></tr></thead><tbody>
     ${hosts.map((h) => html`<tr><td><b class="mono">${h.name}</b>${h.label ? html`<div class="muted small">${h.label}</div>` : ""}</td>
-      <td class="small"><b>${h.user}</b> · port ${h.port}<div class="muted">${h.auth === "key" ? "SSH key" : "password"} · operations as ${BECOME[h.become || ""]}${h.sudo_pw ? " (sudo password)" : ""}</div></td>
+      <td class="small"><b>${h.user}</b> · port ${h.port}<div class="muted">${h.auth === "key" ? "SSH key" : "password"} · operations as ${BECOME[h.become || ""]}${h.become ? " via " + ELEVATE[h.elevate || ""] : ""}${h.sudo_pw ? " (password)" : ""}</div></td>
       <td>${h.sids.length ? html`<div class="chips">${h.sids.map((x) => html`<a class="chip" href="#/system/${x}">${x}</a>`)}</div>` : html`<span class="muted">—</span>`}
         <div class="muted small">${h.hostname || ""}${h.state.os ? " · " + h.state.os + " " + h.state.machine : ""}</div></td>
       <td>${h.state.refreshing ? html`<span class="badge s-BLUE"><span class="spin"></span> checking</span>` : h.state.ok ? html`<span class="badge s-GREEN">reachable</span>`
@@ -229,7 +230,7 @@ hostsPage.live = true;
 
 function hostForm(h) {
   let edit = !!h;
-  h = h || { name: "", port: 22, user: "", auth: "password", become: "", sudo_pw: false, label: "" };
+  h = h || { name: "", port: 22, user: "", auth: "password", become: "", sudo_pw: false, elevate: "", label: "" };
   const m = modal(html`<form><div class="card-h"><h2>${edit ? "Edit " + h.name : "Add an SAP host"}</h2><div class="grow"></div><button type="button" class="ghost" data-close>✕</button></div>
     <div class="card-b form">
       <div class="row"><label>Host name or IP<input type="text" name="name" value="${h.name}" required placeholder="sapdev01.example.com"></label><label>SSH port<input type="number" name="port" value="${h.port}" min="1" max="65535"></label></div>
@@ -240,11 +241,16 @@ function hostForm(h) {
         <label>Key passphrase (optional)<input type="password" name="secret_key" autocomplete="off" placeholder="${edit && h.has_secret ? "unchanged" : ""}"></label></div>
       <label>Run operations as<select name="become">
         <option value="" ${!h.become ? "selected" : ""}>the login user (root or &lt;sid&gt;adm logins)</option>
-        <option value="sidadm" ${h.become === "sidadm" ? "selected" : ""}>&lt;sid&gt;adm via sudo (domain user with sudo -u &lt;sid&gt;adm)</option>
-        <option value="root" ${h.become === "root" ? "selected" : ""}>root via sudo (domain user with sudo rights)</option></select></label>
-      <label class="check"><input type="checkbox" name="sudo_pw" ${h.sudo_pw ? "checked" : ""}> sudo asks for my password (the login password is given to sudo -S, never on a command line)</label>
+        <option value="sidadm" ${h.become === "sidadm" ? "selected" : ""}>&lt;sid&gt;adm (domain user allowed to become &lt;sid&gt;adm)</option>
+        <option value="root" ${h.become === "root" ? "selected" : ""}>root (domain user with sudo / dzdo rights — saproot.sh runs too)</option></select></label>
+      <label>Become with<select name="elevate">
+        <option value="" ${!h.elevate ? "selected" : ""}>sudo</option>
+        <option value="dzdo" ${h.elevate === "dzdo" ? "selected" : ""}>dzdo (Centrify)</option>
+        <option value="dzdo-su" ${h.elevate === "dzdo-su" ? "selected" : ""}>dzdo su - (when only "dzdo su -" is allowed)</option>
+        <option value="sudo-su" ${h.elevate === "sudo-su" ? "selected" : ""}>sudo su -</option></select></label>
+      <label class="check"><input type="checkbox" name="sudo_pw" ${h.sudo_pw ? "checked" : ""}> sudo / dzdo asks for my password (the login password goes to its standard input, -S, never on a command line)</label>
       <label>Label (optional)<input type="text" name="label" value="${h.label || ""}" placeholder="DEV · Central Services"></label>
-      <div class="note">As <code>&lt;sid&gt;adm</code> every SAP step runs; only root steps (chown, saproot.sh, SAP Host Agent restart) are reported as "run as root later". With sudo the agent lives in <code>/var/tmp/kernelman-&lt;user&gt;</code> so that &lt;sid&gt;adm can run it.</div>
+      <div class="note">As <code>&lt;sid&gt;adm</code> every SAP step runs; only root steps (chown, saproot.sh, SAP Host Agent restart) are reported as "run as root later"; as root (sudo / dzdo) KernelMan runs them itself. With sudo / dzdo the agent lives in <code>/var/tmp/kernelman-&lt;user&gt;</code> so that the run-as user can read it.</div>
       <div class="note err hidden" data-err></div>
     </div>
     <div class="modal-f"><span class="muted small grow" data-wait></span><button type="button" data-close>Cancel</button><button class="primary" type="submit">${edit ? "Save and test" : "Add and test"}</button></div></form>`);
@@ -258,7 +264,7 @@ function hostForm(h) {
   m.el.querySelector("form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
-    const body = { name: f.name.trim(), port: +f.port || 22, user: f.user.trim(), auth, key_path: f.key_path || "", become: f.become || "", sudo_pw: !!f.sudo_pw && !!f.become,
+    const body = { name: f.name.trim(), port: +f.port || 22, user: f.user.trim(), auth, key_path: f.key_path || "", become: f.become || "", sudo_pw: !!f.sudo_pw && !!f.become, elevate: f.become ? f.elevate || "" : "",
       label: f.label || "", secret: auth === "key" ? f.secret_key || "" : f.secret_pw || "" };
     const err = m.el.querySelector("[data-err]"), wait = m.el.querySelector("[data-wait]"), btn = m.el.querySelector("button[type=submit]");
     btn.disabled = true; err.classList.add("hidden"); wait.innerHTML = '<span class="spin"></span> connecting, installing the agent, reading the status…';

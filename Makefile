@@ -81,7 +81,7 @@ hub-agents:
 hub: hub-agents
 	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/kernelman-hub ./cmd/kernelman-hub
 
-# dist/hub/kernelman-hub-linux-amd64.tar.gz (RHEL/SLES: binary + systemd unit + quick start)
+# dist/hub/kernelman-hub-linux-amd64.tar.gz and .zip (RHEL/SLES: binary + systemd unit + quick start)
 # dist/hub/kernelman-hub-windows-amd64.zip  (kernelman-hub.exe + quick start)
 hub-dist: hub-agents
 	@mkdir -p dist/hub
@@ -90,7 +90,7 @@ hub-dist: hub-agents
 	  d=dist/hub/kernelman-hub-$$os-$$arch; mkdir -p $$d; echo "  $$d/kernelman-hub$$ext"; \
 	  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags '$(LDFLAGS)' -o $$d/kernelman-hub$$ext ./cmd/kernelman-hub || exit 1; \
 	  cp docs/HUB.md $$d/README.md; \
-	  if [ $$os = linux ]; then cp scripts/kernelman-hub.service $$d/; (cd dist/hub && tar czf kernelman-hub-$$os-$$arch.tar.gz kernelman-hub-$$os-$$arch); \
+	  if [ $$os = linux ]; then cp scripts/kernelman-hub.service $$d/; (cd dist/hub && tar czf kernelman-hub-$$os-$$arch.tar.gz kernelman-hub-$$os-$$arch && zip -qr kernelman-hub-$$os-$$arch.zip kernelman-hub-$$os-$$arch); \
 	  else (cd dist/hub && zip -qr kernelman-hub-$$os-$$arch.zip kernelman-hub-$$os-$$arch); fi; \
 	done
 	@cd dist/hub && sha256sum *.tar.gz *.zip > SHA256SUMS && ls -la *.tar.gz *.zip
