@@ -48,15 +48,12 @@ func UpdateOp(args []string) int {
 			return ExitError
 		}
 	}
-	files, ok := pickArchives(ctx, t, *from, true, len(kernelDirs(t)))
+	n := len(kernelDirs(t))
+	files, ok := pickArchives(ctx, t, *from, *yes, fmt.Sprintf("Extract %s into %d kernel director%s in this order?", "%s", n, plural(n, "y", "ies")))
 	if !ok {
 		return ExitError
 	}
 	dir := filepath.Dir(files[0].Path)
-	if !*yes && !confirm(fmt.Sprintf("Extract these %d archive(s) into %d kernel director%s in this order?", len(files), len(kernelDirs(t)), plural(len(kernelDirs(t)), "y", "ies"))) {
-		fmt.Fprintln(stdout, "  cancelled")
-		return ExitError
-	}
 	sapcar, err := ops.FindSAPCAR(ctx, e, []string{dir}, lastSAPCARs)
 	if err != nil {
 		return fail(err)
@@ -76,7 +73,8 @@ func UpdateOp(args []string) int {
 	if res.SaprootNote != "done" || res.ChownNote != "done" {
 		fmt.Fprintf(stdout, "  %s not root: run chown -R %s:%s and saproot.sh %s as root before starting\n", pal.Paint(ui.Yellow, "!"), t.SIDAdm, t.Group, t.SID)
 	}
-	return offerStart(ctx, e, *start)
+	showMoved(res.Moved)
+	return offerStart(ctx, e, *start, *yes)
 }
 
 // RollbackOp copies the latest exe_<date> backup back over the kernel directory.
@@ -136,7 +134,11 @@ func RollbackOp(args []string) int {
 		return fail(err)
 	}
 	fmt.Fprintf(stdout, "\n  %s Kernel %s restored: %s → %s\n", pal.Check(), t.SID, res.Before, pal.Paint(ui.Bold, res.After.String()))
-	return offerStart(ctx, e, false)
+	if res.SaprootNote != "done" {
+		fmt.Fprintf(stdout, "  %s not root: run saproot.sh %s as root before starting (owner and setuid of icmbnd and friends)\n", pal.Paint(ui.Yellow, "!"), t.SID)
+	}
+	showMoved(res.Moved)
+	return offerStart(ctx, e, false, *yes)
 }
 
 // ensureStopped shows the lights and offers to stop a running system.
@@ -177,8 +179,17 @@ func ensureBackup(ctx context.Context, e *ops.Env, yes bool) bool {
 	return true
 }
 
-func offerStart(ctx context.Context, e *ops.Env, start bool) int {
-	if start || confirm("Start the system now?") {
+// offerStart starts the system when asked to (--start) or when the operator
+// says so; unattended (--yes) it never asks and leaves SAP stopped.
+func offerStart(ctx context.Context, e *ops.Env, start, yes bool) int {
+	if start {
+		return runStart(ctx, e)
+	}
+	if yes {
+		fmt.Fprintf(stdout, "  %s\n", currentPalette().Paint(ui.Dim, "SAP stays stopped: start it with 5) SAP Stop / Start or kernelman start"))
+		return ExitOK
+	}
+	if confirm("Start the system now?") {
 		return runStart(ctx, e)
 	}
 	return ExitOK
@@ -188,4 +199,16 @@ func sameDay(a, b time.Time) bool {
 	ay, am, ad := a.Date()
 	by, bm, bd := b.Date()
 	return ay == by && am == bm && ad == bd
+}
+
+// showMoved lists the files a kernel change renamed aside.
+func showMoved(moved []string) {
+	if len(moved) == 0 {
+		return
+	}
+	pal := currentPalette()
+	fmt.Fprintf(stdout, "  %s %d file(s) could not be overwritten and were kept under a new name (delete them after a good start):\n", pal.Paint(ui.Yellow, "!"), len(moved))
+	for _, m := range moved {
+		fmt.Fprintf(stdout, "      %s\n", m)
+	}
 }

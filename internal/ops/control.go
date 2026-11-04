@@ -68,11 +68,12 @@ func (e *Env) startTimeout() time.Duration {
 	return defaultStartTimeout
 }
 
-// Stop stops the whole SAP system and then every local sapstartsrv:
-// StopSystem ALL → wait per instance → StopService per instance.
+// Stop stops the whole SAP system: StopSystem ALL → wait per instance.
+// sapstartsrv keeps running (see pause.go): sapcontrol still answers and
+// nobody has to start it again with its profile.
 func Stop(ctx context.Context, e *Env) error {
 	insts := e.T.Instances
-	n := 1 + 2*len(insts)
+	n := 1 + len(insts)
 	var ref *sapcontrol.Client
 	for _, st := range Probe(ctx, e) {
 		if st.Sapstartsrv {
@@ -97,42 +98,26 @@ func Stop(ctx context.Context, e *Env) error {
 			return err
 		}
 	}
-	for _, in := range insts {
-		i++
-		if err := e.step(i, n, fmt.Sprintf("StopService %s (%s)", in.Name, in.Nr), func() (string, error) {
-			err := e.T.Client(e.R, in.Nr, time.Minute).StopService(ctx)
-			if sapcontrol.IsConnRefused(err) {
-				return "already stopped", nil
-			}
-			return "sapstartsrv stopped", err
-		}); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-// Start starts every local sapstartsrv as <sid>adm, then the whole system:
-// StartService per instance → StartSystem ALL → wait per instance.
+// Start makes sure every local sapstartsrv runs (StartService as <sid>adm,
+// else sapstartsrv pf=<profile> -D like /usr/sap/sapservices), then starts
+// the whole system: StartSystem ALL → wait per instance.
 func Start(ctx context.Context, e *Env) error {
 	insts := e.T.Instances
 	n := 1 + 2*len(insts)
-	for _, s := range KernelSync(e) { // an instance directory at another level than the central kernel will not start
-		if s.Checked > 0 && !s.InSync() {
-			e.Pr.Info(fmt.Sprintf("! %s is not at the central kernel level (%s differ): run 6) Kernel Update so every directory is extracted", s.Dir, strings.Join(s.Differs, ", ")))
-		}
-	}
+	states := Probe(ctx, e)
 	i := 0
-	for _, in := range insts {
+	for k, in := range insts {
 		i++
-		if err := e.step(i, n, fmt.Sprintf("StartService %s (%s)", in.Name, in.Nr), func() (string, error) {
-			c := e.T.Client(e.R, in.Nr, 2*time.Minute)
-			c.RunAs = e.asAdm()
-			if err := c.StartService(ctx, e.T.SID); err != nil {
-				return "", err
+		if states[k].Sapstartsrv {
+			if err := e.step(i, n, fmt.Sprintf("sapstartsrv %s (%s)", in.Name, in.Nr), func() (string, error) { return "already running", nil }); err != nil {
+				return err
 			}
-			return "sapstartsrv up", waitForSapstartsrv(ctx, e, in.Nr)
-		}); err != nil {
+			continue
+		}
+		if err := StartSapstartsrv(ctx, e, []ServiceInstance{{Nr: in.Nr, Name: in.Name, Profile: in.Profile, ExeDir: in.ExeDir}}, i, n); err != nil {
 			return err
 		}
 	}

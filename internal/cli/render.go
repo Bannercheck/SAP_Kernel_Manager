@@ -228,7 +228,7 @@ func freeColour(fs disk.Filesystem) ui.Colour {
 func diskTreeLines(d status.Disk, root disk.Node, pal ui.Palette, maxKids, depth int) []string {
 	free := pal.Paint(ui.Dim, "free space n/a")
 	for _, fs := range d.Filesystems {
-		if fs.Path == root.Path {
+		if fs.Holds(root.Path) {
 			free = fmt.Sprintf("%s %s free of %s (%d%% used, %s)", pal.Light(freeColour(fs)), disk.Human(fs.AvailKB), disk.Human(fs.SizeKB), fs.UsePct, fs.Mount)
 		}
 	}

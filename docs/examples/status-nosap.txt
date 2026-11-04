@@ -1,10 +1,10 @@
 $ ./kernelman.sh status      # SAP kurulu olmayan bir hostta
-[1mSAP Status · Hostname vm · 2026-09-29 06:37:23[0m
+[1mSAP Status · Hostname vm · 2026-11-04 22:03:57[0m
   [32m●[0m Running   [33m●[0m Partial   [31m●[0m Stopped   [90m○[0m Remote/Unknown
 
 [36mHOST[0m
   Hostname                     vm
-  OS                           Ubuntu 24.04.4 LTS (kernel 6.18.44-fc-v37)
+  OS                           Ubuntu 24.04.5 LTS (kernel 6.18.44-fc-v233)
   OS Architecture              linux/amd64 (SAP platform dir: linuxx86_64)
   User                         root (privileged)
   SAP Host Agent               [31m⬤[0m [31m[1mNOT INSTALLED[0m[0m · SAP Host Agent not found (/usr/sap/hostctrl/exe)

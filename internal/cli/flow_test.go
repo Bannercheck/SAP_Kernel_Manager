@@ -29,11 +29,17 @@ import (
 type router struct {
 	fake *exec.Fake
 	real exec.Runner
+	sim  *sapSim // optional stateful sapcontrol
 }
 
 var fakeBins = map[string]bool{"sapcontrol": true, "SAPCAR": true, "disp+work": true, "saphostctrl": true, "saphostexec": true, "hostexecstart": true, "sapstartsrv": true, "ssh": true, "scp": true}
 
 func (r router) Run(ctx context.Context, c exec.Cmd) (exec.Result, error) {
+	if r.sim != nil {
+		if res, ok := r.sim.run(c); ok {
+			return res, nil
+		}
+	}
 	if fakeBins[filepath.Base(c.Path)] {
 		return r.fake.Run(ctx, c)
 	}
@@ -56,6 +62,7 @@ type flowEnv struct {
 	download  string
 	root      string
 	sc        string
+	sim       *sapSim
 }
 
 func okBody(fn string) string { return "\n27.09.2026 10:00:00\n" + fn + "\nOK\n" }
@@ -117,7 +124,6 @@ func newFlow(t *testing.T) *flowEnv {
 	sc := "/usr/sap/hostctrl/exe/sapcontrol -nr "
 	f.On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0).
 		On(sc+"00 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).On(sc+"01 -function WaitforStopped 600 10", okBody("WaitforStopped"), 0).
-		On(sc+"00 -function StopService", okBody("StopService"), 0).On(sc+"01 -function StopService", okBody("StopService"), 0).
 		On(sc+"00 -function StartService ABC", okBody("StartService"), 0).On(sc+"01 -function StartService ABC", okBody("StartService"), 0).
 		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0).
 		On(sc+"00 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).On(sc+"01 -function WaitforStarted 900 10", okBody("WaitforStarted"), 0).
@@ -146,7 +152,7 @@ func newFlow(t *testing.T) *flowEnv {
 func (fe *flowEnv) install(t *testing.T) {
 	t.Helper()
 	prevRunner, prevResolve, prevCollect, prevRoot, prevScan, prevDefault, prevCT := runner, resolveTarget, collectStatus, isRoot, scanRoots, ops.DefaultScanRoots, ops.ChangeTime
-	runner = router{fake: fe.fake, real: exec.NewReal()}
+	runner = router{fake: fe.fake, real: exec.NewReal(), sim: fe.sim}
 	isRoot = false
 	t.Setenv("HOME", fe.root) // ~/.kernelman of the test host
 	scanRoots = nil
@@ -236,19 +242,20 @@ func TestFlowFiles(t *testing.T) {
 
 func TestFlowStop(t *testing.T) {
 	fe := newFlow(t)
+	fe.sim = newSim(true, true) // running system
 	fe.install(t)
-	// lights before, Stop's own probe, lights after → GREEN, GREEN, then down
-	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
-	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", procs("GREEN", 3), procs("GREEN", 3), down)
 	out := runMenu(t, "stop", "5\nk\nm\nq\n") // 5, K = stop, M = main menu, quit
 	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [M] Main menu", "⬤ RUNNING", "SAP Host Agent   ⬤ RUNNING",
-		"D00 (00)     ● running    /usr/sap/ABC/SYS/profile/ABC_D00_sapci", "[1/5] StopSystem ALL ... ok",
-		"[5/5] StopService ASCS01 (01) ... ok", "system ABC stopped", "⬤ STOPPED", "D00 (sapstartsrv down)", "5) ✔ SAP Stop / Start")
+		"D00 (00)     ● running    /usr/sap/ABC/SYS/profile/ABC_D00_sapci", "[1/3] StopSystem ALL ... ok",
+		"[3/3] Wait until ASCS01 (01) is stopped ... ok  all processes GRAY", "system ABC stopped", "⬤ STOPPED", "5) ✔ SAP Stop / Start")
+	// SAP is down, sapstartsrv (started with pf=) keeps running: nobody has to start it by hand again
+	if strings.Contains(out, "StopService") || strings.Contains(out, "sapstartsrv down") || strings.Join(fe.sim.Calls(), ",") != "00 StopSystem" {
+		t.Errorf("stop touched sapstartsrv: calls %v\n%s", fe.sim.Calls(), out)
+	}
 }
 
 func TestFlowUpdateAndStart(t *testing.T) {
 	fe := newFlow(t)
-	fe.install(t)
 	// prepare: today's backup and copied archives, as Kernel Backup / Kernel Files would have done
 	ctx := context.Background()
 	e := &ops.Env{R: router{fake: fe.fake, real: exec.NewReal()}, P: platformNow(), T: fe.target, Pr: progress{w: &bytes.Buffer{}, pal: ui.Palette{}}}
@@ -259,33 +266,38 @@ func TestFlowUpdateAndStart(t *testing.T) {
 	if _, err := ops.CopySARs(ctx, e, today); err != nil {
 		t.Fatal(err)
 	}
-	// system is down while updating; after StartService it answers again
-	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", down, procs("GREEN", 3))
-	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down, procs("GREEN", 3))
+	// SAP stopped, sapstartsrv running (what SAP Stop leaves): the update stops it
+	// only while the files change and starts it again itself
+	fe.sim = newSim(true, false)
+	fe.install(t)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(200), dispworkV(423))
 
 	out := runMenu(t, "update", "6\ny\ny\nm\nq\n") // 6, Y = confirm order, Y = start afterwards, M = main menu, quit
-	mustContain(t, out, "backup from today", "scanning the whole server ("+fe.root+")", "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download, "[1/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files", "[18/18] Verify every instance directory matches the central kernel ... ok",
-		"[4/18] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[5/18] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
-		"[17/18] Read kernel version (disp+work -V) ... ok  793 Patch 423",
-		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "6) ✔ Kernel Update")
+	mustContain(t, out, "backup from today", "scanning the whole server ("+fe.root+")", "1  SAPEXE_403-80007807.SAR", "FOUND IN", fe.download,
+		"[1/22] Stop sapstartsrv D00 (00) while its files are replaced ... ok  started again with pf=ABC_D00_sapci after the files",
+		"[3/22] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.kernelDir+" ... ok  6 files", "[22/22] Verify every instance directory matches the central kernel ... ok",
+		"[6/22] SAPCAR -xvf dw_423-80007541.sar  (dw 423) in "+fe.kernelDir+" ... ok  1 files", "[7/22] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in "+fe.target.KernelDirs[1],
+		"[19/22] Start sapstartsrv D00 (00) ... ok  sapcontrol StartService · answers", "[21/22] Read kernel version (disp+work -V) ... ok  793 Patch 423",
+		"Kernel ABC: 793 Patch 200 → 793 Patch 423", "[1/5] sapstartsrv D00 (00) ... ok  already running", "[3/5] StartSystem ALL ... ok", "system ABC started", "⬤ RUNNING", "6) ✔ Kernel Update")
+	if got := strings.Join(fe.sim.Calls(), ","); got != "00 StopService,01 StopService,00 StartService,01 StartService,00 StartSystem" {
+		t.Errorf("sapcontrol calls = %s", got)
+	}
 }
 
 func TestFlowRollback(t *testing.T) {
 	fe := newFlow(t)
-	fe.install(t)
 	e := &ops.Env{R: router{fake: fe.fake, real: exec.NewReal()}, P: platformNow(), T: fe.target, Pr: progress{w: &bytes.Buffer{}, pal: ui.Palette{}}}
 	bk, err := ops.Backup(context.Background(), e)
 	if err != nil {
 		t.Fatal(err)
 	}
 	os.WriteFile(filepath.Join(fe.kernelDir, "gwrd"), []byte("broken"), 0o755)
-	fe.fake.OnSeq(fe.sc+"00 -function GetProcessList", down)
-	fe.fake.OnSeq(fe.sc+"01 -function GetProcessList", down)
+	fe.sim = newSim(true, false)
+	fe.install(t)
 	fe.fake.OnSeq(filepath.Join(fe.kernelDir, "disp+work")+" -V", dispworkV(423), dispworkV(200))
 	out := runMenu(t, "rollback", "7\n\ny\nn\nm\nq\n") // 7, backup default (Enter keeps it), Y = confirm, N = no start, M = main menu, quit
-	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/9] Copy "+bk.Dirs[0].Dest, "[2/9] Copy "+bk.Dirs[1].Dest,
-		"Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "7) ✔ Kernel Rollback")
+	mustContain(t, out, "Backup for "+fe.kernelDir+" ["+bk.Dirs[0].Dest+"]", "[1/13] Stop sapstartsrv D00 (00)", "[3/13] Copy "+bk.Dirs[0].Dest, "[4/13] Copy "+bk.Dirs[1].Dest,
+		"[10/13] Start sapstartsrv D00 (00) ... ok", "Kernel ABC restored: 793 Patch 423 → 793 Patch 200", "7) ✔ Kernel Rollback")
 	b, _ := os.ReadFile(filepath.Join(fe.kernelDir, "gwrd"))
 	if string(b) == "broken" {
 		t.Error("gwrd not restored")

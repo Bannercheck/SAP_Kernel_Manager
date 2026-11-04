@@ -141,7 +141,9 @@ func buildSystems(hosts []Host, states map[string]HostState) []SystemView {
 			}
 			sh.Central, sh.Role = role(sh.Instances)
 			for _, fs := range st.Report.Disk.Filesystems {
-				sh.Disk = append(sh.Disk, DiskView{Path: fs.Path, Mount: fs.Mount, UsePct: fs.UsePct, AvailKB: fs.AvailKB, SizeKB: fs.SizeKB})
+				for _, p := range append([]string{fs.Path}, fs.Also...) { // /usr/sap and /sapmnt may share one file system
+					sh.Disk = append(sh.Disk, DiskView{Path: p, Mount: fs.Mount, UsePct: fs.UsePct, AvailKB: fs.AvailKB, SizeKB: fs.SizeKB})
+				}
 			}
 			v.Hosts = append(v.Hosts, sh)
 		}

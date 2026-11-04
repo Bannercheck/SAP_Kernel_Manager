@@ -296,12 +296,25 @@ func (h *Hub) runStep(ctx context.Context, j *Job, st *Step) error {
 }
 
 // pushDirScript prints the directory archives go to: the configured one
-// when it can be created and written, else ~/.kernelman/download.
-const pushDirScript = `d="$1"; if mkdir -p "$d" 2>/dev/null && test -w "$d"; then :; else d="$HOME/.kernelman/download"; mkdir -p "$d" || exit 1; fi; echo "$d"`
+// when it can be created and written, else $2 (owned by the login user), by
+// default ~/.kernelman/download. umask 022: the run-as user must read it.
+const pushDirScript = `umask 022; d="$1"; if mkdir -p "$d" 2>/dev/null && test -w "$d"; then :; else d="${2:-$HOME/.kernelman/download}"; mkdir -p "$d" && test -O "$d" || exit 1; fi; echo "$d"`
 
-// push copies library files to the host and proves them with cksum.
+// pushFallback is where archives go when the configured directory is not
+// writable: through sudo the run-as user cannot read the login user's home,
+// so the shared agent directory is used.
+func pushFallback(h Host) string {
+	if d := agentDir(h); d != "" {
+		return d + "/download"
+	}
+	return ""
+}
+
+// push copies library files to the host and proves them with cksum — as the
+// login user after the upload, and as the run-as user, who has to read them.
 func (h *Hub) push(ctx context.Context, j *Job, st *Step, c Conn) error {
-	out, err := output(ctx, c, shCmd(pushDirScript, h.Store.Settings().RemoteDir))
+	host, _ := h.Store.Host(st.Host)
+	out, err := output(ctx, c, shCmd(pushDirScript, h.Store.Settings().RemoteDir, pushFallback(host)))
 	if err != nil {
 		return fmt.Errorf("prepare remote directory: %w", err)
 	}
@@ -342,7 +355,39 @@ func (h *Hub) push(ctx context.Context, j *Job, st *Step, c Conn) error {
 		}
 		j.log(st.HostName, "out", fmt.Sprintf("  %s ... ok  %s, cksum %s verified", name, humanBytes(a.Size), strings.Fields(a.Cksum)[0]))
 	}
+	if host.Become != "" {
+		if err := h.readableAs(ctx, j, st, c, dir); err != nil {
+			return err
+		}
+	}
 	j.update(func() { j.pushDirs[st.Host] = dir })
+	return nil
+}
+
+// readableAs proves the run-as user (sudo) reads every pushed archive intact.
+func (h *Hub) readableAs(ctx context.Context, j *Job, st *Step, c Conn, dir string) error {
+	argv := []string{"cksum"}
+	for _, name := range st.Archives {
+		argv = append(argv, dir+"/"+name)
+	}
+	cmd, stdin := runAsCmd(j.targets[st.Host], j.SID, argv...)
+	var out, errb strings.Builder
+	code, err := c.Run(ctx, cmd, stdin, &out, &errb)
+	who := "root"
+	if j.targets[st.Host].Host.Become == "sidadm" {
+		who = SIDAdm(j.SID)
+	}
+	if err != nil || code != 0 {
+		return fmt.Errorf("%s cannot read the archives in %s: %s", who, dir, lastLine(errb.String()+" "+fmt.Sprint(err)))
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	for i, name := range st.Archives {
+		a, _ := h.Library.Get(name)
+		if i >= len(lines) || sumOf(lines[i]) != a.Cksum {
+			return fmt.Errorf("%s reads %s differently than the hub sent it", who, name)
+		}
+	}
+	j.log(st.HostName, "out", fmt.Sprintf("  readable by %s ... ok  %d archive(s), cksum verified", who, len(st.Archives)))
 	return nil
 }
 

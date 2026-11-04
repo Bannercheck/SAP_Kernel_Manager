@@ -225,6 +225,19 @@ func runStop(ctx context.Context, e *ops.Env) int {
 func runStart(ctx context.Context, e *ops.Env) int {
 	pal := currentPalette()
 	fmt.Fprintf(stdout, "\n  %s\n", pal.Paint(ui.Bold, "SAP Start "+e.T.SID))
+	// the control the operator asked for: an instance directory left at another
+	// level than the central kernel does not start; say so before trying
+	var behind []string
+	for _, s := range ops.KernelSync(e) {
+		if s.Checked > 0 && !s.InSync() {
+			behind = append(behind, s.Dir)
+			fmt.Fprintf(stdout, "  %s %s is not at the central kernel level (%s differ)\n", pal.Cross(), s.Dir, strings.Join(s.Differs, ", "))
+		}
+	}
+	if len(behind) > 0 && !confirm("Start anyway? (run 6) Kernel Update first so every directory is extracted)") {
+		fmt.Fprintf(stdout, "  not started: %s first needs the central kernel — 6) Kernel Update, or 7) Kernel Rollback\n", strings.Join(behind, ", "))
+		return ExitError
+	}
 	if err := ops.Start(ctx, e); err != nil {
 		lights(ctx, e)
 		return fail(err)

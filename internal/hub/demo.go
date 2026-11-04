@@ -235,6 +235,19 @@ func (c *demoConn) Run(ctx context.Context, cmd string, stdin io.Reader, stdout,
 		c.r.mu.Unlock()
 	case script == `exec "$@"`:
 		for i, a := range args {
+			if a == "cksum" { // the run-as user reads the pushed archives
+				c.r.mu.Lock()
+				defer c.r.mu.Unlock()
+				for _, p := range args[i+1:] {
+					f, ok := c.r.files[c.host.name][p]
+					if !ok {
+						fmt.Fprintf(stderr, "cksum: %s: No such file or directory\n", p)
+						return 1, nil
+					}
+					fmt.Fprintf(stdout, "%s %s\n", f.sum, p)
+				}
+				return 0, nil
+			}
 			if strings.HasSuffix(a, "/kernelman") {
 				return c.r.agent(ctx, c.host, args[i+1:], stdout), nil
 			}

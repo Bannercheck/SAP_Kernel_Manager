@@ -49,7 +49,8 @@ func FilesOp(args []string) int {
 	}
 	e := newEnv(t)
 	noteRemote(ctx, e)
-	files, ok := pickArchives(ctx, t, *from, *yes, len(kernelDirs(t)))
+	n := len(kernelDirs(t))
+	files, ok := pickArchives(ctx, t, *from, *yes, fmt.Sprintf("Copy %s into %d kernel director%s?", "%s", n, plural(n, "y", "ies")))
 	if !ok {
 		return ExitError
 	}
@@ -66,9 +67,11 @@ func FilesOp(args []string) int {
 }
 
 // pickArchives scans the server for archives dated today, shows them in
-// apply order and asks for confirmation. With from set only that directory
-// is searched. When nothing is found the user may type a directory.
-func pickArchives(ctx context.Context, t *system.Target, from string, yes bool, ndirs int) ([]ops.SARFile, bool) {
+// apply order and lets the operator take all, some (by number) or none;
+// question has one %s for "these N archive(s)". With from set only that
+// directory is searched. When nothing is found the user may type a
+// directory. A selection that would mix SAPEXE and SAPEXEDB levels is refused.
+func pickArchives(ctx context.Context, t *system.Target, from string, yes bool, question string) ([]ops.SARFile, bool) {
 	pal := currentPalette()
 	roots := scanRoots
 	if from != "" {
@@ -84,9 +87,19 @@ func pickArchives(ctx context.Context, t *system.Target, from string, yes bool, 
 		if len(res.Today) > 0 {
 			showArchives(res)
 			if yes {
-				return res.Today, true
+				// unattended: never mix archives from several places (another system's download, an old copy)
+				if dirs := archiveDirs(res.Today); len(dirs) > 1 && from == "" {
+					fmt.Fprintf(stdout, "  %s today's archives are in %d directories (%s): choose one with --from DIR, or run without --yes and select by number\n",
+						pal.Cross(), len(dirs), strings.Join(dirs, ", "))
+					return nil, false
+				}
+				return checkedSet(res.Today)
 			}
-			return chooseArchives(res.Today, fmt.Sprintf("Copy %s into %d kernel director%s?", "%s", ndirs, plural(ndirs, "y", "ies")))
+			files, ok := chooseArchives(res.Today, question)
+			if !ok {
+				return nil, false
+			}
+			return checkedSet(files)
 		}
 		fmt.Fprintf(stdout, "  %s no .SAR files placed today (%s) under %s", pal.Cross(), time.Now().Format("2006-01-02"), strings.Join(res.Roots, " "))
 		if res.Older > 0 {
@@ -161,7 +174,7 @@ func showArchives(res *ops.ScanResult) {
 		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Dim, fmt.Sprintf("%d older archive(s) ignored", res.Older)))
 	}
 	if len(res.Duplicates) > 0 {
-		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Yellow, fmt.Sprintf("duplicates (newest kept): %s", strings.Join(res.Duplicates, ", "))))
+		fmt.Fprintf(stdout, "   · %s", pal.Paint(ui.Yellow, fmt.Sprintf("found more than once (newest copy kept): %s", countNames(res.Duplicates))))
 	}
 	fmt.Fprintln(stdout)
 	fmt.Fprintln(stdout)
@@ -254,4 +267,43 @@ func parseSelection(s string, n int) ([]int, error) {
 	}
 	sort.Ints(out)
 	return out, nil
+}
+
+// archiveDirs lists the distinct directories the archives were found in.
+func archiveDirs(files []ops.SARFile) []string {
+	var dirs []string
+	seen := map[string]bool{}
+	for _, f := range files {
+		if d := filepath.Dir(f.Path); !seen[d] {
+			seen[d] = true
+			dirs = append(dirs, d)
+		}
+	}
+	return dirs
+}
+
+// checkedSet passes a selection on unless it would leave a mixed kernel.
+func checkedSet(files []ops.SARFile) ([]ops.SARFile, bool) {
+	if err := ops.CheckKernelSet(files); err != nil {
+		fmt.Fprintf(stdout, "  %s %v\n", currentPalette().Cross(), err)
+		return nil, false
+	}
+	return files, true
+}
+
+// countNames turns the scanner's duplicate list (one entry per extra copy)
+// into "a.SAR (3 copies), b.SAR (2 copies)".
+func countNames(names []string) string {
+	count := map[string]int{}
+	var order []string
+	for _, n := range names {
+		if count[n] == 0 {
+			order = append(order, n)
+		}
+		count[n]++
+	}
+	for i, n := range order {
+		order[i] = fmt.Sprintf("%s (%d copies)", n, count[n]+1)
+	}
+	return strings.Join(order, ", ")
 }

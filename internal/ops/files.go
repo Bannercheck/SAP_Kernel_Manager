@@ -130,6 +130,31 @@ func TargetPatch(files []SARFile) int {
 	return max
 }
 
+// CheckKernelSet refuses a selection that would leave a mixed kernel:
+// SAPEXE (database independent) and SAPEXEDB (database dependent) belong
+// together and must carry the same patch level. Single-component patches
+// (dw, lib_dbsl, …) may come alone.
+func CheckKernelSet(files []SARFile) error {
+	exe, db := 0, 0
+	for _, f := range files {
+		switch f.Component {
+		case "SAPEXE":
+			exe = max(exe, f.Patch)
+		case "SAPEXEDB":
+			db = max(db, f.Patch)
+		}
+	}
+	switch {
+	case exe == db:
+		return nil
+	case exe == 0:
+		return fmt.Errorf("SAPEXEDB %d without SAPEXE: take the database independent part SAPEXE_%d too, or the kernel would be mixed", db, db)
+	case db == 0:
+		return fmt.Errorf("SAPEXE %d without SAPEXEDB: take the database dependent part SAPEXEDB_%d for this database too, or the kernel would be mixed", exe, exe)
+	}
+	return fmt.Errorf("SAPEXE %d and SAPEXEDB %d differ: both parts of a kernel must have the same patch level", exe, db)
+}
+
 // CopyResult describes a finished Kernel Files operation.
 type CopyResult struct {
 	Dests     []string // kernel directories that received the archives
@@ -148,7 +173,7 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 	dirs := e.kernelDirs()
 	n := 2*len(dirs) + 2
 	step := 1
-	if err := e.step(step, n, fmt.Sprintf("Check permissions of %d archive(s) in %s", len(files), filepath.Dir(files[0].Path)), func() (string, error) {
+	if err := e.step(step, n, fmt.Sprintf("Check permissions of %d archive(s) in %s", len(files), sourceDirs(files)), func() (string, error) {
 		return ensureMode(files, 0o755)
 	}); err != nil {
 		return res, err
@@ -171,8 +196,14 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 			return res, err
 		}
 		step++
-		if err := e.step(step, n, fmt.Sprintf("chown -R %s:%s %s", e.T.SIDAdm, e.T.Group, dir), func() (string, error) {
-			return chownTree(ctx, e, dir, &res.ChownNote)
+		// only the copied archives: chown -R on the kernel directory would strip the
+		// root owner and setuid bit saproot.sh gave icmbnd (and sapuxuserchk)
+		if err := e.step(step, n, fmt.Sprintf("chown %s:%s %d archive(s) in %s", e.T.SIDAdm, e.T.Group, len(files), dir), func() (string, error) {
+			var paths []string
+			for _, f := range files {
+				paths = append(paths, filepath.Join(dir, f.Name))
+			}
+			return chownPaths(ctx, e, paths, &res.ChownNote)
 		}); err != nil {
 			return res, err
 		}
@@ -205,7 +236,7 @@ func CopySARs(ctx context.Context, e *Env, files []SARFile) (*CopyResult, error)
 // change, without stopping: the copy then fails with a clear message only if
 // the file is really unreadable.
 func ensureMode(files []SARFile, mode os.FileMode) (string, error) {
-	var changed, failed []string
+	var changed, kept, failed []string
 	ok := 0
 	for _, f := range files {
 		info, err := os.Stat(f.Path)
@@ -218,7 +249,13 @@ func ensureMode(files []SARFile, mode os.FileMode) (string, error) {
 			continue
 		}
 		if err := os.Chmod(f.Path, mode); err != nil {
-			failed = append(failed, fmt.Sprintf("%s is %04o (owner may chmod, or root): %v", f.Name, info.Mode().Perm(), err))
+			// another user's upload: copying only needs read access, the copies belong to us
+			if r, rerr := os.Open(f.Path); rerr == nil {
+				r.Close()
+				kept = append(kept, fmt.Sprintf("%s %04o", f.Name, info.Mode().Perm()))
+				continue
+			}
+			failed = append(failed, fmt.Sprintf("%s is %04o and not readable (its owner or root may chmod it): %v", f.Name, info.Mode().Perm(), err))
 			continue
 		}
 		changed = append(changed, fmt.Sprintf("%s %04o → %04o", f.Name, info.Mode().Perm(), mode))
@@ -229,6 +266,9 @@ func ensureMode(files []SARFile, mode os.FileMode) (string, error) {
 	}
 	if len(changed) > 0 {
 		parts = append(parts, "chmod "+strings.Join(changed, ", "))
+	}
+	if len(kept) > 0 {
+		parts = append(parts, "not owner, readable, left as is: "+strings.Join(kept, ", "))
 	}
 	detail := strings.Join(parts, " · ")
 	if len(failed) > 0 {
@@ -241,6 +281,15 @@ func ensureMode(files []SARFile, mode os.FileMode) (string, error) {
 // already belong to <sid>adm:sapsys, so nothing needs doing; as any other
 // user it says what must be done later.
 func chownTree(ctx context.Context, e *Env, dir string, note *string) (string, error) {
+	return chown(ctx, e, []string{"-R", e.T.SIDAdm + ":" + e.T.Group, dir}, note)
+}
+
+// chownPaths gives single files to <sid>adm:sapsys (as root; otherwise a note).
+func chownPaths(ctx context.Context, e *Env, paths []string, note *string) (string, error) {
+	return chown(ctx, e, append([]string{e.T.SIDAdm + ":" + e.T.Group}, paths...), note)
+}
+
+func chown(ctx context.Context, e *Env, args []string, note *string) (string, error) {
 	if !e.IsRoot {
 		if e.User == e.T.SIDAdm {
 			*note = "not needed: running as " + e.T.SIDAdm
@@ -249,9 +298,25 @@ func chownTree(ctx context.Context, e *Env, dir string, note *string) (string, e
 		}
 		return *note, nil
 	}
-	_, err := e.run(ctx, exec.Cmd{Path: "chown", Args: []string{"-R", e.T.SIDAdm + ":" + e.T.Group, dir}, Timeout: time.Hour})
+	_, err := e.run(ctx, exec.Cmd{Path: "chown", Args: args, Timeout: time.Hour})
 	if err == nil {
 		*note = "done"
 	}
 	return *note, err
+}
+
+// sourceDirs names where the archives come from: one directory, or "2 directories (a, b)".
+func sourceDirs(files []SARFile) string {
+	var dirs []string
+	seen := map[string]bool{}
+	for _, f := range files {
+		if d := filepath.Dir(f.Path); !seen[d] {
+			seen[d] = true
+			dirs = append(dirs, d)
+		}
+	}
+	if len(dirs) == 1 {
+		return dirs[0]
+	}
+	return fmt.Sprintf("%d directories (%s)", len(dirs), strings.Join(dirs, ", "))
 }

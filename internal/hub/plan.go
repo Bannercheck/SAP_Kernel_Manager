@@ -3,6 +3,7 @@ package hub
 import (
 	"errors"
 	"fmt"
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/ops"
 	"strings"
 )
 
@@ -82,6 +83,9 @@ func (h *Hub) Plan(req JobRequest) (*Job, error) {
 	}
 	if req.Kind == "update" && len(archives) > 0 && targetPatch(archives) == 0 {
 		return nil, errors.New("the selected files contain no kernel archive")
+	}
+	if err := ops.CheckKernelSet(sarFiles(archives)); err != nil {
+		return nil, err
 	}
 
 	j := &Job{JobInfo: JobInfo{ID: newID(6), Kind: req.Kind, SID: req.SID, Host: req.HostID}}

@@ -77,9 +77,12 @@ func (r *DemoRemote) agent(ctx context.Context, h *demoHost, args []string, w io
 		return r.demoFilesUpdate(ctx, args[0], sys, h, mine, flag("--from"), say)
 	case "rollback":
 		dirs := r.dirs(sys, mine)
-		n := 2*len(dirs) + 3
-		for i, d := range dirs {
-			say("  [%d/%d] Copy %s_%s over %s ... ok  cp -pR", i+1, n, d, time.Now().Format("20060102"), d)
+		srv := r.runningSrv(mine)
+		n := 2*len(dirs) + 3 + 2*len(srv)
+		step := r.pauseSrv(sys, srv, n, say)
+		for _, d := range dirs {
+			step++
+			say("  [%d/%d] Copy %s_%s over %s ... ok  cp -pR", step, n, d, time.Now().Format("20060102"), d)
 		}
 		r.mu.Lock()
 		sys.Central = sys.Prev
@@ -87,6 +90,7 @@ func (r *DemoRemote) agent(ctx context.Context, h *demoHost, args []string, w io
 			in.Patch = sys.Prev
 		}
 		r.mu.Unlock()
+		r.resumeSrv(srv, n-1-len(srv), n, say)
 		say("  [%d/%d] Read kernel version (disp+work -V) ... ok  793 Patch %d", n-1, n, sys.Prev)
 		say("  [%d/%d] Verify every instance directory matches the central kernel ... ok", n, n)
 		say("  ✔ Kernel %s restored: 793 Patch %d", sid, sys.Prev)
@@ -161,7 +165,7 @@ func (r *DemoRemote) demoStop(sys *demoSys, h *demoHost, mine []*demoInst, say f
 		running = running || in.Running
 	}
 	say("  SAP Stop %s", sys.SID)
-	n := 1 + 2*len(mine)
+	n := 1 + len(mine) // sapstartsrv keeps running, like the agent
 	if running {
 		say("  [1/%d] StopSystem ALL ... ok  instance %s", n, mine[0].Nr)
 	} else {
@@ -175,12 +179,6 @@ func (r *DemoRemote) demoStop(sys *demoSys, h *demoHost, mine []*demoInst, say f
 	for i, in := range mine {
 		say("  [%d/%d] Wait until %s (%s) is stopped ... ok  all processes GRAY", i+2, n, in.Name, in.Nr)
 	}
-	for i, in := range mine {
-		say("  [%d/%d] StopService %s (%s) ... ok  sapstartsrv stopped", len(mine)+i+2, n, in.Name, in.Nr)
-		r.mu.Lock()
-		in.Srv = false
-		r.mu.Unlock()
-	}
 	say("  ✔ system %s stopped", sys.SID)
 	return 0
 }
@@ -192,10 +190,15 @@ func (r *DemoRemote) demoStart(sys *demoSys, h *demoHost, mine []*demoInst, say 
 		if in.Patch != sys.Central {
 			say("  ! /usr/sap/%s/%s/exe is not at the central kernel level (disp+work, sapstartsrv differ): run 6) Kernel Update so every directory is extracted", sys.SID, in.Name)
 		}
-		say("  [%d/%d] StartService %s (%s) ... ok  sapstartsrv up", i+1, n, in.Name, in.Nr)
 		r.mu.Lock()
+		up := in.Srv
 		in.Srv = true
 		r.mu.Unlock()
+		if up {
+			say("  [%d/%d] sapstartsrv %s (%s) ... ok  already running", i+1, n, in.Name, in.Nr)
+		} else {
+			say("  [%d/%d] Start sapstartsrv %s (%s) ... ok  sapcontrol StartService · answers", i+1, n, in.Name, in.Nr)
+		}
 	}
 	for _, in := range sys.Insts {
 		if in.Host != h.name && !in.Srv {
@@ -257,7 +260,7 @@ func (r *DemoRemote) demoFilesUpdate(ctx context.Context, op string, sys *demoSy
 		say("  [1/%d] Check permissions of %d archive(s) in %s ... ok  %d already 0755", n, len(sars), where, len(sars))
 		for i, d := range dirs {
 			say("  [%d/%d] Copy %d archive(s) to %s ... ok  cp -p", 2*i+2, n, len(sars), d)
-			say("  [%d/%d] chown -R %sadm:sapsys %s ... ok  done", 2*i+3, n, strings.ToLower(sys.SID), d)
+			say("  [%d/%d] chown %sadm:sapsys %d archive(s) in %s ... ok  done", 2*i+3, n, strings.ToLower(sys.SID), len(sars), d)
 		}
 		say("  [%d/%d] List archives in %s ... ok  ls -la", n, n, dirs[0])
 		say("  ✔ %d archive(s) copied into %d kernel directories · chown done", len(sars), len(dirs))
@@ -273,7 +276,9 @@ func (r *DemoRemote) demoFilesUpdate(ctx context.Context, op string, sys *demoSy
 	}
 	say("  SAPCAR: /sapmnt/%s/exe/uc/linuxx86_64/SAPCAR", sys.SID)
 	say("  current kernel: 793 Patch %d", sys.Central)
-	n, step := len(dirs)*len(sars)+len(dirs)+3, 0
+	srv := r.runningSrv(mine)
+	n := len(dirs)*len(sars) + len(dirs) + 3 + 2*len(srv)
+	step := r.pauseSrv(sys, srv, n, say)
 	for _, d := range dirs {
 		for _, f := range sars {
 			step++
@@ -300,7 +305,8 @@ func (r *DemoRemote) demoFilesUpdate(ctx context.Context, op string, sys *demoSy
 	}
 	r.mu.Unlock()
 	say("  [%d/%d] saproot.sh %s ... ok  done", step+1, n, sys.SID)
-	say("  [%d/%d] Read kernel version (disp+work -V) ... ok  793 Patch %d", step+2, n, target)
+	step = r.resumeSrv(srv, step+2, n, say)
+	say("  [%d/%d] Read kernel version (disp+work -V) ... ok  793 Patch %d", step, n, target)
 	var ok []string
 	for _, in := range mine {
 		ok = append(ok, in.Name+"/exe")
@@ -357,4 +363,39 @@ func (r *DemoRemote) report(h *demoHost) status.Report {
 		rep.Systems = append(rep.Systems, sys)
 	}
 	return rep
+}
+
+// runningSrv lists the host's instances whose sapstartsrv runs.
+func (r *DemoRemote) runningSrv(mine []*demoInst) []*demoInst {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var out []*demoInst
+	for _, in := range mine {
+		if in.Srv {
+			out = append(out, in)
+		}
+	}
+	return out
+}
+
+// pauseSrv stops sapstartsrv while the kernel files change (steps 1..) and returns the last step.
+func (r *DemoRemote) pauseSrv(sys *demoSys, srv []*demoInst, n int, say func(string, ...any) bool) int {
+	for i, in := range srv {
+		say("  [%d/%d] Stop sapstartsrv %s (%s) while its files are replaced ... ok  started again with pf=%s_%s_%s after the files", i+1, n, in.Name, in.Nr, sys.SID, in.Name, in.Host)
+		r.mu.Lock()
+		in.Srv = false
+		r.mu.Unlock()
+	}
+	return len(srv)
+}
+
+// resumeSrv starts them again from step first and returns the next step.
+func (r *DemoRemote) resumeSrv(srv []*demoInst, first, n int, say func(string, ...any) bool) int {
+	for i, in := range srv {
+		say("  [%d/%d] Start sapstartsrv %s (%s) ... ok  sapcontrol StartService · answers", first+i, n, in.Name, in.Nr)
+		r.mu.Lock()
+		in.Srv = true
+		r.mu.Unlock()
+	}
+	return first + len(srv)
 }

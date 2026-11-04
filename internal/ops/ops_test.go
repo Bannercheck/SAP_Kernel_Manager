@@ -296,7 +296,7 @@ func TestExtractInOrder(t *testing.T) {
 	// the extraction order must be SAPEXE_403 before dw_421, in every kernel directory
 	var order []string
 	for _, c := range fake.Calls {
-		if filepath.Base(c.Path) == "SAPCAR" {
+		if filepath.Base(c.Path) == "SAPCAR" && c.Args[0] == "-xvf" {
 			order = append(order, filepath.Base(c.Dir)+"/"+filepath.Base(c.Args[1]))
 		}
 	}
@@ -334,25 +334,29 @@ func TestStopAndStart(t *testing.T) {
 	// per instance: probe (GREEN) → wait after StopSystem (GRAY) → sapstartsrv check after StartService (GRAY) → wait after StartSystem (GREEN)
 	fake.OnSeq(sc+"00 -function GetProcessList", green, gray, gray, green)
 	fake.OnSeq(sc+"01 -function GetProcessList", green, gray, gray, green)
-	fake.On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0).
-		On(sc+"00 -function StopService", okBody("StopService"), 0).On(sc+"01 -function StopService", okBody("StopService"), 0)
+	fake.On(sc+"00 -function StopSystem ALL", okBody("StopSystem"), 0)
 	if err := Stop(context.Background(), e); err != nil {
 		t.Fatalf("stop: %v\n%s", err, rec)
 	}
-	if !strings.Contains(rec.String(), "[1/5] StopSystem ALL") || !strings.Contains(rec.String(), "[2/5] Wait until D00 (00) is stopped") ||
-		!strings.Contains(rec.String(), "ok all processes GRAY") || !strings.Contains(rec.String(), "[5/5] StopService ASCS01 (01)") {
+	if !strings.Contains(rec.String(), "[1/3] StopSystem ALL") || !strings.Contains(rec.String(), "[2/3] Wait until D00 (00) is stopped") ||
+		!strings.Contains(rec.String(), "ok all processes GRAY") || strings.Contains(rec.String(), "StopService") {
 		t.Errorf("progress:\n%s", rec)
 	}
 
+	// sapstartsrv kept running through the stop: Start does not start it again
 	rec.lines = nil
-	fake.On(sc+"00 -function StartService ABC", okBody("StartService"), 0).On(sc+"01 -function StartService ABC", okBody("StartService"), 0).
-		On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0)
+	fake.On(sc+"00 -function StartSystem ALL", okBody("StartSystem"), 0)
 	if err := Start(context.Background(), e); err != nil {
 		t.Fatalf("start: %v\n%s", err, rec)
 	}
-	if !strings.Contains(rec.String(), "[3/5] StartSystem ALL") || !strings.Contains(rec.String(), "[5/5] Wait until ASCS01 (01) is running") ||
-		!strings.Contains(rec.String(), "ok all processes GREEN") {
+	if !strings.Contains(rec.String(), "[1/5] sapstartsrv D00 (00)\n  ok already running") || !strings.Contains(rec.String(), "[3/5] StartSystem ALL") ||
+		!strings.Contains(rec.String(), "[5/5] Wait until ASCS01 (01) is running") || !strings.Contains(rec.String(), "ok all processes GREEN") {
 		t.Errorf("progress:\n%s", rec)
+	}
+	for _, c := range fake.Calls {
+		if strings.Contains(c.String(), "Service") {
+			t.Errorf("unexpected %s", c)
+		}
 	}
 	states := Probe(context.Background(), e)
 	if IsStopped(states) {

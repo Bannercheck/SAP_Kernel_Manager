@@ -1,6 +1,12 @@
 package disk
 
-import "testing"
+import (
+	"context"
+	"os"
+	"testing"
+
+	"github.com/Bannercheck/SAP_Kernel_Manager/internal/exec"
+)
 
 func TestParseDF(t *testing.T) {
 	linux := "Filesystem     1024-blocks      Used Available Capacity Mounted on\n/dev/mapper/vg-sap   209612800 86016000 123596800      41% /usr/sap\n"
@@ -45,5 +51,21 @@ func TestBuildTree(t *testing.T) {
 	}
 	if BuildTree("/nope", ParseDU(out), 1) != nil {
 		t.Error("unknown root must give nil")
+	}
+}
+
+func TestDFSharedFilesystem(t *testing.T) {
+	root := t.TempDir()
+	a, b := root+"/usr/sap", root+"/sapmnt"
+	for _, d := range []string{a, b} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := "Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/vda 1000 400 600 40% /\n"
+	f := exec.NewFake().On("df -Pk "+a, out, 0).On("df -Pk "+b, out, 0)
+	fss, err := DF(context.Background(), f, a, b)
+	if err != nil || len(fss) != 1 || !fss[0].Holds(a) || !fss[0].Holds(b) || fss[0].Holds(root) {
+		t.Errorf("one file system holding both paths expected: %+v %v", fss, err)
 	}
 }

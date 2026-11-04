@@ -1,0 +1,14 @@
+$ cp exe_<tarih>/disp+work /usr/sap/DEV/ASCS01/exe/   # ASCS01 eski seviyede kaldı
+$ kernelman start </dev/null                         # otomatik (hub gibi): başlatmaz
+  System [1mDEV[0m · running as root → file operations and sapcontrol via su - devadm
+  Kernel directories:
+    /usr/sap/DEV/SYS/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /usr/sap/DEV/D00/exe
+    /usr/sap/DEV/ASCS01/exe
+
+
+  [1mSAP Start DEV[0m
+  [31m✘[0m /usr/sap/DEV/ASCS01/exe is not at the central kernel level (disp+work differ)
+
+  Start anyway? (run 6) Kernel Update first so every directory is extracted)  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m 
+  not started: /usr/sap/DEV/ASCS01/exe first needs the central kernel — 6) Kernel Update, or 7) Kernel Rollback

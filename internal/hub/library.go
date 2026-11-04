@@ -173,12 +173,15 @@ func (l *Library) Delete(name string) error {
 }
 
 // targetPatch is the kernel patch the selected archives lead to.
-func targetPatch(archives []Archive) int {
+func targetPatch(archives []Archive) int { return ops.TargetPatch(sarFiles(archives)) }
+
+// sarFiles turns library archives into the agent's view of them.
+func sarFiles(archives []Archive) []ops.SARFile {
 	var files []ops.SARFile
 	for _, a := range archives {
 		if a.Kind == "sar" {
 			files = append(files, ops.SARFile{Name: a.Name, Component: a.Component, Patch: a.Patch, Full: a.Full})
 		}
 	}
-	return ops.TargetPatch(files)
+	return files
 }

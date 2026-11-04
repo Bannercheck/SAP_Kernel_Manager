@@ -150,11 +150,15 @@ func SIDAdm(sid string) string { return strings.ToLower(sid) + "adm" }
 
 // agentCmd runs the agent with args as the host's run-as user: colours off,
 // glyphs on. sid names <sid>adm when the host runs operations as <sid>adm;
-// status reads (sid empty) run as the login user then. When sudo asks for a
-// password the login password is written to its stdin (sudo -S), never put
-// on a command line.
+// status reads (sid empty) run as the login user then.
 func agentCmd(t Target, ri remoteInfo, sid string, args ...string) (string, io.Reader) {
-	argv := []string{"env", "KERNELMAN_COLOR=never", "KERNELMAN_UNICODE=1", ri.Agent}
+	return runAsCmd(t, sid, append([]string{"env", "KERNELMAN_COLOR=never", "KERNELMAN_UNICODE=1", ri.Agent}, args...)...)
+}
+
+// runAsCmd runs argv as the host's run-as user (sudo, sudo -u <sid>adm, or
+// the login user itself). When sudo asks for a password the login password
+// is written to its stdin (sudo -S), never put on a command line.
+func runAsCmd(t Target, sid string, argv ...string) (string, io.Reader) {
 	var sudo []string
 	switch {
 	case t.Host.Become == "root":
@@ -172,5 +176,5 @@ func agentCmd(t Target, ri remoteInfo, sid string, args ...string) (string, io.R
 		}
 		argv = append(sudo, argv...)
 	}
-	return execCmd(append(argv, args...)...), stdin
+	return execCmd(argv...), stdin
 }

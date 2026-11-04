@@ -193,6 +193,11 @@ func TestPlanSafetyRules(t *testing.T) {
 	if !strings.Contains(j.Title, "patch 423") {
 		t.Errorf("title %q", j.Title)
 	}
+	// half a kernel (SAPEXEDB without SAPEXE) would leave a mixed kernel
+	if _, err := h.Plan(JobRequest{Kind: "update", SID: "PRD", Confirm: "PRD", Archives: []string{"SAPEXEDB_423-80008766.SAR"}}); err == nil ||
+		!strings.Contains(err.Error(), "SAPEXEDB 423 without SAPEXE") {
+		t.Errorf("SAPEXEDB alone: %v", err)
+	}
 	// an application server that is not in the hub blocks a system-wide update
 	for _, host := range h.Store.Hosts() {
 		if host.Name == "prdapp2" {

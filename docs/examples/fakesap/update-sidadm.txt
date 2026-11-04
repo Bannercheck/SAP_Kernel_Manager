@@ -1,0 +1,72 @@
+$ su - devadm -c "kernelman update --yes --from /usr/sap/download"   # sidadm, root sahipli sapuxuserchk, StartService bozuk
+  System [1mDEV[0m · running as devadm [32m✔[0m (new files belong to devadm:sapsys)
+  Kernel directories:
+    /usr/sap/DEV/SYS/exe/uc/linuxx86_64[90m  central · sapcontrol ParameterValue DIR_CT_RUN (instance 00)[0m
+    /usr/sap/DEV/D00/exe
+    /usr/sap/DEV/ASCS01/exe
+
+  [31m⬤[0m [31m[1mSTOPPED[0m[0m   [31m●[0m D00 GRAY   [31m●[0m ASCS01 GRAY
+  [33m![0m no kernel backup from today.
+  [1/11] Check free space ... [32mok[0m  [90m/: need 3 KB, free 25.9 GB[0m
+  [2/11] Check /usr/sap/DEV/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m18 files, 1.6 KB[0m
+  [3/11] Copy to /usr/sap/DEV/SYS/exe/uc/linuxx86_64_20261104 ... [32mok[0m  [90mcp -pR[0m
+  [4/11] Verify linuxx86_64_20261104 ... [32mok[0m  [90m18 files match[0m
+  [5/11] Check /usr/sap/DEV/D00/exe ... [32mok[0m  [90m17 files, 1.5 KB[0m
+  [6/11] Copy to /usr/sap/DEV/D00/exe_20261104 ... [32mok[0m  [90mcp -pR[0m
+  [7/11] Verify exe_20261104 ... [32mok[0m  [90m17 files match[0m
+  [8/11] Check /usr/sap/DEV/ASCS01/exe ... [32mok[0m  [90m17 files, 1.5 KB[0m
+  [9/11] Copy to /usr/sap/DEV/ASCS01/exe_20261104 ... [32mok[0m  [90mcp -pR[0m
+  [10/11] Verify exe_20261104 ... [32mok[0m  [90m17 files match[0m
+  [11/11] Write listing /usr/sap/DEV/.kernelman/backup_20261104_220334.log ... [32mok[0m  [90m3 directories[0m
+  [32m✔[0m backup ready: 3 directories, 52 files
+  [90mscanning /usr/sap/download for .SAR files placed today (2026-11-04); system directories, kernel directories and backups are skipped[0m
+  [90m1 directories scanned[0m
+
+  [36mArchives placed on this server today, in apply order (lowest patch first)[0m
+    [36m[1m#[0m[0m  [36m[1mARCHIVE[0m[0m                    [36m[1mCOMPONENT[0m[0m               [36m[1mPATCH[0m[0m  [36m[1mSIZE[0m[0m     [36m[1mPLACED[0m[0m            [36m[1mFOUND IN[0m[0m
+    1  SAPEXE_403-80007807.SAR    SAPEXE (full kernel)    403    20.0 KB  2026-11-04 22:03  /usr/sap/download
+    2  SAPEXEDB_403-80007808.SAR  SAPEXEDB (full kernel)  403    10.0 KB  2026-11-04 22:03  /usr/sap/download
+    3  dw_421-80007541.sar        dw                      421    10.0 KB  2026-11-04 22:03  /usr/sap/download
+    → target level after apply: [1mpatch 421[0m
+
+  [90mSAPCAR: /usr/sap/DEV/SYS/exe/uc/linuxx86_64/SAPCAR[0m
+  [90mcurrent kernel: 793 Patch 300[0m
+  [1/20] Move aside 1 file(s) devadm cannot overwrite (sapuxuserchk) ... [32mok[0m  [90mkept as <name>.kernelman_20261104_220334 · saproot.sh as root sets owner and setuid of the new files[0m
+  [2/20] Stop sapstartsrv D00 (00) while its files are replaced ... [32mok[0m  [90mstarted again with pf=DEV_D00_vm after the files[0m
+  [3/20] Stop sapstartsrv ASCS01 (01) while its files are replaced ... [32mok[0m  [90mstarted again with pf=DEV_ASCS01_vm after the files[0m
+  [4/20] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/DEV/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m15 files[0m
+  [5/20] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/DEV/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m4 files[0m
+  [6/20] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/DEV/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m2 files[0m
+  [7/20] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/DEV/D00/exe ... [32mok[0m  [90m15 files[0m
+  [8/20] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/DEV/D00/exe ... [32mok[0m  [90m4 files[0m
+  [9/20] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/DEV/D00/exe ... [32mok[0m  [90m2 files[0m
+  [10/20] SAPCAR -xvf SAPEXE_403-80007807.SAR  (SAPEXE 403) in /usr/sap/DEV/ASCS01/exe ... [32mok[0m  [90m15 files[0m
+  [11/20] SAPCAR -xvf SAPEXEDB_403-80007808.SAR  (SAPEXEDB 403) in /usr/sap/DEV/ASCS01/exe ... [32mok[0m  [90m4 files[0m
+  [12/20] SAPCAR -xvf dw_421-80007541.sar  (dw 421) in /usr/sap/DEV/ASCS01/exe ... [32mok[0m  [90m2 files[0m
+  [13/20] chown -R devadm:sapsys /usr/sap/DEV/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90mnot needed: running as devadm[0m
+  [14/20] chown -R devadm:sapsys /usr/sap/DEV/D00/exe ... [32mok[0m  [90mnot needed: running as devadm[0m
+  [15/20] chown -R devadm:sapsys /usr/sap/DEV/ASCS01/exe ... [32mok[0m  [90mnot needed: running as devadm[0m
+  [16/20] saproot.sh DEV ... [32mok[0m  [90mskipped: needs root (later: /usr/sap/DEV/SYS/exe/uc/linuxx86_64/saproot.sh DEV)[0m
+  [17/20] Start sapstartsrv D00 (00) ... [32mok[0m  [90mStartService failed (sapcontrol StartService: Instance service could not be started: sapstartsrv not registered (sapservices) (exit 1)) → sapstartsrv pf=/usr/sap/DEV/SYS/profile/DEV_D00_vm -D · answers[0m
+  [18/20] Start sapstartsrv ASCS01 (01) ... [32mok[0m  [90mStartService failed (sapcontrol StartService: Instance service could not be started: sapstartsrv not registered (sapservices) (exit 1)) → sapstartsrv pf=/usr/sap/DEV/SYS/profile/DEV_ASCS01_vm -D · answers[0m
+  [19/20] Read kernel version (disp+work -V) ... [32mok[0m  [90m793 Patch 421[0m
+  [20/20] Verify every instance directory matches the central kernel ... [32mok[0m  [90mD00/exe, ASCS01/exe = central[0m
+
+  [32m✔[0m Kernel DEV: 793 Patch 300 → [1m793 Patch 421[0m
+  [33m![0m not root: run chown -R devadm:sapsys and saproot.sh DEV as root before starting
+  [33m![0m 1 file(s) could not be overwritten and were kept under a new name (delete them after a good start):
+      /usr/sap/DEV/SYS/exe/uc/linuxx86_64/sapuxuserchk.kernelman_20261104_220334
+  [90mSAP stays stopped: start it with 5) SAP Stop / Start or kernelman start[0m
+
+$ grep -E "Stop|Start|SAPCAR" /usr/sap/.fakesap/calls.log
+  22:03:34 devadm sapcontrol -nr 00 -function StopService
+  22:03:34 devadm sapcontrol -nr 01 -function StopService
+  22:03:34 devadm SAPCAR -xvf /usr/sap/download/SAPEXE_403-80007807.SAR
+  22:03:34 devadm SAPCAR -xvf /usr/sap/download/SAPEXEDB_403-80007808.SAR
+  22:03:34 devadm SAPCAR -xvf /usr/sap/download/dw_421-80007541.sar
+  22:03:35 devadm SAPCAR -xvf /usr/sap/download/SAPEXE_403-80007807.SAR
+  22:03:35 devadm SAPCAR -xvf /usr/sap/download/SAPEXEDB_403-80007808.SAR
+  22:03:35 devadm SAPCAR -xvf /usr/sap/download/dw_421-80007541.sar
+  …
+  22:03:35 devadm sapcontrol -nr 00 -function StartService DEV
+  22:03:35 devadm sapcontrol -nr 01 -function StartService DEV

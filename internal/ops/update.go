@@ -29,6 +29,7 @@ type UpdateResult struct {
 	After       kernel.Version
 	ChownNote   string
 	SaprootNote string
+	Moved       []string // files renamed aside because they could not be overwritten
 }
 
 func (e *Env) kernelDirs() []string {
@@ -48,41 +49,65 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 	}
 	SortForApply(files)
 	dirs := e.kernelDirs()
-	n := len(dirs)*len(files) + len(dirs) + 3 // extract per dir/file, chown per dir, saproot.sh, version, sync check
+	src := func(dir string, f SARFile) string {
+		if _, err := os.Stat(filepath.Join(dir, f.Name)); err == nil { // Kernel Files placed a copy in every kernel directory
+			return filepath.Join(dir, f.Name)
+		}
+		return f.Path
+	}
+	listed := map[string][]string{}
+	blocked, err := blockedFiles(dirs, func(dir string) ([]string, error) {
+		var all []string
+		for _, f := range files {
+			names, ok := listed[f.Name]
+			if !ok {
+				var lerr error
+				if names, lerr = archiveEntries(ctx, e, sapcar, src(dir, f)); lerr != nil {
+					return nil, lerr
+				}
+				listed[f.Name] = names
+			}
+			all = append(all, names...)
+		}
+		return all, nil
+	})
+	if err != nil {
+		return res, err
+	}
+	svc, kept := runningServices(ctx, e)
+	mv := min(len(blocked), 1)
+	// move aside, stop sapstartsrv, extract per dir/file, chown per dir, saproot.sh, start sapstartsrv, version, sync check
+	n := mv + len(dirs)*len(files) + len(dirs) + 3 + 2*len(svc)
 	res.Before, _ = kernel.Probe(ctx, e.R, e.P, e.T.KernelDir)
 	if res.Before.Release > 0 {
 		e.Pr.Info("current kernel: " + res.Before.String())
 	}
-	if !e.IsRoot { // SAPCAR as <sid>adm cannot overwrite the root-owned setuid files saproot.sh leaves behind
-		for _, dir := range dirs {
-			if n, ex := rootOwnedFiles(dir); n > 0 {
-				e.Pr.Info(fmt.Sprintf("! %d file(s) in %s belong to root (%s): SAPCAR as %s will fail on them — run KernelMan as root", n, dir, strings.Join(ex, ", "), e.User))
-			}
-		}
+	if res.Moved, err = moveAside(e, blocked, 1, n); err != nil {
+		return res, err
 	}
-	step := 0
+	if err := pauseServices(ctx, e, svc, kept, 1+mv, n); err != nil {
+		return res, err
+	}
+	step := mv + len(svc)
 	for _, dir := range dirs {
 		for _, f := range files {
 			st := ExtractStep{Dir: dir, File: f.Name}
 			step++
 			if err := e.step(step, n, fmt.Sprintf("SAPCAR -xvf %s  (%s %d) in %s", f.Name, f.Label, f.Patch, dir), func() (string, error) {
-				src := filepath.Join(dir, f.Name) // Kernel Files placed a copy in every kernel directory
-				if _, err := os.Stat(src); err != nil {
-					src = f.Path
-				}
 				// as the current user: root overwrites the root-owned setuid files too; chown -R and saproot.sh follow
-				out, err := e.run(ctx, exec.Cmd{Path: sapcar, Args: []string{"-xvf", src}, Dir: dir, Timeout: time.Hour})
+				out, err := e.run(ctx, exec.Cmd{Path: sapcar, Args: []string{"-xvf", src(dir, f)}, Dir: dir, Timeout: time.Hour})
 				st.Files = countExtracted(out.Stdout)
 				st.Err = err
 				return fmt.Sprintf("%d files", st.Files), err
 			}); err != nil {
 				res.Steps = append(res.Steps, st)
+				servicesDown(e, svc)
 				return res, err
 			}
 			res.Steps = append(res.Steps, st)
 		}
 	}
-	return finishKernelChange(ctx, e, res, step+1, n)
+	return finishKernelChange(ctx, e, res, svc, step+1, n)
 }
 
 // Restore copies each directory's backup back over it (Kernel Rollback).
@@ -90,34 +115,56 @@ func Extract(ctx context.Context, e *Env, sapcar string, files []SARFile) (*Upda
 func Restore(ctx context.Context, e *Env, backups map[string]string) (*UpdateResult, error) {
 	res := &UpdateResult{}
 	dirs := e.kernelDirs()
-	n := 2*len(dirs) + 3 // copy per dir, chown per dir, saproot.sh, version, sync check
 	for _, dir := range dirs {
 		b := backups[dir]
 		if st, err := os.Stat(b); b == "" || err != nil || !st.IsDir() {
 			return res, fmt.Errorf("no backup for %s", dir)
 		}
 	}
+	blocked, err := blockedFiles(dirs, func(dir string) ([]string, error) {
+		entries, err := os.ReadDir(backups[dir])
+		var names []string
+		for _, de := range entries {
+			names = append(names, de.Name())
+		}
+		return names, err
+	})
+	if err != nil {
+		return res, err
+	}
+	svc, kept := runningServices(ctx, e)
+	mv := min(len(blocked), 1)
+	n := mv + 2*len(dirs) + 3 + 2*len(svc) // move aside, stop sapstartsrv, copy per dir, chown per dir, saproot.sh, start sapstartsrv, version, sync check
 	res.Before, _ = kernel.Probe(ctx, e.R, e.P, e.T.KernelDir)
-	step := 0
+	if res.Moved, err = moveAside(e, blocked, 1, n); err != nil {
+		return res, err
+	}
+	if err := pauseServices(ctx, e, svc, kept, 1+mv, n); err != nil {
+		return res, err
+	}
+	step := mv + len(svc)
 	for _, dir := range dirs {
 		step++
 		if err := e.step(step, n, "Copy "+backups[dir]+" over "+dir, func() (string, error) {
 			_, err := e.run(ctx, exec.Cmd{Path: "cp", Args: []string{"-pR", backups[dir] + "/.", dir + "/"}, Timeout: 2 * time.Hour})
 			return "cp -pR", err
 		}); err != nil {
+			servicesDown(e, svc)
 			return res, err
 		}
 	}
-	return finishKernelChange(ctx, e, res, step+1, n)
+	return finishKernelChange(ctx, e, res, svc, step+1, n)
 }
 
 // finishKernelChange runs the common tail: chown every directory,
-// saproot.sh in the central one, version probe.
-func finishKernelChange(ctx context.Context, e *Env, res *UpdateResult, step, n int) (*UpdateResult, error) {
+// saproot.sh in the central one, sapstartsrv started again from the new
+// files, version probe, instance directory check.
+func finishKernelChange(ctx context.Context, e *Env, res *UpdateResult, svc []ServiceInstance, step, n int) (*UpdateResult, error) {
 	for _, dir := range e.kernelDirs() {
 		if err := e.step(step, n, fmt.Sprintf("chown -R %s:%s %s", e.T.SIDAdm, e.T.Group, dir), func() (string, error) {
 			return chownTree(ctx, e, dir, &res.ChownNote)
 		}); err != nil {
+			servicesDown(e, svc)
 			return res, err
 		}
 		step++
@@ -138,9 +185,14 @@ func finishKernelChange(ctx context.Context, e *Env, res *UpdateResult, step, n 
 		}
 		return res.SaprootNote, err
 	}); err != nil {
+		servicesDown(e, svc)
 		return res, err
 	}
 	step++
+	if err := StartSapstartsrv(ctx, e, svc, step, n); err != nil {
+		return res, err
+	}
+	step += len(svc)
 	if err := e.step(step, n, "Read kernel version (disp+work -V)", func() (string, error) {
 		v, err := kernel.Probe(ctx, e.R, e.P, e.T.KernelDir)
 		res.After = v
@@ -183,29 +235,6 @@ func KernelSync(e *Env) []kernel.Sync {
 		out = append(out, kernel.CompareDirs(e.T.KernelDir, d))
 	}
 	return out
-}
-
-// rootOwnedFiles counts regular files in dir owned by uid 0 and names a few.
-func rootOwnedFiles(dir string) (int, []string) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return 0, nil
-	}
-	n := 0
-	var ex []string
-	for _, de := range entries {
-		info, err := de.Info()
-		if err != nil || !info.Mode().IsRegular() {
-			continue
-		}
-		if uid, ok := fileUID(info); ok && uid == 0 {
-			n++
-			if len(ex) < 4 {
-				ex = append(ex, de.Name())
-			}
-		}
-	}
-	return n, ex
 }
 
 // countExtracted counts "x <file>" lines in SAPCAR output.

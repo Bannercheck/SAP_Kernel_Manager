@@ -17,13 +17,27 @@ import (
 
 // Filesystem is one df line.
 type Filesystem struct {
-	Device  string `json:"device"`
-	Mount   string `json:"mount"`
-	SizeKB  int64  `json:"size_kb"`
-	UsedKB  int64  `json:"used_kb"`
-	AvailKB int64  `json:"avail_kb"`
-	UsePct  int    `json:"use_pct"`
-	Path    string `json:"path"` // the path that was asked about
+	Device  string   `json:"device"`
+	Mount   string   `json:"mount"`
+	SizeKB  int64    `json:"size_kb"`
+	UsedKB  int64    `json:"used_kb"`
+	AvailKB int64    `json:"avail_kb"`
+	UsePct  int      `json:"use_pct"`
+	Path    string   `json:"path"`           // the path that was asked about
+	Also    []string `json:"also,omitempty"` // further asked paths on the same file system
+}
+
+// Holds reports whether path was asked about and lies on this file system.
+func (f Filesystem) Holds(path string) bool {
+	if f.Path == path {
+		return true
+	}
+	for _, a := range f.Also {
+		if a == path {
+			return true
+		}
+	}
+	return false
 }
 
 // DirSize is one du line.
@@ -35,7 +49,7 @@ type DirSize struct {
 // DF returns the file systems holding paths (one entry per distinct mount).
 func DF(ctx context.Context, r exec.Runner, paths ...string) ([]Filesystem, error) {
 	var out []Filesystem
-	seen := map[string]bool{}
+	seen := map[string]int{} // mount → index in out
 	for _, p := range paths {
 		if _, err := os.Stat(p); err != nil {
 			continue
@@ -49,10 +63,12 @@ func DF(ctx context.Context, r exec.Runner, paths ...string) ([]Filesystem, erro
 			continue
 		}
 		fs.Path = p
-		if !seen[fs.Mount] {
-			seen[fs.Mount] = true
-			out = append(out, fs)
+		if i, ok := seen[fs.Mount]; ok { // /usr/sap and /sapmnt on one file system: one entry, both paths
+			out[i].Also = append(out[i].Also, p)
+			continue
 		}
+		seen[fs.Mount] = len(out)
+		out = append(out, fs)
 	}
 	if len(out) == 0 {
 		return nil, fmt.Errorf("df: no file system information for %s", strings.Join(paths, " "))

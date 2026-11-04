@@ -52,7 +52,9 @@ Denemek için SAP'siz demo: `kernelman-hub --demo` (giriş `admin` / `kernelman1
   standart girişten (`sudo -S`) verilir, komut satırına asla yazılmaz.
 * sidadm olarak her SAP adımı çalışır; yalnızca root gerektirenler (chown, `saproot.sh`, SAP Host Agent restart)
   "run as root later" olarak raporlanır.
-* sudo modlarında ajan `/var/tmp/kernelman-<kullanıcı>` dizinine kurulur (sidadm sizin ev dizininizi okuyamaz).
+* sudo modlarında ajan `/var/tmp/kernelman-<kullanıcı>` dizinine kurulur (sidadm sizin ev dizininizi okuyamaz);
+  ayarlardaki arşiv dizinine (`/usr/sap/download/kernelman`) yazılamıyorsa arşivler `/var/tmp/kernelman-<kullanıcı>/download`'a
+  gider ve SAP durdurulmadan önce `sudo -u <sid>adm cksum` ile **çalıştıran kullanıcının da okuyabildiği** kanıtlanır.
   `/var/tmp` `noexec` bağlıysa hub bunu açıkça söyler.
 * Host eklemek **yalnızca okur**: SSH ile girer, ajanı kopyalar, `kernelman status` çalıştırır.
   Host anahtarı ilk bağlantıda kaydedilir; değişirse bağlantı reddedilir.

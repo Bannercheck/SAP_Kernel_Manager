@@ -20,7 +20,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [x] Adım 1 — **SAP Status**: kernel sürümü, sapstartsrv/sapcontrol ışıkları, SID/hostname/instance otomatik; menü başlığında sistem + instance ışıkları
 - [x] Adım 2 — **Kernel Backup**: `DIR_CT_RUN` → yanına `exe_<YYYYMMDD>` (`cp -pR`, root ise `su - <sid>adm`), dosya sayısı doğrulanır, `ls -la` listesi ekranda
 - [x] Adım 3 — **Kernel Files**: indirme dizini sorulur; **yalnızca bugün tarihli** `*.SAR/*.sar` dosyaları kernel dizinine kopyalanır; `chown -R <sid>adm:sapsys`; liste
-- [x] Adım 4 — **SAP Stop / Start**: `K` = StopSystem ALL → WaitforStopped → StopService; `S` = StartService (sidadm) → StartSystem ALL → WaitforStarted; ışıklar
+- [x] Adım 4 — **SAP Stop / Start**: `K` = StopSystem ALL → GRAY bekle (**sapstartsrv açık kalır**); `S` = duran sapstartsrv için StartService, olmazsa `sapstartsrv pf=` → StartSystem ALL → GREEN bekle; ışıklar
 - [x] Adım 5 — **Kernel Update**: sistem durmuş + bugünkü yedek şart (yoksa teklif eder); arşivler **patch numarasına göre küçükten büyüğe** `SAPCAR -xvf`
       (SAPEXE → SAPEXEDB → tek bileşen yamaları); `chown -R`; `saproot.sh` (root); `disp+work -V` ile yeni seviye; `S` ile başlat
 - [x] Adım 6 — **Kernel Rollback**: en son `exe_<date>` yedeğini kernel dizininin üstüne kopyalar, chown, doğrula, başlat teklifi
@@ -37,9 +37,32 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 ## Faz H — KernelMan Hub (2026-11-04)
 - [x] H1 — `cmd/kernelman-hub` + `internal/hub`: envanter, şifreli kasa, SSH (x/crypto), ajan dağıtımı, durum toplama, iş kuyruğu + SSE konsol,
       planlayıcı (merkezi host önce), güvenlik kilitleri, demo landscape, Liquid Glass pano (bilgi kartları, filtre, detay penceresi), paketler.
+- [x] H1.1 — uçtan uca deneme (2026-11-04, "v9" kontrolü): `scripts/fakesap/setup.sh` gerçek yollarla sahte SAP hostu kurar
+      (`/usr/sap`, `/sapmnt`, profiller, sapservices, Host Agent, ASCS01 + D00, bugünkü arşivler 700'lük ev dizininde); gerçek ajan
+      ikilisi root / devadm (tcsh) / `sudo -u devadm` ile ve hub gerçek SSH üzerinden bütün adımları geçti. Bulunan 11 hata düzeltildi (karar günlüğü).
 - [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT)
 
 ## Karar günlüğü
+- 2026-11-04 · Kullanıcı: "bütün adımları kendi içinde dene, en son v9 çıkarmıştık". "v9" = gönderilen 10. ajan paketi (Mac'te
+  `kernelman-linux-aix (9).tar.gz`, commit 4aa33cf). Gerçek yollarla sahte SAP hostunda (`scripts/fakesap`) bulunan ve düzeltilen hatalar:
+  (1) **SAP Stop sapstartsrv'yi de öldürüyordu** (kullanıcı: "sadece SAP'yi kapatsın") → Stop yalnızca StopSystem + bekleme; Start duran
+  sapstartsrv'yi StartService, olmazsa `sapstartsrv pf=<profil> -D` ile kaldırır. Kernel Update/Rollback çalışan sapstartsrv'yi **yalnızca
+  dosyalar değişirken** durdurur (Linux/AIX'te çalışan dosya üzerine yazılamaz, yüklü kütüphane bozulur) ve aynı profille kendisi başlatır.
+  (2) **sidadm ile update yarıda kalıyordu**: saproot.sh'nin root'a verdiği dosyaya SAPCAR yazamıyor, ajan yalnızca uyarıp SAPCAR'ı
+  başlatıyor, kernel karışık kalıyordu → önce `SAPCAR -tvf` ile içerik okunur, yazılamayan dosyalar `<ad>.kernelman_<tarih_saat>` olarak
+  kenara alınır (geri alınabilir), içerik bilinmiyorsa hiçbir şeye dokunulmaz; rollback'te de aynı. (3) Kernel File Transfer root ile
+  kernel dizinine `chown -R` yapıp icmbnd'nin root/setuid'ini siliyordu → yalnızca kopyalanan arşivler chown edilir. (4) Başkasının
+  yüklediği 644 arşivde chmod olmayınca tüm kopyalama duruyordu → okunabiliyorsa devam. (5) `--yes` farklı dizinlerdeki bugünkü
+  arşivleri karıştırıp hepsini alıyordu → birden çok dizin varsa `--from` istenir. (6) **Hub sudo modunda** arşivleri giriş kullanıcısının
+  700'lük ev dizinine itiyordu, sidadm okuyamıyor, update "arşiv yok" diye SAP durduktan sonra düşüyordu → paylaşılan
+  `/var/tmp/kernelman-<kullanıcı>/download` + SAP durmadan önce `sudo -u <sid>adm cksum` ile okunabilirlik kanıtı. (7) SAPEXEDB tek başına
+  (veya SAPEXE ile farklı yamada) seçilebiliyordu → ajan ve hub karışık kerneli reddeder. (8) Bir instance `exe` dizini merkezi kernelden
+  geride iken Start yalnızca uyarıyordu → başlatmaz (menüde açık onay, hub/otomatikte ret). (9) `--yes` modunda yine "Start?" soruyordu.
+  (10) /usr/sap ile /sapmnt aynı dosya sistemindeyse /sapmnt "free space n/a" gösteriyordu. (11) Menüdeki Kernel Update arşivleri
+  numarayla seçtirmiyordu (hepsini alıyordu) → File Transfer ile aynı `[Y]/[S]/[N]` seçimi. Doğrulama: root, devadm (tcsh),
+  `sudo -u devadm` (parolalı) ile backup → files → stop → update → start → rollback; hub: gerçek SSH, push+cksum, update, rollback,
+  eksik app sunucusu ve yanlış SID reddi; menü 5'te tek instance ve F; menü 8 loopback ssh. Kalan bilinen sınırlama: "bugün konulan" kuralı
+  ctime'ı da sayar (kullanıcının isteği; WinSCP mtime'ı korur) — eski bir arşivin ctime'ı bugün değiştiyse listede görünür (tabloda PLACED).
 - 2026-11-04 · Kullanıcı: "tek sunucudan bütün sunucularda kernel güncellemesini dashboard'dan yapalım; Windows'uma ya da RHEL'e kurulabilsin".
   **KernelMan Hub** (ARCHITECTURE §11): tek binary `kernelman-hub` (windows/amd64, linux/amd64, linux/ppc64le, darwin); SAP hostlarına
   SSH ile bağlanır, mevcut `kernelman` ajanını (gömülü: linux-amd64, linux-ppc64le, aix-ppc64) kopyalar ve alt komutlarını çalıştırır —
