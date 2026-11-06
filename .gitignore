@@ -14,3 +14,5 @@ coverage.*
 .DS_Store
 # agent builds embedded into the hub by `make hub`
 /internal/hub/agents/kernelman-*
+# graphify (rebuilt per session by the environment setup script)
+/graphify-out/
