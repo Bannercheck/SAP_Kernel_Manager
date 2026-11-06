@@ -47,7 +47,8 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
   için proje kapsamlı kuruldu (`graphify install --project`): `.claude/skills/graphify/`, `.claude/settings.json` hook'ları
   (PreToolUse Bash|Grep|Read|Glob, SessionStart compact), CLAUDE.md'ye graphify bölümü. Go bağımlılığı değil, yalnızca geliştirme aracı.
   `graphify-out/` commit edilmez (6.8 MB, her derlemede tamamen yeniden yazılır); bulut ortamı kurulum betiği CLI'yı kurar ve
-  `graphify update .` ile (yalnızca AST, API maliyeti yok) grafı her oturumda yeniden üretir. `--strict` kullanılmadı.
+  `graphify update .` ile (yalnızca AST, API maliyeti yok) grafı her oturumda yeniden üretir. Kullanıcı onayıyla `--strict` açık:
+  grafın kapsadığı dosyaya ilk Read/Grep, son 30 dk'da `graphify query/explain/path` çalışmadıysa oturumda bir kez reddedilir.
 - 2026-11-04 · Kullanıcı: "saproot için root yok, sudo ile root yetkimiz var, `dzdo su -` ile root'a geçiyorum; RHEL'e kuracağım, zipli gönder".
   Hub hostuna **Become with** eklendi: `sudo` (varsayılan) · `dzdo` (Centrify, sudo ile aynı seçenekler; parola yoksa `-n` verilmez) ·
   `dzdo su -` / `sudo su -` (yalnızca `su -` izinli politikalar: komut `<araç> [-S -p ''] su - <kullanıcı> -c '<tek satır>'`, iç komut
