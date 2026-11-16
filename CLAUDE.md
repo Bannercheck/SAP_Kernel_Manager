@@ -57,3 +57,20 @@ Bu depoda `.claude/skills/caveman/` ve `.claude/skills/ultracave/` bulunur (kayn
 - **Kalıcı metinler normal yazılır:** kod, yorum, commit mesajı, doküman, sürüm notu, PR ve bilet.
 - **Tam cümleye dönülen yerler:** güvenlik uyarısı, geri alınamaz işlem onayı, sırası karışabilecek adımlar, kafası karışan kullanıcı ve kullanıcıya sorulan soru.
 - **Kapatmak için:** "stop caveman" ya da "normal mode".
+
+## Çalışma yöntemi (superpowers)
+
+Bu depoda `.claude/skills/` altında obra/superpowers skill'leri bulunur (commit 22f0b46, MIT; LICENSE her skill klasöründe): using-superpowers, brainstorming, writing-plans, executing-plans, test-driven-development, systematic-debugging, verification-before-completion, requesting-code-review, receiving-code-review, using-git-worktrees, finishing-a-development-branch, dispatching-parallel-agents, subagent-driven-development, writing-skills, diagnosing-superpowers.
+
+- Her görevde işe başlamadan uygun skill'i kullan (using-superpowers).
+- Yeni özellik: brainstorming, sonra writing-plans, sonra test-driven-development.
+- Hata: systematic-debugging; kök neden bulunmadan düzeltme yapılmaz.
+- "Bitti" demeden önce verification-before-completion: testi ve çıktıyı kendin gör.
+- Öncelik sırası: kullanıcının talimatı, sonra bu CLAUDE.md, sonra skill'ler.
+
+## Arayüz tasarımı (ui-ux-pro-max)
+
+Bu depoda `.claude/skills/ui-ux-pro-max/` bulunur (nextlevelbuilder/ui-ux-pro-max-skill, commit e59ff37, MIT; LICENSE klasörde).
+
+- Arayüz, bileşen, renk, tipografi, erişilebilirlik ve duyarlı düzen işlerinde bu skill'i kullan.
+- Kapalı ağda çalışan ürünlerde dış font, CDN ya da harici görsel bağlantısı ekleme; yerel varlık kullan.
