@@ -11,7 +11,8 @@ Wants=network-online.target
 [Service]
 User=kernelman
 Group=kernelman
-ExecStart=/opt/kernelman-hub/kernelman-hub --listen 0.0.0.0:8443 --no-browser --data /var/lib/kernelman-hub
+# another port: change 7443 here (and in firewall-cmd)
+ExecStart=/opt/kernelman-hub/kernelman-hub --listen 0.0.0.0:7443 --no-browser --data /var/lib/kernelman-hub
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

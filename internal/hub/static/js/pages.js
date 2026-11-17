@@ -161,7 +161,9 @@ function bindSystemActions(root, systems, after = rerender) {
 export function jobsCard(jobs, title) {
   return html`<div class="card"><div class="card-h"><h2>${title}</h2><div class="grow"></div><a href="#/jobs" class="small">All jobs</a></div>
     ${jobs && jobs.length ? html`<table class="table"><tbody>${jobs.map((j) => html`<tr class="click" data-href="#/job/${j.id}">
-      <td><b>${j.title}</b><div class="muted small">${ago(j.created)}${j.started ? " · " + duration(j.started, j.ended) : ""}</div></td><td>${jobBadge(j.state)}</td></tr>`)}</tbody></table>`
+      <td><b>${j.title}</b><div class="muted small">${ago(j.created)}${j.started ? " · " + duration(j.started, j.ended) : ""}</div>
+        ${j.state === "running" ? html`<div class="meter thin"><i data-w="${j.percent}"></i></div>` : ""}</td>
+      <td class="nowrap">${j.state === "running" ? html`<b class="pctsm">${j.percent}%</b> ` : ""}${jobBadge(j.state)}</td></tr>`)}</tbody></table>`
       : html`<div class="empty">No jobs yet.</div>`}</div>`;
 }
 

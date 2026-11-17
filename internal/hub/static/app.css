@@ -246,6 +246,12 @@ input:focus, select:focus, button:focus-visible { outline: 2px solid var(--brand
 .plan .plan-total { display: block; border: 0; padding-top: 12px; }
 .plan .plan-total::before { display: none; }
 .jobhead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+.pct { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--brand); }
+.pct small { font-size: 18px; font-weight: 700; margin-left: 1px; }
+.pct.ok { color: var(--green); } .pct.failed, .pct.cancelled, .pct.interrupted { color: var(--red); }
+.pctsm { font-variant-numeric: tabular-nums; color: var(--brand); margin-right: 6px; }
+.meter.thin { height: 4px; margin-top: 6px; }
+.nowrap { white-space: nowrap; }
 .steps { display: flex; flex-direction: column; }
 .step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--hair); font-size: 13px; }
 .step .ic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--gray-soft); color: var(--gray); }

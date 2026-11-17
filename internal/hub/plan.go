@@ -144,8 +144,10 @@ func (h *Hub) Plan(req JobRequest) (*Job, error) {
 		if len(archives) > 0 {
 			push()
 		}
+		// the backup runs while SAP is still up: shorter downtime, and the update finds today's backup
+		each("agent", "Back up kernel directories (SAP keeps running)", append([]string{"backup", "--yes"}, sid...)...)
 		each("agent", "Stop SAP", append([]string{"stop"}, sid...)...)
-		each("agent", "Back up, extract, verify the kernel", from(append([]string{"update", "--yes"}, sid...)...)...)
+		each("agent", "Extract, verify the kernel", from(append([]string{"update", "--yes"}, sid...)...)...)
 		add(hosts[0], "verify", "Verify the kernel level on every host", fmt.Sprint(targetPatch(archives)))
 		if req.Start {
 			each("agent", "Start SAP", append([]string{"start"}, sid...)...)

@@ -98,7 +98,7 @@ export function jobsPage(el) {
     if (!alive) return;
     mount(el, html`<div class="card">${jobs.length ? html`<table class="table"><thead><tr><th>Job</th><th>System</th><th>State</th><th>Steps</th><th>Started</th><th>Duration</th></tr></thead><tbody>
       ${jobs.map((j) => html`<tr class="click" data-href="#/job/${j.id}"><td><b>${j.title}</b></td><td>${j.sid ? html`<span class="chip">${j.sid}</span>` : ""}</td><td>${jobBadge(j.state)}</td>
-        <td class="small">${j.steps.filter((s) => s.state === "ok").length}/${j.steps.length}</td><td class="small muted">${ago(j.started || j.created)}</td><td class="small">${duration(j.started, j.ended)}</td></tr>`)}
+        <td class="small"><b>${j.percent}%</b> <span class="muted">· ${j.steps.filter((s) => s.state === "ok").length}/${j.steps.length}</span></td><td class="small muted">${ago(j.started || j.created)}</td><td class="small">${duration(j.started, j.ended)}</td></tr>`)}
       </tbody></table>` : html`<div class="empty">No jobs yet. Open a system and start an operation.</div>`}</div>`);
     on(el, "click", "[data-href]", (_, r) => { location.hash = r.dataset.href; });
   });
@@ -122,11 +122,14 @@ export function jobPage(el, id) {
     top(job.title, html`<a href="#/jobs">Jobs</a>${job.sid ? html` / <a href="#/system/${job.sid}">${job.sid}</a>` : ""}`);
     const running = job.state === "running" || job.state === "queued";
     const done = job.steps.filter((s) => s.state === "ok").length;
-    mount($("[data-head]", el), html`<div class="jobhead">${jobBadge(job.state)}<span>${done}/${job.steps.length} steps</span><span class="muted">started ${clock(job.started) || "—"} · ${duration(job.started, job.ended)}</span>
+    const cur = job.steps.find((s) => s.state === "running");
+    mount($("[data-head]", el), html`<div class="jobhead"><span class="pct ${job.state}">${job.percent}<small>%</small></span>${jobBadge(job.state)}<span>${done}/${job.steps.length} steps</span>
+      ${cur ? html`<span class="muted">now: ${cur.title}${cur.sub ? " · " + cur.sub : ""}</span>` : ""}<span class="muted">started ${clock(job.started) || "—"} · ${duration(job.started, job.ended)}</span>
       <span class="grow"></span>${running ? html`<button class="danger sm" data-cancel>${icon("stop", 13)} Stop after the current step</button>` : ""}</div>
-      <div class="meter"><i data-w="${job.steps.length ? (done * 100) / job.steps.length : 0}"></i></div>`);
+      <div class="meter"><i data-w="${job.percent}"></i></div>`);
     mount($("[data-steps]", el), html`${job.steps.map((s, i) => html`<div class="step ${s.state}"><span class="ic">${s.state === "ok" ? "✓" : s.state === "failed" ? "✕" : s.state === "skipped" ? "–" : i + 1}</span>
-      <div><div class="t">${s.title}</div><div class="d">${s.kind}${s.started ? " · " + duration(s.started, s.ended) : ""}</div>${s.detail ? html`<div class="err">${s.detail}</div>` : ""}</div></div>`)}`);
+      <div><div class="t">${s.title}</div><div class="d">${s.kind}${s.started ? " · " + duration(s.started, s.ended) : ""}${s.state === "running" ? html` · <b>${s.pct}%</b>${s.sub ? " · " + s.sub : ""}` : ""}</div>
+        ${s.state === "running" ? html`<div class="meter thin"><i data-w="${s.pct}"></i></div>` : ""}${s.detail ? html`<div class="err">${s.detail}</div>` : ""}</div></div>`)}`);
   };
   on(el, "click", "[data-cancel]", async () => {
     if (await confirmDialog("Stop this job?", html`<p>The running step finishes — an extraction or backup is never cut in half — and every following step is skipped.</p>`, "Stop after this step", true)) {

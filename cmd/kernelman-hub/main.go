@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -21,17 +22,22 @@ import (
 	"github.com/Bannercheck/SAP_Kernel_Manager/internal/version"
 )
 
+// serverPort is the default port on a server (no desktop).
+const serverPort = "7443"
+
 func main() { os.Exit(run(os.Args[1:])) }
 
 func run(args []string) int {
 	// A desktop (Windows, macOS) serves only itself; a server (Linux without a
 	// display) serves the network over HTTPS so the dashboard opens from any PC.
-	defListen := "0.0.0.0:8443"
+	// Not 8443: other in-house applications on the same server often take it.
+	defListen := "0.0.0.0:" + serverPort
 	if platform.HasDesktop() {
 		defListen = "127.0.0.1:8090"
 	}
 	fs := flag.NewFlagSet("kernelman-hub", flag.ContinueOnError)
 	listen := fs.String("listen", defListen, "address to serve the dashboard on (non-loopback addresses use HTTPS)")
+	port := fs.Int("port", 0, "serve on this port, keeping the address of --listen (e.g. --port 9443)")
 	data := fs.String("data", hub.DefaultDataDir(), "data directory (inventory, encrypted secrets, jobs, archives)")
 	demo := fs.Bool("demo", false, "simulated SAP landscape, nothing real is touched (login admin / kernelman1)")
 	cert := fs.String("tls-cert", "", "TLS certificate (PEM); default: self-signed, created in the data directory")
@@ -48,6 +54,18 @@ func run(args []string) int {
 	if *showVersion {
 		fmt.Println("kernelman-hub " + strings.TrimPrefix(version.String(), version.AppName+" "))
 		return 0
+	}
+	if *port != 0 {
+		if *port < 1 || *port > 65535 {
+			fmt.Fprintf(os.Stderr, "kernelman-hub: --port %d: a port is 1–65535\n", *port)
+			return 2
+		}
+		host, _, err := net.SplitHostPort(*listen)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "kernelman-hub: --listen %q: %v\n", *listen, err)
+			return 2
+		}
+		*listen = net.JoinHostPort(host, strconv.Itoa(*port))
 	}
 	cfg := hub.Config{DataDir: *data}
 	if *demo {

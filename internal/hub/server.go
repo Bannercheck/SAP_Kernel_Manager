@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"syscall"
 	"time"
 )
 
@@ -122,6 +124,9 @@ func (h *Hub) Serve(ctx context.Context, addr, certFile, keyFile string) (url st
 	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
+		if errors.Is(err, syscall.EADDRINUSE) || strings.Contains(err.Error(), "address already in use") || strings.Contains(err.Error(), "Only one usage of each socket address") {
+			return "", nil, fmt.Errorf("port %s is already used by another program on this server — start with --port <another port>: %w", port, err)
+		}
 		return "", nil, err
 	}
 	srv := &http.Server{Handler: h.Handler(secure), ReadHeaderTimeout: 15 * time.Second, IdleTimeout: 2 * time.Minute,

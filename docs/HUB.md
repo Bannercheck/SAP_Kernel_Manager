@@ -16,18 +16,20 @@ chmod +x kernelman-hub                     # zip Mac'te açılıp tekrar kopyala
 ```
 
 `unzip` yoksa: `dnf install unzip` ya da `.tar.gz` paketini kullanın. Hub'ı root olmadan, kendi kullanıcınızla
-çalıştırabilirsiniz (8443 ayrıcalıksız porttur); yalnızca güvenlik duvarı ve kalıcı servis için root gerekir.
+çalıştırabilirsiniz (7443 ayrıcalıksız porttur); yalnızca güvenlik duvarı ve kalıcı servis için root gerekir.
+Port başka bir uygulamadaysa (ör. 8443'te regista): `./kernelman-hub --port 9443` — hub dolu portu açıkça söyler.
 
 Açılışta erişim linkleri yazılır (sunucu adı ve her IP için), örneğin:
 
 ```
-  Dashboard  https://saphub01:8443
-             https://10.20.30.15:8443
+  Dashboard  https://saphub01:7443
+             https://10.20.30.15:7443
   Self-signed certificate: the browser warns once. Compare its SHA-256 fingerprint: …
-  Firewall (RHEL): firewall-cmd --permanent --add-port=8443/tcp && firewall-cmd --reload
+  Firewall (RHEL): firewall-cmd --permanent --add-port=7443/tcp && firewall-cmd --reload
 ```
 
-* Linux'ta varsayılan: **tüm arayüzlerde HTTPS 8443**. Sertifika ilk açılışta oluşturulur (kendinden imzalı);
+* Linux'ta varsayılan: **tüm arayüzlerde HTTPS 7443** (8443 başka iç uygulamalara bırakıldı; `--port N` ile değişir,
+  kalıcı serviste `kernelman-hub.service` içindeki `7443`). Sertifika ilk açılışta oluşturulur (kendinden imzalı);
   kendi sertifikanız için `--tls-cert` / `--tls-key`.
 * Port açık değilse yukarıdaki `firewall-cmd` satırını root olarak çalıştırın.
 * Tarayıcıda linki açın → ilk girişte **yönetici hesabı** oluşturulur (en az 10 karakter parola).
@@ -38,7 +40,7 @@ Açılışta erişim linkleri yazılır (sunucu adı ve her IP için), örneğin
 ## 2. Windows'ta çalıştırma
 
 `kernelman-hub-windows-amd64.zip` → `kernelman-hub.exe` çift tıklayın. Tarayıcı kendiliğinden açılır
-(`http://127.0.0.1:8090`, yalnızca bu PC). Ağa açmak için: `kernelman-hub.exe --listen 0.0.0.0:8443`.
+(`http://127.0.0.1:8090`, yalnızca bu PC). Ağa açmak için: `kernelman-hub.exe --listen 0.0.0.0:7443`.
 
 Denemek için SAP'siz demo: `kernelman-hub --demo` (giriş `admin` / `kernelman1`, simüle edilmiş hostlar).
 

@@ -43,6 +43,12 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT)
 
 ## Karar günlüğü
+- 2026-11-17 · Kullanıcı: "güncellemeyi yüzdelik görebiliyor muyuz?" ve "regista da aynı sunucuda olacak, 8443 olmasın".
+  (1) İş yüzdesi: her adımın ağırlığı (preflight/verify 1, push 3, stop/start 3, backup 4, rollback 6, update 8), çalışan adım kendi
+  ilerlemesiyle sayılır — ajanın `[i/n]` satırlarından (ör. SAPCAR 12/20) veya arşiv yüklemesinden; değer hiç geri gitmez, iş sayfasında
+  büyük `%`, adım listesinde adım yüzdesi + alt adım, iş listesinde ve ana sayfadaki "Recent jobs"ta da görünür. (2) Hub'daki Kernel
+  Update planında yedek artık **SAP durmadan önce** ayrı adım (duruş süresi kısalır; update bugünkü yedeği bulup atlar). (3) Linux'ta
+  varsayılan port **7443**; `--port N` (adres korunur); dolu portta açık mesaj; systemd biriminde 7443.
 - 2026-11-04 · Kullanıcı: "saproot için root yok, sudo ile root yetkimiz var, `dzdo su -` ile root'a geçiyorum; RHEL'e kuracağım, zipli gönder".
   Hub hostuna **Become with** eklendi: `sudo` (varsayılan) · `dzdo` (Centrify, sudo ile aynı seçenekler; parola yoksa `-n` verilmez) ·
   `dzdo su -` / `sudo su -` (yalnızca `su -` izinli politikalar: komut `<araç> [-S -p ''] su - <kullanıcı> -c '<tek satır>'`, iç komut
@@ -93,7 +99,7 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - 2026-11-04 · Kullanıcı tasarım geri bildirimleri: "Liquid Glass" (aurora arka plan, `backdrop-filter` cam paneller, açık/koyu);
   "kartlar simetrik olsun, üstü kalabalık" → sistem kartı yalnızca **SID + durum + kernel**, tüm kartlar eşit boy (`auto-fit` ızgara,
   `grid-auto-rows: 1fr`); hostname/instance no/OS/DB/işlemler karta tıklayınca açılan **pencerede**; uzun hostname'ler kırılır.
-  Arama + durum/tür/kernel filtreleri yenilemede korunur. RHEL'de varsayılan `0.0.0.0:8443` HTTPS ve açılışta sunucu adı + IP linkleri.
+  Arama + durum/tür/kernel filtreleri yenilemede korunur. RHEL'de varsayılan `0.0.0.0:7443` HTTPS (2026-11-17'de 8443'ten taşındı) ve açılışta sunucu adı + IP linkleri.
 - 2026-09-27 · Kullanıcı: diğer sunuculara kopyalama + KernelMan'in kendisi de gitsin → menü 8 **Send to Other Servers** (`internal/ship`):
   bugünkü SAR'lar + KernelMan dağıtımı (`kernelman.sh` + `bin/*`; `os.Executable()` ile bulunur, dağıtım klasöründen çalışmıyorsa gömülü
   başlatıcı + çalışan binary'den geçici olarak derlenir) → `ssh mkdir -p`, `scp -pr`, `chmod`, iki tarafta `cksum` karşılaştırması, uzak `ls -la`.

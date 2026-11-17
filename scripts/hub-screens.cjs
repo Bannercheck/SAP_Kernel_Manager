@@ -63,6 +63,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.waitForSelector(".console .l");
   await sleep(7000);
   await shot("job-running", false);
+  // half way: the percentage, the running step's own progress and the overview while the job runs
+  await page.waitForFunction(() => +((document.querySelector(".jobhead .pct")?.textContent || "0").replace(/\D/g, "")) >= 50, null, { timeout: 180000 });
+  await shot("job-progress", false);
+  await page.goto(base + "/#/");
+  await page.waitForSelector(".sys");
+  await sleep(1500);
+  await shot("overview-running", false);
+  await page.goBack();
+  await page.waitForSelector(".jobhead");
   await page.waitForFunction(() => /Done|Failed/.test(document.querySelector("[data-head]")?.textContent || ""), null, { timeout: 180000 });
   await sleep(1500);
   await shot("job-done", false);

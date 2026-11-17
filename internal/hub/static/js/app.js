@@ -148,7 +148,8 @@ function startPolling() {
     if (live && !document.querySelector(".backdrop")) { if (S.update) S.update(); else render(); }
     S.timer = setTimeout(tick, S.overview && S.overview.busy ? 3000 : 10000);
   };
-  S.timer = setTimeout(tick, S.overview && S.overview.busy ? 3000 : 10000);
+  // a page opened from another one (e.g. the overview after watching a job) first shows the data it had, then fresh data at once
+  S.timer = setTimeout(tick, 0);
 }
 function stopPolling() { clearTimeout(S.timer); }
 

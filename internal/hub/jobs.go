@@ -25,6 +25,10 @@ type Step struct {
 	Detail   string    `json:"detail,omitempty"`
 	Started  time.Time `json:"started,omitempty"`
 	Ended    time.Time `json:"ended,omitempty"`
+	Pct      int       `json:"pct"`           // progress of this step, 0–100
+	Sub      string    `json:"sub,omitempty"` // where the step is: "12/20" (agent step), "file 1/3" (push)
+
+	subI, subN, base int // the agent's current numbered phase (progress.go)
 }
 
 // Line is one line of a job's console.
@@ -44,6 +48,7 @@ type JobInfo struct {
 	SID     string    `json:"sid,omitempty"`
 	Host    string    `json:"host,omitempty"` // set when the job runs on one host only
 	State   string    `json:"state"`          // queued running ok failed cancelled interrupted
+	Percent int       `json:"percent"`        // weighted progress of the steps, 0–100
 	Created time.Time `json:"created"`
 	Started time.Time `json:"started,omitempty"`
 	Ended   time.Time `json:"ended,omitempty"`
@@ -74,6 +79,7 @@ func (j *Job) Summary() JobInfo {
 		c := *st
 		s.Steps = append(s.Steps, &c)
 	}
+	s.Percent = jobPercent(s.State, s.Steps)
 	return s
 }
 

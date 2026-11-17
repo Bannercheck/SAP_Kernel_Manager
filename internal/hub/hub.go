@@ -219,7 +219,7 @@ func (h *Hub) runJob(ctx context.Context, j *Job) error {
 		err := h.runStep(ctx, j, st)
 		j.update(func() {
 			st.Ended = time.Now()
-			st.State = "ok"
+			st.State, st.Pct = "ok", 100
 			if err != nil {
 				st.State, st.Detail = "failed", err.Error()
 			}
@@ -281,7 +281,10 @@ func (h *Hub) runStep(ctx context.Context, j *Job, st *Step) error {
 		}
 		args = append(args, a)
 	}
-	lw := &lineWriter{emit: func(s string) { j.log(st.HostName, "out", s) }}
+	lw := &lineWriter{emit: func(s string) {
+		j.update(func() { st.subStep(s) })
+		j.log(st.HostName, "out", s)
+	}}
 	cmd, stdin := agentCmd(j.targets[st.Host], ri, j.SID, args...)
 	code, err := c.Run(ctx, cmd, stdin, lw, lw)
 	lw.Flush()
@@ -320,11 +323,12 @@ func (h *Hub) push(ctx context.Context, j *Job, st *Step, c Conn) error {
 	}
 	dir := strings.TrimSpace(out)
 	j.log(st.HostName, "info", "target directory "+dir)
-	for _, name := range st.Archives {
+	for k, name := range st.Archives {
 		a, err := h.Library.Get(name)
 		if err != nil {
 			return err
 		}
+		j.update(func() { st.uploaded(k, len(st.Archives), 0) })
 		remote := dir + "/" + name
 		if have, _ := output(ctx, c, shCmd(`cksum "$1" 2>/dev/null || true`, remote)); sumOf(have) == a.Cksum {
 			// already there: re-date it, Kernel File Transfer takes only files placed today
@@ -339,6 +343,7 @@ func (h *Hub) push(ctx context.Context, j *Job, st *Step, c Conn) error {
 			return err
 		}
 		pr := &progressReader{r: f, size: a.Size, report: func(pct int, done int64) {
+			j.update(func() { st.uploaded(k, len(st.Archives), pct) })
 			j.log(st.HostName, "info", fmt.Sprintf("  ↑ %s %3d%%  %s of %s", name, pct, humanBytes(done), humanBytes(a.Size)))
 		}}
 		err = c.Upload(ctx, pr, remote, 0o644)

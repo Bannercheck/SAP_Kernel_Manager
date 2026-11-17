@@ -196,7 +196,8 @@ func TestPlanSafetyRules(t *testing.T) {
 	}
 	got := strings.Join(order, " ")
 	want := "preflight:prdascs preflight:prdapp1 preflight:prdapp2 preflight:prdapp3 push:prdascs push:prdapp1 push:prdapp2 push:prdapp3 " +
-		"agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3 agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3 verify:prdascs " +
+		"agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3 agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3 " + // backup (SAP up), stop
+		"agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3 verify:prdascs " +
 		"agent:prdascs agent:prdapp1 agent:prdapp2 agent:prdapp3"
 	if got != want {
 		t.Errorf("order:\n%s\nwant\n%s", got, want)
