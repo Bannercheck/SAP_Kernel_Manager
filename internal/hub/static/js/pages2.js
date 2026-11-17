@@ -4,7 +4,7 @@ import { S, refresh, rerender, top } from "./app.js";
 
 // ---------------------------------------------------------------- operation dialog
 const OP = {
-  update: { title: "Kernel Update", text: "Preflight on every host, push the archives, stop the system, back up and extract the kernel on every host (central services first), verify that every instance directory matches the central kernel, then start." },
+  update: { title: "Kernel Update", text: "Preflight on every host, push the archives, back up the kernel while SAP still runs, stop the system, extract the kernel on every host (central services first), verify that every instance directory matches the central kernel, then start. The job page shows the progress in percent." },
   backup: { title: "Kernel Backup", text: "Copies every kernel directory next to itself as <name>_<date>. The shared central directory is backed up once." },
   files: { title: "Kernel File Transfer", text: "Pushes the archives to the hosts (or uses archives already placed there today), checks them with cksum and copies them into every kernel directory." },
   stop: { title: "SAP Stop", text: "StopSystem ALL from the central services host, then every host waits for its instances and stops its sapstartsrv." },
