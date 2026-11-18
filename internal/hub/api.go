@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -77,18 +78,13 @@ func (h *Hub) apiSetup(w http.ResponseWriter, r *http.Request, secure bool) {
 		httpError(w, 400, "bad request")
 		return
 	}
-	if h.Store.Auth() != nil {
-		httpError(w, 409, "the hub is already set up")
+	key, err := h.setup(c.User, c.Password)
+	switch {
+	case errors.Is(err, ErrAlreadySetUp):
+		httpError(w, 409, err.Error())
 		return
-	}
-	a, err := NewAuth(strings.TrimSpace(c.User), c.Password)
-	if err != nil {
+	case err != nil:
 		httpError(w, 400, err.Error())
-		return
-	}
-	key, _ := a.Key(c.Password)
-	if err := h.Store.SetAuth(a, nil); err != nil {
-		httpError(w, 500, err.Error())
 		return
 	}
 	h.setCookie(w, h.sess.create(key), secure)
@@ -101,20 +97,16 @@ func (h *Hub) apiLogin(w http.ResponseWriter, r *http.Request, secure bool) {
 		httpError(w, 400, "bad request")
 		return
 	}
-	a := h.Store.Auth()
-	if a == nil {
-		httpError(w, 409, "set up the hub first")
+	key, err := h.login(c.User, c.Password)
+	switch {
+	case errors.Is(err, ErrNotSetUp):
+		httpError(w, 409, err.Error())
 		return
-	}
-	if h.sess.locked() {
-		httpError(w, 429, "too many failed logins, wait a minute")
+	case errors.Is(err, ErrLoginsPaused):
+		httpError(w, 429, err.Error())
 		return
-	}
-	key, ok := a.Verify(c.User, c.Password)
-	if !ok {
-		h.sess.failed()
-		time.Sleep(400 * time.Millisecond)
-		httpError(w, 401, "wrong user or password")
+	case err != nil:
+		httpError(w, 401, err.Error())
 		return
 	}
 	h.setCookie(w, h.sess.create(key), secure)
@@ -207,19 +199,7 @@ func (h *Hub) apiPutHost(w http.ResponseWriter, r *http.Request) {
 	}
 	host := Host{ID: r.PathValue("id"), Name: f.Name, Port: f.Port, User: f.User, Auth: f.Auth, KeyPath: strings.TrimSpace(f.KeyPath),
 		Become: f.Become, SudoPW: f.SudoPW, Elevate: f.Elevate, Label: strings.TrimSpace(f.Label)}
-	if f.Secret != "" {
-		sealed, err := Seal(h.sess.vaultKey(), f.Secret)
-		if err != nil {
-			httpError(w, 500, err.Error())
-			return
-		}
-		host.Secret = sealed
-	}
-	if host.ID == "" && host.Auth != "key" && host.Secret == "" {
-		httpError(w, 400, "enter the SSH password")
-		return
-	}
-	saved, err := h.Store.PutHost(host)
+	saved, err := h.SaveHost(host, f.Secret)
 	if err != nil {
 		httpError(w, 400, err.Error())
 		return
@@ -235,12 +215,10 @@ func (h *Hub) apiPutHost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) apiDeleteHost(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	if err := h.Store.DeleteHost(id); err != nil {
+	if err := h.RemoveHost(r.PathValue("id")); err != nil {
 		httpError(w, 404, err.Error())
 		return
 	}
-	h.forget(id)
 	writeJSON(w, 200, map[string]bool{"ok": true})
 }
 

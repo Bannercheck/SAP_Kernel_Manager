@@ -2,9 +2,8 @@ module github.com/Bannercheck/SAP_Kernel_Manager
 
 go 1.27
 
-toolchain go1.27.3
+toolchain go1.27.4
 
-require (
-	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-)
+require golang.org/x/crypto v0.59.0
+
+require golang.org/x/sys v0.50.0 // indirect

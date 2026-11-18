@@ -40,9 +40,20 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [x] H1.1 — uçtan uca deneme (2026-11-04, "v9" kontrolü): `scripts/fakesap/setup.sh` gerçek yollarla sahte SAP hostu kurar
       (`/usr/sap`, `/sapmnt`, profiller, sapservices, Host Agent, ASCS01 + D00, bugünkü arşivler 700'lük ev dizininde); gerçek ajan
       ikilisi root / devadm (tcsh) / `sudo -u devadm` ile ve hub gerçek SSH üzerinden bütün adımları geçti. Bulunan 11 hata düzeltildi (karar günlüğü).
-- [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT)
+- [x] H1.2 — konsol modu `kernelman-hub console` (2026-11-18)
+- [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT) — dashboard veya konsol ile
 
 ## Karar günlüğü
+- 2026-11-18 · `make vuln`: **GO-2026-6859** (net/http, MaxBytesReader başlık yarışı → HTTP/1 sunucusu çöker; hub'ın yükleme API'si
+  MaxBytesReader kullanıyor, gerçekten etkileniyordu) → toolchain **go1.27.4**; x/crypto **v0.59.0**, x/sys **v0.50.0** (en güncel).
+  Sonuç: 0 zafiyet; gerçek SSH e2e testi yeni x/crypto ile geçti.
+- 2026-11-18 · Kullanıcı: "bunu sadece RedHat'te konsoldan çalışacak hale de getir". **`kernelman-hub console`** (`internal/hubcli`):
+  tarayıcı ve port yok; dashboard ile aynı veri dizini, kasa, plan, güvenlik kuralları ve iş kuyruğu (hub'a ön yüzler için Go API:
+  `Setup`, `Login`, `HostViews`, `SaveHost`, `RemoveHost`; web işleyicileri de bunları kullanır). Ana ekran = sistem tablosu +
+  dikkat listesi + son işler; işlem akışı: kilit aç → arşivler numarayla → host → plan → SID yaz → canlı konsol, adım başına `%`,
+  terminalde altta ilerleme çubuğu; Ctrl+C mevcut adımdan sonra durdurur. Arşivler sunucudaki dosya/dizinden kütüphaneye alınır.
+  Varsayım: tek hub süreci/veri dizini (`hub.lock`, PID; ölü süreçten kalan kilit devralınır) — dashboard ve konsol aynı anda aynı
+  dizinde çalışırsa iki iş birden koşabilirdi. Şifreler terminalde `stty -echo` ile gizli okunur (ajandaki gibi, yeni bağımlılık yok).
 - 2026-11-17 · Kullanıcı: "güncellemeyi yüzdelik görebiliyor muyuz?" ve "regista da aynı sunucuda olacak, 8443 olmasın".
   (1) İş yüzdesi: her adımın ağırlığı (preflight/verify 1, push 3, stop/start 3, backup 4, rollback 6, update 8), çalışan adım kendi
   ilerlemesiyle sayılır — ajanın `[i/n]` satırlarından (ör. SAPCAR 12/20) veya arşiv yüklemesinden; değer hiç geri gitmez, iş sayfasında

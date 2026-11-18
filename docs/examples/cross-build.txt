@@ -7,23 +7,26 @@ $ make cross
 
 $ ls -la dist dist/bin
   dist:
-  total 24
-  drwxr-xr-x 4 root root 4096 Nov  4 22:01 .
-  drwxr-xr-x 9 root root 4096 Nov  4 21:04 ..
-  -rw-r--r-- 1 root root  541 Nov  4 22:03 SHA256SUMS
-  drwxr-xr-x 2 root root 4096 Nov  4 22:03 bin
-  drwxr-xr-x 6 root root 4096 Nov  4 21:09 hub
-  -rwxr-xr-x 1 root root 1081 Nov  4 22:03 kernelman.sh
+  total 19204
+  drwxr-xr-x  5 root root    4096 Nov 17 20:54 .
+  drwxr-xr-x 10 root root    4096 Nov 17 20:53 ..
+  -rw-r--r--  1 root root     541 Nov 18 20:27 SHA256SUMS
+  drwxr-xr-x  2 root root    4096 Nov 18 20:27 bin
+  drwxr-xr-x  6 root root    4096 Nov 17 20:54 hub
+  drwxr-xr-x  3 root root    4096 Nov  4 22:06 kernelman
+  -rw-r--r--  1 root root 9814540 Nov  4 22:06 kernelman-ceb6c85.tar.gz
+  -rw-r--r--  1 root root 9814540 Nov  4 22:06 kernelman-linux-aix.tar.gz
+  -rwxr-xr-x  1 root root    1081 Nov 18 20:27 kernelman.sh
   
   dist/bin:
-  total 39728
-  drwxr-xr-x 2 root root    4096 Nov  4 22:03 .
-  drwxr-xr-x 4 root root    4096 Nov  4 22:01 ..
-  -rwxr-xr-x 1 root root 9088611 Nov  4 22:03 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 8195776 Nov  4 22:03 kernelman-darwin-amd64
-  -rwxr-xr-x 1 root root 7541138 Nov  4 22:03 kernelman-darwin-arm64
-  -rwxr-xr-x 1 root root 8036512 Nov  4 22:03 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 7798944 Nov  4 22:03 kernelman-linux-ppc64le
+  total 39732
+  drwxr-xr-x 2 root root    4096 Nov 18 20:27 .
+  drwxr-xr-x 5 root root    4096 Nov 17 20:54 ..
+  -rwxr-xr-x 1 root root 9089027 Nov 18 20:26 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 8195776 Nov 18 20:27 kernelman-darwin-amd64
+  -rwxr-xr-x 1 root root 7541138 Nov 18 20:26 kernelman-darwin-arm64
+  -rwxr-xr-x 1 root root 8036512 Nov 18 20:26 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 7798944 Nov 18 20:26 kernelman-linux-ppc64le
 
 $ file dist/bin/*
   dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped

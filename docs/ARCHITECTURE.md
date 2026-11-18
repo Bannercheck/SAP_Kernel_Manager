@@ -325,7 +325,7 @@ en son açılır ve kernel `793 patch 423` olur. Kernel dizini sapstartsrv kapal
 ## 11. KernelMan Hub — tek sunucudan web panosu (2026-11-04)
 
 ```
- Tarayıcı ──HTTPS(7443)/HTTP(127.0.0.1:8090)──▶ kernelman-hub (RHEL veya Windows)
+ Tarayıcı ──HTTPS(7443)/HTTP(127.0.0.1:8090)──▶ kernelman-hub (RHEL veya Windows)   · ya da terminalde `kernelman-hub console` (internal/hubcli, port yok)
                                                  ├─ Store     hub.json (0600): envanter, pinlenmiş host anahtarları, ayarlar, kilitler
                                                  ├─ Vault     admin parolası → PBKDF2-SHA256 600k → AES-256-GCM (SSH parolaları)
                                                  ├─ Library   tarayıcıdan yüklenen SAR/SAPCAR (sha256 + POSIX cksum)

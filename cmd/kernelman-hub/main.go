@@ -28,6 +28,9 @@ const serverPort = "7443"
 func main() { os.Exit(run(os.Args[1:])) }
 
 func run(args []string) int {
+	if len(args) > 0 && args[0] == "console" {
+		return runConsole(args[1:])
+	}
 	// A desktop (Windows, macOS) serves only itself; a server (Linux without a
 	// display) serves the network over HTTPS so the dashboard opens from any PC.
 	// Not 8443: other in-house applications on the same server often take it.
@@ -45,7 +48,7 @@ func run(args []string) int {
 	noBrowser := fs.Bool("no-browser", false, "do not open the browser")
 	showVersion := fs.Bool("version", false, "print the version and exit")
 	fs.Usage = func() {
-		fmt.Fprintf(fs.Output(), "KernelMan Hub %s — SAP kernel updates for every server, from one dashboard\n\nUsage: kernelman-hub [flags]\n\n", version.Version)
+		fmt.Fprintf(fs.Output(), "KernelMan Hub %s — SAP kernel updates for every server, from one dashboard\n\nUsage: kernelman-hub [flags]          the dashboard (browser)\n       kernelman-hub console [flags]  the same on this terminal, no browser and no open port\n\n", version.Version)
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -67,23 +70,12 @@ func run(args []string) int {
 		}
 		*listen = net.JoinHostPort(host, strconv.Itoa(*port))
 	}
-	cfg := hub.Config{DataDir: *data}
-	if *demo {
-		cfg.DataDir = filepath.Join(os.TempDir(), "kernelman-hub-demo")
-		_ = os.RemoveAll(cfg.DataDir) // a fresh landscape every start
-		cfg.Remote, cfg.Demo = hub.NewDemoRemote(), true
+	h, release, code := openHub(*data, *demo)
+	if h == nil {
+		return code
 	}
-	h, err := hub.New(cfg)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "kernelman-hub:", err)
-		return 1
-	}
-	if *demo {
-		if err := hub.SetupDemo(h, "admin", "kernelman1"); err != nil {
-			fmt.Fprintln(os.Stderr, "kernelman-hub demo:", err)
-			return 1
-		}
-	}
+	defer release()
+	cfg := hub.Config{DataDir: h.Store.Dir()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	url, done, err := h.Serve(ctx, *listen, *cert, *key)

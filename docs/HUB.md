@@ -37,6 +37,22 @@ Açılışta erişim linkleri yazılır (sunucu adı ve her IP için), örneğin
 * Kalıcı servis: paketteki `kernelman-hub.service` dosyasının başındaki 3 komut (systemd, ayrı `kernelman` kullanıcısı).
 * Veri dizini: `~/.config/KernelManHub` (servis olarak `/var/lib/kernelman-hub`).
 
+## 1b. Yalnızca konsol (tarayıcı ve port yok)
+
+```sh
+./kernelman-hub console                 # RHEL'de ssh oturumundan; port açılmaz, tarayıcı gerekmez
+./kernelman-hub console --demo          # simüle edilmiş hostlarla deneme (admin / kernelman1)
+```
+
+Dashboard ile **aynı envanter, kasa, iş geçmişi ve güvenlik kuralları** kullanılır (aynı `--data` dizini; ilk açılışta
+yönetici hesabı konsoldan oluşturulur). Menü: `1` durum yenile · `2` sistem detayı (hostlar, instance'lar, local exe = central,
+disk) · `3` işlem (Kernel Update, Backup, Transfer files, Stop, Start, Start services, Rollback): kilit açma → arşivleri numarayla
+seçme → host seçimi → **plan** → stop/update/rollback için **SID'i yazma** → canlı konsol, her adımda yüzde ve terminalin
+altında ilerleme çubuğu (`#######......  42%  Stop SAP on prdapp2`) · `4` hostlar (ekle/düzenle/sil/test; root · `<sid>adm`,
+sudo · dzdo · `dzdo su -`) · `5` arşivler (sunucudaki bir dosyayı veya dizini kütüphaneye al) · `6` işler ve logları · `7` ayarlar.
+Ctrl+C iş sürerken **mevcut adım bittikten sonra** durdurur (SAPCAR/yedek yarıda kesilmez).
+Aynı veri dizinini aynı anda tek hub süreci kullanabilir (dashboard **veya** konsol): ikincisi açıkça reddedilir.
+
 ## 2. Windows'ta çalıştırma
 
 `kernelman-hub-windows-amd64.zip` → `kernelman-hub.exe` çift tıklayın. Tarayıcı kendiliğinden açılır

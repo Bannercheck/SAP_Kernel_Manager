@@ -44,6 +44,7 @@ func CleanInput(line string) (clean string, esc bool) {
 var asciiGlyphs = map[rune]string{
 	'·': "-", '→': "->", '←': "<-", '…': "...", '—': "-", '–': "-", '›': ">", '‹': "<",
 	'✔': "+", '✘': "x", '●': "*", '○': "o", '⬤': "#", '◯': "o", '│': "|", '├': "|", '└': "`", '─': "-",
+	'▶': ">", '█': "#", '░': ".", '↑': "^",
 }
 
 // ASCIIWriter returns a writer that transliterates the decorative glyphs to

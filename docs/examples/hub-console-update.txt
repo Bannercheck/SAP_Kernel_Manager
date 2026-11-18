@@ -1,0 +1,141 @@
+$ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y ⏎ PRD ⏎ q
+
+  KernelMan Hub — console
+  User: admin
+  Password: 
+
+  KernelMan Hub · vm · 2026-11-18 20:26
+  3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
+
+  SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
+  DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
+  PRD     AS ABAP  ● running  793 PL 200  4 hosts  4/4 running  read-only
+  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  read-only
+
+  NEEDS ATTENTION
+  ✘ sbxsrv sbxsrv: connect sbxsrv:22: dial tcp 10.20.30.49:22: connect: no route to host
+  ! DEV devsrv /usr/sap is 92% full
+  ! PRD prdapp3 D20: local exe is not at the central kernel level (sapstartsrv, disp+work, gwrd, icman differ)
+
+   1) Refresh           read the status of every host again
+   2) System            details of one system: hosts, instances, local exe = central, disk
+   3) Run an operation  Kernel Update · Backup · Transfer files · Stop · Start · Start services · Rollback
+   4) Hosts             list · add · edit · delete · test the login
+   5) Archives          the hub's library: import SAR / SAPCAR files from this server, delete
+   6) Jobs              history and logs
+   7) Settings          archive directory on the hosts
+   q) Quit              
+  Select (number, q to quit): 3
+     1) DEV  AS Java · 793 PL 423 · 1 host
+     2) PRD  AS ABAP · 793 PL 200 · 4 hosts
+     3) QAS  AS ABAP · 793 PL 300 · 1 host
+  System (number or name, Enter = back): PRD
+     1) update           Kernel Update — preflight · push archives · backup (SAP up) · stop · extract · verify · start
+     2) backup           Backup — copy every kernel directory next to itself as <name>_<date>
+     3) files            Transfer files — push archives and copy them into the kernel directories
+     4) stop             Stop — StopSystem ALL, wait until every process is GRAY (sapstartsrv keeps running)
+     5) start            Start — sapstartsrv when needed, StartSystem ALL, wait until GREEN
+     6) services         Start services — SAP Host Agent and every sapstartsrv that is down
+     7) rollback         Rollback — copy the latest kernel backup back, verify, start
+     8) refresh          Refresh status — read the hosts of this system again
+  Operation on PRD (number or name, Enter = back): update
+
+  PRD is read-only in the hub: every change needs an unlock (it lasts 8 hours).
+
+  Unlock PRD now?  [Y] Yes  [N] No  › y
+  ✔ PRD unlocked until 04:26
+
+  ARCHIVES IN THE HUB LIBRARY
+  #  ARCHIVE                    COMPONENT               PATCH  SIZE
+  1  igsexe_7-80007787.sar      igsexe                  7      900 KB
+  2  SAPEXE_423-80008765.SAR    SAPEXE (full kernel)    423    2.8 MB
+  3  SAPEXEDB_423-80008766.SAR  SAPEXEDB (full kernel)  423    1.7 MB
+  4  SAPCAR_1324-70006178.EXE   SAPCAR                         300 KB
+  Archives to push (numbers, e.g. 1,3-4; Enter = none, already on the hosts): 2,3
+  Target level after the update: patch 423 (now 793 PL 200)
+
+     1) prdascs Central Services
+     2) prdapp1 Application Server
+     3) prdapp2 Application Server
+     4) prdapp3 Application Server
+  Hosts: Enter = all 4 hosts of PRD (central services first), or the number of one host: 
+
+  Start SAP afterwards (only when every host verified)?  [Y] Yes  [N] No  › y
+
+  PLAN — Kernel Update PRD (4 hosts) → patch 423
+   1 Preflight checks                                 prdascs → prdapp1 → prdapp2 → prdapp3
+   2 Push 2 file(s) and check cksum                   prdascs → prdapp1 → prdapp2 → prdapp3
+   3 Back up kernel directories (SAP keeps running)   prdascs → prdapp1 → prdapp2 → prdapp3
+   4 Stop SAP                                         prdascs → prdapp1 → prdapp2 → prdapp3
+   5 Extract, verify the kernel                       prdascs → prdapp1 → prdapp2 → prdapp3
+   6 Verify the kernel level on every host            
+   7 Start SAP                                        prdascs → prdapp1 → prdapp2 → prdapp3
+  25 steps in total · one host at a time · the job stops at the first failure
+  Type PRD to confirm (Enter = cancel): PRD
+
+  job c816ee6fb6fc started · Ctrl+C stops after the running step (an extraction or a backup is never cut in half)
+
+  ▶   0% [1/25] Preflight checks on prdascs
+  prdascs      PRD on prdascs: 1 local instance(s), kernel 793 Patch 200, central kernel /sapmnt/PRD/exe/uc/linuxx86_64
+  prdascs      /usr/sap: 62.0 GB free (38% used)
+  prdascs      /sapmnt: 19.0 GB free (62% used)
+  ✔ Preflight checks on prdascs (0s)
+
+  ▶   1% [2/25] Preflight checks on prdapp1
+  prdapp1      PRD on prdapp1: 1 local instance(s), kernel 793 Patch 200, central kernel /sapmnt/PRD/exe/uc/linuxx86_64
+  prdapp1      /usr/sap: 49.0 GB free (51% used)
+  prdapp1      /sapmnt: 19.0 GB free (62% used)
+  ✔ Preflight checks on prdapp1 (0s)
+
+  ▶   2% [3/25] Preflight checks on prdapp2
+  prdapp2      PRD on prdapp2: 1 local instance(s), kernel 793 Patch 200, central kernel /sapmnt/PRD/exe/uc/linuxx86_64
+  prdapp2      /usr/sap: 53.0 GB free (47% used)
+  prdapp2      /sapmnt: 19.0 GB free (62% used)
+  ✔ Preflight checks on prdapp2 (0s)
+
+  ▶   3% [4/25] Preflight checks on prdapp3
+  prdapp3      PRD on prdapp3: 1 local instance(s), kernel 793 Patch 200, central kernel /sapmnt/PRD/exe/uc/linuxx86_64
+  prdapp3      /usr/sap: 56.0 GB free (44% used)
+  prdapp3      /sapmnt: 19.0 GB free (62% used)
+  ✔ Preflight checks on prdapp3 (0s)
+
+  ▶   4% [5/25] Push 2 file(s) and check cksum on prdascs
+  prdascs    target directory /usr/sap/download/kernelman
+  prdascs      ↑ SAPEXE_423-80008765.SAR  11%  320.0 KB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  20%  608.0 KB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  30%  896.0 KB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  40%  1.2 MB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  50%  1.4 MB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  60%  1.7 MB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  70%  2.0 MB of 2.8 MB
+  prdascs      ↑ SAPEXE_423-80008765.SAR  80%  2.3 MB of 2.8 MB
+  … 326 more lines of the job console …
+  ✔ Start SAP on prdapp3 (0s)
+  ✔ Kernel Update PRD (4 hosts) → patch 423 finished
+
+  ✔ Kernel Update PRD (4 hosts) → patch 423 · 100% · ok · job c816ee6fb6fc
+
+  KernelMan Hub · vm · 2026-11-18 20:26
+  3 systems (1 running, 1 stopped) · 6/7 hosts reachable · 5/8 instances running · kernels: 793 PL 300, 793 PL 423
+
+  SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
+  DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
+  PRD     AS ABAP  ● partial  793 PL 423  4 hosts  3/4 running  unlocked until 04:26
+  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  read-only
+
+  NEEDS ATTENTION
+  ✘ sbxsrv sbxsrv: connect sbxsrv:22: dial tcp 10.20.30.49:22: connect: no route to host
+  ! DEV devsrv /usr/sap is 92% full
+
+  RECENT JOBS
+  ✔  100%  Kernel Update PRD (4 hosts) → patch 423  11-18 20:26
+
+   1) Refresh           read the status of every host again
+   2) System            details of one system: hosts, instances, local exe = central, disk
+   3) Run an operation  Kernel Update · Backup · Transfer files · Stop · Start · Start services · Rollback
+   4) Hosts             list · add · edit · delete · test the login
+   5) Archives          the hub's library: import SAR / SAPCAR files from this server, delete
+   6) Jobs              history and logs
+   7) Settings          archive directory on the hosts
+   q) Quit              
+  Select (number, q to quit): q

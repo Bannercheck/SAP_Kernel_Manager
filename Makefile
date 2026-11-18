@@ -47,6 +47,7 @@ cross:
 examples: build
 	@rm -f docs/examples/*.txt docs/examples/*.png
 	@KERNELMAN_WRITE_EXAMPLE=1 go test ./internal/cli >/dev/null
+	@KERNELMAN_WRITE_EXAMPLE=1 go test -count=1 ./internal/hubcli >/dev/null
 	@{ echo '$$ ./kernelman.sh version'; ./bin/kernelman version; } > docs/examples/version.txt
 	@{ echo '$$ ./kernelman.sh status      # SAP kurulu olmayan bir hostta'; $(EXENV) ./bin/kernelman status; echo "exit code: $$?"; } > docs/examples/status-nosap.txt
 	@rm -rf /tmp/kernelman-demo-example && { echo '$$ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K → M · q'; printf '2\ny\nm\n5\nk\nm\nq\n' | KERNELMAN_DEMO=1 KERNELMAN_DEMO_ROOT=/tmp/kernelman-demo-example KERNELMAN_MENU=1 $(EXENV) ./bin/kernelman | sed 's|/tmp/kernelman-demo-example|~/.kernelman/demo|g'; } > docs/examples/demo.txt

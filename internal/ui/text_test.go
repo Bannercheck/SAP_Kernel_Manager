@@ -29,13 +29,13 @@ func TestCleanInput(t *testing.T) {
 func TestASCIIWriter(t *testing.T) {
 	var out bytes.Buffer
 	w := ASCIIWriter(&out)
-	in := []byte("Hostname host1 · exe → exe_20260927 … ✔ ├── /usr/sap › ağaç\n")
+	in := []byte("Hostname host1 · exe → exe_20260927 … ✔ ├── /usr/sap › ağaç ▶ ██░░ ↑\n")
 	for i := range in { // one byte at a time: multi-byte runes are split across writes
 		if _, err := w.Write(in[i : i+1]); err != nil {
 			t.Fatal(err)
 		}
 	}
-	want := "Hostname host1 - exe -> exe_20260927 ... + |-- /usr/sap > ağaç\n"
+	want := "Hostname host1 - exe -> exe_20260927 ... + |-- /usr/sap > ağaç > ##.. ^\n"
 	if out.String() != want {
 		t.Errorf("got %q\nwant %q", out.String(), want)
 	}
