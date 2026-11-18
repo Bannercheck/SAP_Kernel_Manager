@@ -101,6 +101,9 @@ func TestConsoleUpdate(t *testing.T) {
 	must(t, out, "PRD is read-only", "unlocked until", "Target level after the update: patch 423",
 		"PLAN", "Back up kernel directories (SAP keeps running)", "Type PRD to confirm",
 		"100%", "Kernel Update PRD (4 hosts) → patch 423 finished")
+	// the screen after the job shows the hosts as they are now, not before the job
+	after := out[strings.LastIndex(out, "finished"):]
+	must(t, after, "793 PL 423  4 hosts  4/4 running")
 	jobs := h.Jobs.List("PRD", 1)
 	if len(jobs) != 1 || jobs[0].State != "ok" || jobs[0].Percent != 100 {
 		t.Errorf("job %+v", jobs)

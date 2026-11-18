@@ -1,10 +1,10 @@
-$ ./kernelman-hub console      # 5 ⏎ i ⏎ /tmp/TestConsoleImportArchive3403661321/002/dw_430-80007541.sar ⏎ m ⏎ q
+$ ./kernelman-hub console      # 5 ⏎ i ⏎ /tmp/TestConsoleImportArchive3870998755/002/dw_430-80007541.sar ⏎ m ⏎ q
 
   KernelMan Hub — console
   User: admin
   Password: 
 
-  KernelMan Hub · vm · 2026-11-18 20:26
+  KernelMan Hub · vm · 2026-11-18 20:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
@@ -34,7 +34,7 @@ $ ./kernelman-hub console      # 5 ⏎ i ⏎ /tmp/TestConsoleImportArchive340366
   3  SAPEXEDB_423-80008766.SAR  SAPEXEDB   423    1.7 MB  b91f85855ccb1663…
   4  SAPCAR_1324-70006178.EXE   SAPCAR            300 KB  1d0bb38081931d60…
   [I] Import a file or directory from this server  [D] Delete <n>  [M] Main menu [m]: i
-  Path (a .SAR / SAPCAR file, or a directory: all of them): /tmp/TestConsoleImportArchive3403661321/002/dw_430-80007541.sar
+  Path (a .SAR / SAPCAR file, or a directory: all of them): /tmp/TestConsoleImportArchive3870998755/002/dw_430-80007541.sar
   ✔ dw_430-80007541.sar imported · 0 KB · dw
 
   ARCHIVES (pushed to the hosts and checked with cksum during an operation)
@@ -46,7 +46,7 @@ $ ./kernelman-hub console      # 5 ⏎ i ⏎ /tmp/TestConsoleImportArchive340366
   5  SAPCAR_1324-70006178.EXE   SAPCAR            300 KB  1d0bb38081931d60…
   [I] Import a file or directory from this server  [D] Delete <n>  [M] Main menu [m]: m
 
-  KernelMan Hub · vm · 2026-11-18 20:26
+  KernelMan Hub · vm · 2026-11-18 20:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES

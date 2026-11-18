@@ -1,6 +1,7 @@
 package hubcli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -91,7 +92,21 @@ func (c *Console) operate() error {
 	}
 	c.H.Jobs.Submit(j)
 	c.follow(j)
+	c.reread(sys, req.HostID)
 	return nil
+}
+
+// reread reads the hosts of a system again after a job, so the next screen
+// shows them as they are now.
+func (c *Console) reread(sys hub.SystemView, only string) {
+	c.printf("  reading the status of %s again …\n", sys.SID)
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
+	defer cancel()
+	for _, h := range sys.Hosts {
+		if h.Managed && (only == "" || h.HostID == only) {
+			_ = c.H.Refresh(ctx, h.HostID) // an unreachable host shows its error on the screen
+		}
+	}
 }
 
 // chooseArchives lists the library and returns the numbers picked.

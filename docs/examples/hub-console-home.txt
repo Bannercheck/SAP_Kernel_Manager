@@ -4,7 +4,7 @@ $ ./kernelman-hub console      # q
   User: admin
   Password: 
 
-  KernelMan Hub · vm · 2026-11-18 20:26
+  KernelMan Hub · vm · 2026-11-18 20:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
