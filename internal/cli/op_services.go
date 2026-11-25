@@ -159,23 +159,67 @@ func servicesScreen(rep *status.Report) (down []downInstance, haDown bool) {
 	return downList, haDown
 }
 
-// ServiceLines is the home-screen block: every local instance with its
-// sapstartsrv state and profile.
+// ServiceLines is the home-screen block: every local instance with the
+// state of SAP itself, of its sapstartsrv and its profile, and a hint that
+// names what is down.
 func ServiceLines(rep *status.Report, pal ui.Palette) []string {
 	lines, down := serviceTable(rep, pal, true)
 	if len(lines) == 0 {
 		return nil
 	}
-	hint := "sapstartsrv per instance and its profile (pf=)"
-	if len(down) > 0 || (rep.HostAgent.Installed && !rep.HostAgent.Healthy()) {
-		hint = "something is down → 5) SAP Stop / Start starts it"
+	var parts []string
+	if rep.HostAgent.Installed && !rep.HostAgent.Healthy() {
+		parts = append(parts, "SAP Host Agent")
 	}
-	return append([]string{pal.Header("SERVICES") + "  " + pal.Paint(ui.Dim, hint)}, lines...)
+	for _, d := range down {
+		name := d.in.Name
+		if name == "" {
+			name = d.in.Nr
+		}
+		parts = append(parts, "sapstartsrv of "+d.sid+" "+name)
+	}
+	hint := pal.Paint(ui.Dim, "SAP = the instance's processes · SAPSTARTSRV = its service (sapcontrol), started with pf=")
+	if len(parts) > 0 {
+		verb := " is down"
+		if len(parts) > 1 {
+			verb = " are down"
+		}
+		hint = pal.Paint(ui.Yellow, strings.Join(parts, ", ")+verb+" → 5) SAP Stop / Start → F starts it")
+	}
+	return append([]string{pal.Header("SERVICES") + "  " + hint}, lines...)
 }
 
+// sapCell is the state of an instance's processes; without its sapstartsrv
+// nothing can be known about them.
+func sapCell(pal ui.Palette, status string, srvUp bool) string {
+	if !srvUp {
+		return pal.Light(ui.Dim) + " unknown"
+	}
+	switch status {
+	case "GREEN":
+		return pal.Light(ui.Green) + " running"
+	case "GRAY", "":
+		return pal.Light(ui.Red) + " stopped"
+	}
+	return pal.Light(ui.Yellow) + " partial"
+}
+
+// srvCell is the state of the instance's sapstartsrv: "up" or "down", so it
+// never reads like the state of SAP itself.
+func srvCell(pal ui.Palette, up bool) string {
+	if up {
+		return pal.Light(ui.Green) + " up"
+	}
+	return pal.Light(ui.Red) + " " + pal.Paint(ui.Red, "down")
+}
+
+// stoppedNote explains a stopped instance whose sapstartsrv is up.
+const stoppedNote = "sapstartsrv stays up after a stop on purpose: sapcontrol keeps answering and 5) S starts SAP again without pf="
+
 func serviceTable(rep *status.Report, pal ui.Palette, withSID bool) ([]string, []downInstance) {
-	rows := [][]string{pal.Headers("INSTANCE", "SAPSTARTSRV", "PROFILE (pf=)")}
+	rows := [][]string{pal.Headers("INSTANCE", "SAP", "SAPSTARTSRV", "PROFILE (pf=)")}
 	var down []downInstance
+	stoppedUp := false
 	for _, sys := range rep.Systems {
 		for _, in := range sys.Instances {
 			if !in.Local {
@@ -186,24 +230,28 @@ func serviceTable(rep *status.Report, pal ui.Palette, withSID bool) ([]string, [
 				name = in.Nr
 			}
 			name = sys.SID + " " + name
-			var state string
-			switch in.Sapstartsrv {
-			case "running":
-				state = pal.Light(ui.Green) + " running"
-			case "not running":
-				state = pal.Light(ui.Red) + " " + pal.Paint(ui.Red, "not running")
+			up := in.Sapstartsrv == "running"
+			srv := srvCell(pal, up)
+			if !up {
 				down = append(down, downInstance{sys.SID, in})
-			default:
-				state = pal.Light(ui.Yellow) + " " + in.Sapstartsrv
-				down = append(down, downInstance{sys.SID, in})
+				if in.Sapstartsrv != "not running" {
+					srv = pal.Light(ui.Yellow) + " " + in.Sapstartsrv
+				}
 			}
-			rows = append(rows, []string{name, state, orDash(in.Profile)})
+			if up && (in.Status == "GRAY" || in.Status == "") {
+				stoppedUp = true
+			}
+			rows = append(rows, []string{name, sapCell(pal, in.Status, up), srv, orDash(in.Profile)})
 		}
 	}
 	if len(rows) == 1 {
 		return nil, nil
 	}
-	return ui.Table("", rows), down
+	lines := ui.Table("", rows)
+	if stoppedUp {
+		lines = append(lines, pal.Paint(ui.Dim, stoppedNote))
+	}
+	return lines, down
 }
 
 // sidsOf lists the systems of the down instances, in order, once each.

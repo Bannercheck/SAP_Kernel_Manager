@@ -1,18 +1,18 @@
 $ ./kernelman.sh demo         # simüle SAP hostu · 2 → Y → M · 5 → K → M · q
-[1mKernelMan — SAP Kernel Manager[0m   [90ma24d99b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-11-18 20:26
+[1mKernelMan — SAP Kernel Manager[0m   [90mf9bfcbc-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-11-25 21:34
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65   saphostexec [32m●[0m  sapstartsrv [32m●[0m  saposcol [32m●[0m
   
-  [36m[1mSERVICES[0m[0m  [90msapstartsrv per instance and its profile (pf=)[0m
-  [36m[1mINSTANCE[0m[0m    [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
-  ABC D00     [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
-  ABC ASCS01  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
+  [36m[1mSERVICES[0m[0m  [90mSAP = the instance's processes · SAPSTARTSRV = its service (sapcontrol), started with pf=[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAP[0m[0m        [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  ABC D00     [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
+  ABC ASCS01  [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [31m●[0m 26.5 GB free of 252.0 GB (31% used, /)
+  [1m~/.kernelman/demo[0m  [1m212 KB[0m   [33m●[0m 27.8 GB free of 252.0 GB (28% used, /)
   ├── ABC            156 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -37,83 +37,83 @@ Select an operation (number or name, q to quit): 2
     ~/.kernelman/demo/ABC/ASCS01/exe
 
   [36mKernel directories → backups[0m
-    ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64  →  ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261118
-    ~/.kernelman/demo/ABC/D00/exe  →  ~/.kernelman/demo/ABC/D00/exe_20261118
-    ~/.kernelman/demo/ABC/ASCS01/exe  →  ~/.kernelman/demo/ABC/ASCS01/exe_20261118
+    ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64  →  ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261125
+    ~/.kernelman/demo/ABC/D00/exe  →  ~/.kernelman/demo/ABC/D00/exe_20261125
+    ~/.kernelman/demo/ABC/ASCS01/exe  →  ~/.kernelman/demo/ABC/ASCS01/exe_20261125
 
   Back up these 3 directories?  [1m[Y][0m Yes  [1m[N][0m No  [90m›[0m y
-  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 26.5 GB[0m
+  [1/11] Check free space ... [32mok[0m  [90m/: need 0 KB, free 27.8 GB[0m
   [2/11] Check ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64 ... [32mok[0m  [90m17 files, 627 B[0m
-  [3/11] Copy to ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261118 ... [32mok[0m  [90mcp -pR[0m
-  [4/11] Verify linuxx86_64_20261118 ... [32mok[0m  [90m17 files match[0m
+  [3/11] Copy to ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261125 ... [32mok[0m  [90mcp -pR[0m
+  [4/11] Verify linuxx86_64_20261125 ... [32mok[0m  [90m17 files match[0m
   [5/11] Check ~/.kernelman/demo/ABC/D00/exe ... [32mok[0m  [90m5 files, 195 B[0m
-  [6/11] Copy to ~/.kernelman/demo/ABC/D00/exe_20261118 ... [32mok[0m  [90mcp -pR[0m
-  [7/11] Verify exe_20261118 ... [32mok[0m  [90m5 files match[0m
+  [6/11] Copy to ~/.kernelman/demo/ABC/D00/exe_20261125 ... [32mok[0m  [90mcp -pR[0m
+  [7/11] Verify exe_20261125 ... [32mok[0m  [90m5 files match[0m
   [8/11] Check ~/.kernelman/demo/ABC/ASCS01/exe ... [32mok[0m  [90m5 files, 195 B[0m
-  [9/11] Copy to ~/.kernelman/demo/ABC/ASCS01/exe_20261118 ... [32mok[0m  [90mcp -pR[0m
-  [10/11] Verify exe_20261118 ... [32mok[0m  [90m5 files match[0m
-  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20261118_202640.log ... [32mok[0m  [90m3 directories[0m
+  [9/11] Copy to ~/.kernelman/demo/ABC/ASCS01/exe_20261125 ... [32mok[0m  [90mcp -pR[0m
+  [10/11] Verify exe_20261125 ... [32mok[0m  [90m5 files match[0m
+  [11/11] Write listing ~/.kernelman/demo/ABC/.kernelman/backup_20261125_213450.log ... [32mok[0m  [90m3 directories[0m
 
-  [36mBackup ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261118[0m
+  [36mBackup ~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261125[0m
     total 76
-    drwxr-xr-x 2 root root 4096 Nov 18 20:26 .
-    drwxr-xr-x 4 root root 4096 Nov 18 20:26 ..
-    -rw-r--r-- 1 root root    3 Nov 18 20:26 .demo_patch
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 R3trans
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 SAPCAR
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 dbhdbslib.so
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 disp+work
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 enq_replicator
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 enq_server
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 gwrd
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 icman
+    drwxr-xr-x 2 root root 4096 Nov 25 21:34 .
+    drwxr-xr-x 4 root root 4096 Nov 25 21:34 ..
+    -rw-r--r-- 1 root root    3 Nov 25 21:34 .demo_patch
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 R3trans
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 SAPCAR
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 dbhdbslib.so
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 disp+work
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 enq_replicator
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 enq_server
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 gwrd
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 icman
     ... 8 more entries
 
 
-  [36mBackup ~/.kernelman/demo/ABC/D00/exe_20261118[0m
+  [36mBackup ~/.kernelman/demo/ABC/D00/exe_20261125[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Nov 18 20:26 .
-    drwxr-xr-x 4 root root 4096 Nov 18 20:26 ..
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 disp+work
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapcontrol
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapcpe
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Nov 25 21:34 .
+    drwxr-xr-x 4 root root 4096 Nov 25 21:34 ..
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 disp+work
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapcontrol
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapcpe
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapstartsrv
 
 
-  [36mBackup ~/.kernelman/demo/ABC/ASCS01/exe_20261118[0m
+  [36mBackup ~/.kernelman/demo/ABC/ASCS01/exe_20261125[0m
     total 28
-    drwxr-xr-x 2 root root 4096 Nov 18 20:26 .
-    drwxr-xr-x 4 root root 4096 Nov 18 20:26 ..
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 disp+work
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 libsapu16.so
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapcontrol
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapcpe
-    -rwxr-xr-x 1 root root   39 Nov 18 20:26 sapstartsrv
+    drwxr-xr-x 2 root root 4096 Nov 25 21:34 .
+    drwxr-xr-x 4 root root 4096 Nov 25 21:34 ..
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 disp+work
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 libsapu16.so
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapcontrol
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapcpe
+    -rwxr-xr-x 1 root root   39 Nov 25 21:34 sapstartsrv
 
   [32m✔[0m Backup ready: 3 directories, 27 files, 1017 B
-    [1m~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261118
-    ~/.kernelman/demo/ABC/D00/exe_20261118
-    ~/.kernelman/demo/ABC/ASCS01/exe_20261118[0m
-    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20261118_202640.log
+    [1m~/.kernelman/demo/ABC/SYS/exe/uc/linuxx86_64_20261125
+    ~/.kernelman/demo/ABC/D00/exe_20261125
+    ~/.kernelman/demo/ABC/ASCS01/exe_20261125[0m
+    full listings: ~/.kernelman/demo/ABC/.kernelman/backup_20261125_213450.log
 
 --- Kernel Backup: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90ma24d99b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-11-18 20:26
+[1mKernelMan — SAP Kernel Manager[0m   [90mf9bfcbc-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-11-25 21:34
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [32m●[0m  ASCS01 [32m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65   saphostexec [32m●[0m  sapstartsrv [32m●[0m  saposcol [32m●[0m
   
-  [36m[1mSERVICES[0m[0m  [90msapstartsrv per instance and its profile (pf=)[0m
-  [36m[1mINSTANCE[0m[0m    [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
-  ABC D00     [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
-  ABC ASCS01  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
+  [36m[1mSERVICES[0m[0m  [90mSAP = the instance's processes · SAPSTARTSRV = its service (sapcontrol), started with pf=[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAP[0m[0m        [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  ABC D00     [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
+  ABC ASCS01  [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [31m●[0m 26.5 GB free of 252.0 GB (31% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 27.8 GB free of 252.0 GB (28% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB
@@ -140,10 +140,10 @@ Select an operation (number or name, q to quit): 5
   [32m⬤[0m [32m[1mRUNNING[0m[0m   [32m●[0m D00 GREEN   [32m●[0m ASCS01 GREEN
   SAP Host Agent   [32m⬤[0m [32m[1mRUNNING[0m[0m  ~/.kernelman/demo/hostctrl/exe/saphostexec
   [32m●[0m saphostexec running (pid = 4242)   [32m●[0m sapstartsrv running (pid = 4243)   [32m●[0m saposcol running (pid = 4244)
-  [36m[1mSAPSTARTSRV[0m[0m  [90msapcontrol only works while it runs with the instance profile[0m
-  [36m[1mINSTANCE[0m[0m     [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
-  D00 (00)     [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
-  ASCS01 (01)  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
+  [36m[1mINSTANCES[0m[0m  [90mSAP = the processes · SAPSTARTSRV = the service sapcontrol talks to (started with pf=)[0m
+  [36m[1mINSTANCE[0m[0m     [36m[1mSAP[0m[0m        [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  D00 (00)     [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
+  ASCS01 (01)  [32m●[0m running  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
 
   [1m[S][0m Start SAP  [1m[K][0m Stop SAP (Kapat)  [1m[I][0m One instance  [1m[M][0m Main menu  [90m›[0m k
 
@@ -157,20 +157,21 @@ Select an operation (number or name, q to quit): 5
 --- SAP Stop / Start: [32m✔[0m [32mdone[0m
 
   [1m[M][0m Main menu  [1m[Q][0m Quit  [90m›[0m m
-[1mKernelMan — SAP Kernel Manager[0m   [90ma24d99b-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
-  Hostname [1mvm[0m · User root · 2026-11-18 20:26
+[1mKernelMan — SAP Kernel Manager[0m   [90mf9bfcbc-dirty[0m  [33mDEMO · simulated SAP host in ~/.kernelman/demo[0m
+  Hostname [1mvm[0m · User root · 2026-11-25 21:34
 
   [36m[1mSTATE[0m[0m      [36m[1mSYSTEM[0m[0m          [36m[1mTYPE[0m[0m     [36m[1mHOSTNAME[0m[0m  [36m[1mKERNEL[0m[0m                [36m[1mINSTANCES[0m[0m
   [31m⬤[0m [31m[1mSTOPPED[0m[0m  ABC             AS ABAP  vm        Kernel 793 Patch 200  D00 [31m●[0m  ASCS01 [31m●[0m
   [32m⬤[0m [32m[1mRUNNING[0m[0m  SAP Host Agent           vm        Kernel 722 Patch 65   saphostexec [32m●[0m  sapstartsrv [32m●[0m  saposcol [32m●[0m
   
-  [36m[1mSERVICES[0m[0m  [90msapstartsrv per instance and its profile (pf=)[0m
-  [36m[1mINSTANCE[0m[0m    [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
-  ABC D00     [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
-  ABC ASCS01  [32m●[0m running    ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
+  [36m[1mSERVICES[0m[0m  [90mSAP = the instance's processes · SAPSTARTSRV = its service (sapcontrol), started with pf=[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAP[0m[0m        [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  ABC D00     [31m●[0m stopped  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_D00_demo-host
+  ABC ASCS01  [31m●[0m stopped  [32m●[0m up         ~/.kernelman/demo/ABC/SYS/profile/ABC_ASCS01_demo-host
+  [90msapstartsrv stays up after a stop on purpose: sapcontrol keeps answering and 5) S starts SAP again without pf=[0m
   
   [36m[1mDISK[0m[0m
-  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [31m●[0m 26.5 GB free of 252.0 GB (31% used, /)
+  [1m~/.kernelman/demo[0m  [1m344 KB[0m   [33m●[0m 27.8 GB free of 252.0 GB (28% used, /)
   ├── ABC            288 KB
   ├── download       28 KB
   └── hostctrl       20 KB

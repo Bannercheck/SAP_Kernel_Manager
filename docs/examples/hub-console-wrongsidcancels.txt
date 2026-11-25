@@ -4,13 +4,13 @@ $ ./kernelman-hub console      # 3 ⏎ QAS ⏎ stop ⏎  ⏎ QSA ⏎ q
   User: admin
   Password: 
 
-  KernelMan Hub · vm · 2026-11-18 20:34
+  KernelMan Hub · vm · 2026-11-25 21:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
   DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
   PRD     AS ABAP  ● running  793 PL 200  4 hosts  4/4 running  read-only
-  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 04:34
+  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 05:34
 
   NEEDS ATTENTION
   ✘ sbxsrv sbxsrv: connect sbxsrv:22: dial tcp 10.20.30.49:22: connect: no route to host
@@ -46,13 +46,13 @@ $ ./kernelman-hub console      # 3 ⏎ QAS ⏎ stop ⏎  ⏎ QSA ⏎ q
   Type QAS to confirm (Enter = cancel): 
   cancelled: nothing was started
 
-  KernelMan Hub · vm · 2026-11-18 20:34
+  KernelMan Hub · vm · 2026-11-25 21:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
   DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
   PRD     AS ABAP  ● running  793 PL 200  4 hosts  4/4 running  read-only
-  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 04:34
+  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 05:34
 
   NEEDS ATTENTION
   ✘ sbxsrv sbxsrv: connect sbxsrv:22: dial tcp 10.20.30.49:22: connect: no route to host
@@ -69,13 +69,13 @@ $ ./kernelman-hub console      # 3 ⏎ QAS ⏎ stop ⏎  ⏎ QSA ⏎ q
    q) Quit              
   Select (number, q to quit): QSA
 
-  KernelMan Hub · vm · 2026-11-18 20:34
+  KernelMan Hub · vm · 2026-11-25 21:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
   DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
   PRD     AS ABAP  ● running  793 PL 200  4 hosts  4/4 running  read-only
-  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 04:34
+  QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  unlocked until 05:34
 
   NEEDS ATTENTION
   ✘ sbxsrv sbxsrv: connect sbxsrv:22: dial tcp 10.20.30.49:22: connect: no route to host

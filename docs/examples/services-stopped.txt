@@ -1,0 +1,7 @@
+$ ./kernelman.sh              # GPP 5 → K ile durduruldu (sapstartsrv bilerek açık), Host Agent kapalı
+  [36m[1mSERVICES[0m[0m  [33mSAP Host Agent is down → 5) SAP Stop / Start → F starts it[0m
+  [36m[1mINSTANCE[0m[0m    [36m[1mSAP[0m[0m        [36m[1mSAPSTARTSRV[0m[0m  [36m[1mPROFILE (pf=)[0m[0m
+  CSA SMDA98  [32m●[0m running  [32m●[0m up         /usr/sap/CSA/SYS/profile/CSA_SMDA98_kupa
+  GPP J00     [31m●[0m stopped  [32m●[0m up         /usr/sap/GPP/SYS/profile/GPP_J00_kupa
+  GPP SCS01   [31m●[0m stopped  [32m●[0m up         /usr/sap/GPP/SYS/profile/GPP_SCS01_kupa
+  [90msapstartsrv stays up after a stop on purpose: sapcontrol keeps answering and 5) S starts SAP again without pf=[0m

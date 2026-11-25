@@ -78,23 +78,24 @@ func controlScreen(ctx context.Context, e *ops.Env) ([]ops.InstanceState, discov
 	default:
 		fmt.Fprintf(stdout, "  SAP Host Agent   %s  %s\n  %s\n", hostAgentBadge(pal, ha), ha.Path, hostAgentComponents(pal, ha))
 	}
-	rows := [][]string{pal.Headers("INSTANCE", "SAPSTARTSRV", "PROFILE (pf=)")}
+	rows := [][]string{pal.Headers("INSTANCE", "SAP", "SAPSTARTSRV", "PROFILE (pf=)")}
+	stoppedUp := false
 	for _, st := range states {
-		state := pal.Light(ui.Green) + " running"
-		if !st.Sapstartsrv {
-			state = pal.Light(ui.Red) + " " + pal.Paint(ui.Red, "not running")
-		}
 		profile := "-"
 		for _, in := range e.T.Instances {
 			if in.Nr == st.Nr && in.Profile != "" {
 				profile = in.Profile
 			}
 		}
-		rows = append(rows, []string{st.Name + " (" + st.Nr + ")", state, profile})
+		stoppedUp = stoppedUp || (st.Sapstartsrv && st.Status == "GRAY")
+		rows = append(rows, []string{st.Name + " (" + st.Nr + ")", sapCell(pal, st.Status, st.Sapstartsrv), srvCell(pal, st.Sapstartsrv), profile})
 	}
-	fmt.Fprintf(stdout, "  %s  %s\n", pal.Header("SAPSTARTSRV"), pal.Paint(ui.Dim, "sapcontrol only works while it runs with the instance profile"))
+	fmt.Fprintf(stdout, "  %s  %s\n", pal.Header("INSTANCES"), pal.Paint(ui.Dim, "SAP = the processes · SAPSTARTSRV = the service sapcontrol talks to (started with pf=)"))
 	for _, l := range ui.Table("  ", rows) {
 		fmt.Fprintln(stdout, l)
+	}
+	if stoppedUp {
+		fmt.Fprintf(stdout, "  %s\n", pal.Paint(ui.Dim, stoppedNote))
 	}
 	return states, ha
 }

@@ -44,6 +44,12 @@ Her oturum: bu dosyayı oku → sadece **NEXT** maddesini yap → burayı günce
 - [ ] H2 — gerçek DEV/TEST doğrulaması (NEXT) — dashboard veya konsol ile
 
 ## Karar günlüğü
+- 2026-11-25 · Kullanıcı (kupa, root, ekran görüntüsü): "sistem kapalı ama hâlâ açık gösteriyor". Kök neden: ana ekrandaki SERVICES
+  ve 5) ekranındaki tablo yalnızca **sapstartsrv** durumunu yeşil "running" olarak gösteriyordu; 5 → K sonrası sapstartsrv bilerek
+  açık kaldığı için (2026-11-04 kararı) durmuş GPP "açık" gibi okunuyordu. Üstteki "something is down" de neyin kapalı olduğunu
+  söylemiyordu (orada SAP Host Agent kapalıydı). Düzeltme: tabloda ayrı **SAP** sütunu (running · stopped · partial; sapstartsrv
+  kapalıysa unknown), SAPSTARTSRV `up`/`down`, durmuş + sapstartsrv açık için açıklama satırı, uyarı adı verir
+  ("SAP Host Agent is down → 5) SAP Stop / Start → F starts it"). Örnek: `docs/examples/services-stopped.png`.
 - 2026-11-18 · `make vuln`: **GO-2026-6859** (net/http, MaxBytesReader başlık yarışı → HTTP/1 sunucusu çöker; hub'ın yükleme API'si
   MaxBytesReader kullanıyor, gerçekten etkileniyordu) → toolchain **go1.27.4**; x/crypto **v0.59.0**, x/sys **v0.50.0** (en güncel).
   Sonuç: 0 zafiyet; gerçek SSH e2e testi yeni x/crypto ile geçti.

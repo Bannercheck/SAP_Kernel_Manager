@@ -7,26 +7,27 @@ $ make cross
 
 $ ls -la dist dist/bin
   dist:
-  total 19204
-  drwxr-xr-x  5 root root    4096 Nov 17 20:54 .
-  drwxr-xr-x 10 root root    4096 Nov 17 20:53 ..
-  -rw-r--r--  1 root root     541 Nov 18 20:27 SHA256SUMS
-  drwxr-xr-x  2 root root    4096 Nov 18 20:27 bin
-  drwxr-xr-x  6 root root    4096 Nov 17 20:54 hub
-  drwxr-xr-x  3 root root    4096 Nov  4 22:06 kernelman
+  total 28792
+  drwxr-xr-x  5 root root    4096 Nov 18 20:34 .
+  drwxr-xr-x 10 root root    4096 Nov 18 20:30 ..
+  -rw-r--r--  1 root root     541 Nov 25 21:35 SHA256SUMS
+  drwxr-xr-x  2 root root    4096 Nov 25 21:35 bin
+  drwxr-xr-x  6 root root    4096 Nov 18 20:35 hub
+  drwxr-xr-x  3 root root    4096 Nov 18 20:33 kernelman
+  -rw-r--r--  1 root root 9814606 Nov 18 20:33 kernelman-41b435a.tar.gz
   -rw-r--r--  1 root root 9814540 Nov  4 22:06 kernelman-ceb6c85.tar.gz
-  -rw-r--r--  1 root root 9814540 Nov  4 22:06 kernelman-linux-aix.tar.gz
-  -rwxr-xr-x  1 root root    1081 Nov 18 20:27 kernelman.sh
+  -rw-r--r--  1 root root 9814606 Nov 18 20:33 kernelman-linux-aix.tar.gz
+  -rwxr-xr-x  1 root root    1081 Nov 25 21:35 kernelman.sh
   
   dist/bin:
-  total 39732
-  drwxr-xr-x 2 root root    4096 Nov 18 20:27 .
-  drwxr-xr-x 5 root root    4096 Nov 17 20:54 ..
-  -rwxr-xr-x 1 root root 9089027 Nov 18 20:26 kernelman-aix-ppc64
-  -rwxr-xr-x 1 root root 8195776 Nov 18 20:27 kernelman-darwin-amd64
-  -rwxr-xr-x 1 root root 7541138 Nov 18 20:26 kernelman-darwin-arm64
-  -rwxr-xr-x 1 root root 8036512 Nov 18 20:26 kernelman-linux-amd64
-  -rwxr-xr-x 1 root root 7798944 Nov 18 20:26 kernelman-linux-ppc64le
+  total 39744
+  drwxr-xr-x 2 root root    4096 Nov 25 21:35 .
+  drwxr-xr-x 5 root root    4096 Nov 18 20:34 ..
+  -rwxr-xr-x 1 root root 9092461 Nov 25 21:35 kernelman-aix-ppc64
+  -rwxr-xr-x 1 root root 8199872 Nov 25 21:35 kernelman-darwin-amd64
+  -rwxr-xr-x 1 root root 7541154 Nov 25 21:35 kernelman-darwin-arm64
+  -rwxr-xr-x 1 root root 8040608 Nov 25 21:34 kernelman-linux-amd64
+  -rwxr-xr-x 1 root root 7798944 Nov 25 21:35 kernelman-linux-ppc64le
 
 $ file dist/bin/*
   dist/bin/kernelman-aix-ppc64:     64-bit XCOFF executable or object module not stripped

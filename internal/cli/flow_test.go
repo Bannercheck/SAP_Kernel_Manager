@@ -246,7 +246,7 @@ func TestFlowStop(t *testing.T) {
 	fe.install(t)
 	out := runMenu(t, "stop", "5\nk\nm\nq\n") // 5, K = stop, M = main menu, quit
 	mustContain(t, out, "[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [M] Main menu", "⬤ RUNNING", "SAP Host Agent   ⬤ RUNNING",
-		"D00 (00)     ● running    /usr/sap/ABC/SYS/profile/ABC_D00_sapci", "[1/3] StopSystem ALL ... ok",
+		"D00 (00)     ● running  ● up         /usr/sap/ABC/SYS/profile/ABC_D00_sapci", "[1/3] StopSystem ALL ... ok",
 		"[3/3] Wait until ASCS01 (01) is stopped ... ok  all processes GRAY", "system ABC stopped", "⬤ STOPPED", "5) ✔ SAP Stop / Start")
 	// SAP is down, sapstartsrv (started with pf=) keeps running: nobody has to start it by hand again
 	if strings.Contains(out, "StopService") || strings.Contains(out, "sapstartsrv down") || strings.Join(fe.sim.Calls(), ",") != "00 StopSystem" {
@@ -523,12 +523,12 @@ func TestFlowServices(t *testing.T) {
 	out := runMenu(t, "services", "5\nf\nm\nq\n") // 5, F = start the stopped services (Host Agent and sapstartsrv), M, quit
 	mustContain(t, out, "=== SAP Stop / Start ===", "ASCS01 (sapstartsrv down)", "SAP Host Agent   ⬤ STOPPED",
 		"● saphostexec not running   ● sapstartsrv not running   ● saposcol not running",
-		"ASCS01 (01)  ● not running  /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
+		"ASCS01 (01)  ○ unknown  ● down       /usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci",
 		"[S] Start SAP  [K] Stop SAP (Kapat)  [I] One instance  [F] Start stopped services (Host Agent, 1 sapstartsrv)  [M] Main menu",
 		"[1/2] Start SAP Host Agent ... ok  saphostexec -restart · saphostexec, sapstartsrv, saposcol running",
 		"[2/2] Start sapstartsrv ASCS01 (01) ... ok  StartService failed", "→ sapstartsrv pf=/usr/sap/ABC/SYS/profile/ABC_ASCS01_sapci -D · answers",
 		"SAP Host Agent   ⬤ RUNNING", "● saphostexec running (pid = 4242)   ● sapstartsrv running (pid = 4243)   ● saposcol running (pid = 4244)",
-		"ASCS01 (01)  ● running", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "5) ✔ SAP Stop / Start")
+		"ASCS01 (01)  ● stopped  ● up", "SAP Host Agent and every sapstartsrv are running · sapcontrol works again", "5) ✔ SAP Stop / Start")
 	var started bool
 	for _, c := range fe.fake.Calls {
 		if strings.HasSuffix(c.Path, "/sapstartsrv") && len(c.Env) == 1 && strings.HasSuffix(c.Env[0], "="+ascs) {

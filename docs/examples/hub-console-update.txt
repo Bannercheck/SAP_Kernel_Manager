@@ -4,7 +4,7 @@ $ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y �
   User: admin
   Password: 
 
-  KernelMan Hub · vm · 2026-11-18 20:34
+  KernelMan Hub · vm · 2026-11-25 21:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 200, 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
@@ -43,7 +43,7 @@ $ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y �
   PRD is read-only in the hub: every change needs an unlock (it lasts 8 hours).
 
   Unlock PRD now?  [Y] Yes  [N] No  › y
-  ✔ PRD unlocked until 04:34
+  ✔ PRD unlocked until 05:34
 
   ARCHIVES IN THE HUB LIBRARY
   #  ARCHIVE                    COMPONENT               PATCH  SIZE
@@ -73,7 +73,7 @@ $ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y �
   25 steps in total · one host at a time · the job stops at the first failure
   Type PRD to confirm (Enter = cancel): PRD
 
-  job d790ee14b201 started · Ctrl+C stops after the running step (an extraction or a backup is never cut in half)
+  job cca490c9ce60 started · Ctrl+C stops after the running step (an extraction or a backup is never cut in half)
 
   ▶   0% [1/25] Preflight checks on prdascs
   prdascs      PRD on prdascs: 1 local instance(s), kernel 793 Patch 200, central kernel /sapmnt/PRD/exe/uc/linuxx86_64
@@ -112,15 +112,15 @@ $ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y �
   … 327 more lines of the job console …
   ✔ Kernel Update PRD (4 hosts) → patch 423 finished
 
-  ✔ Kernel Update PRD (4 hosts) → patch 423 · 100% · ok · job d790ee14b201
+  ✔ Kernel Update PRD (4 hosts) → patch 423 · 100% · ok · job cca490c9ce60
   reading the status of PRD again …
 
-  KernelMan Hub · vm · 2026-11-18 20:34
+  KernelMan Hub · vm · 2026-11-25 21:34
   3 systems (2 running, 1 stopped) · 6/7 hosts reachable · 6/8 instances running · kernels: 793 PL 300, 793 PL 423
 
   SYSTEM  TYPE     STATE      KERNEL      HOSTS    INSTANCES    CHANGES
   DEV     AS Java  ● running  793 PL 423  1 host   2/2 running  read-only
-  PRD     AS ABAP  ● running  793 PL 423  4 hosts  4/4 running  unlocked until 04:34
+  PRD     AS ABAP  ● running  793 PL 423  4 hosts  4/4 running  unlocked until 05:34
   QAS     AS ABAP  ● stopped  793 PL 300  1 host   0/2 running  read-only
 
   NEEDS ATTENTION
@@ -128,7 +128,7 @@ $ ./kernelman-hub console      # 3 ⏎ PRD ⏎ update ⏎ y ⏎ 2,3 ⏎  ⏎ y �
   ! DEV devsrv /usr/sap is 92% full
 
   RECENT JOBS
-  ✔  100%  Kernel Update PRD (4 hosts) → patch 423  11-18 20:34
+  ✔  100%  Kernel Update PRD (4 hosts) → patch 423  11-25 21:34
 
    1) Refresh           read the status of every host again
    2) System            details of one system: hosts, instances, local exe = central, disk
